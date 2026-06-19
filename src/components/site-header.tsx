@@ -16,33 +16,17 @@ import { useSidebar } from "@/components/ui/sidebar"
 import { ModeToggle } from "@/components/mode-toggle"
 import dynamic from "next/dynamic"
 
-// Loaded client-only to avoid Radix UI ID hydration mismatches.
-// The user menu uses context data (no SSR needed) so this is safe and correct.
 const HeaderUserMenu = dynamic(
   () => import("@/components/header-user-menu").then((m) => ({ default: m.HeaderUserMenu })),
   { ssr: false }
 )
 
-const RoleSwitcher = dynamic(
-  () => import("@/components/role-switcher").then((m) => ({ default: m.RoleSwitcher })),
-  { ssr: false }
-)
-
 export function SiteHeader({
-  isTrueAdmin,
-  activeRole,
-  baseRole,
-  volunteerEnabled
-}: {
-  isTrueAdmin?: boolean
-  activeRole?: string
-  baseRole?: string
-  volunteerEnabled?: boolean
-}) {
+  ...props
+}: any) {
   const { toggleSidebar } = useSidebar()
   const pathname = usePathname()
 
-  // Format pathname like "/dashboard/users" -> "Users"
   const activePage = pathname === "/" ? "Dashboard" :
     pathname.split('/').pop()?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || "Dashboard"
 
@@ -77,12 +61,6 @@ export function SiteHeader({
         </Breadcrumb>
         <div className="ml-auto flex items-center gap-2">
           <ModeToggle />
-          <RoleSwitcher
-            isAdmin={isTrueAdmin}
-            activeRole={activeRole}
-            baseRole={baseRole}
-            volunteerEnabled={volunteerEnabled}
-          />
           <HeaderUserMenu />
         </div>
       </div>

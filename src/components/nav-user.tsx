@@ -6,7 +6,6 @@ import {
   ChevronsUpDown,
   LogOut,
 } from "lucide-react"
-import { useAuthActions } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 
 import {
@@ -40,8 +39,11 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
-  const { signOut } = useAuthActions()
   const router = useRouter()
+  
+  const signOut = () => {
+    router.push("/login")
+  }
 
   return (
     <SidebarMenu>
@@ -92,7 +94,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut({ redirectUrl: '/login' })}>
+            <DropdownMenuItem onClick={() => signOut()}>
               <LogOut />
               Log out
             </DropdownMenuItem>

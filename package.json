@@ -1,5 +1,5 @@
 {
-  "name": "ng-volunteer-connect",
+  "name": "nextjs-shadcn-boilerplate",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,18 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.9.0",
-    "@supabase/supabase-js": "^2.98.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "country-state-city": "^3.2.1",
     "lucide-react": "^0.575.0",
     "next": "16.1.6",
     "next-themes": "^0.4.6",
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "recharts": "^2.15.4",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0"
   },

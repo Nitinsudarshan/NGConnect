@@ -1,5 +1,0 @@
-import { redirect } from "next/navigation";
-
-export default async function UsersPage() {
-    redirect("/users-registry");
-}

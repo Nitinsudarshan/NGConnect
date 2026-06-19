@@ -2,26 +2,20 @@
 
 import React, { createContext, useContext } from "react";
 
-export interface UserData {
+export type User = {
     id: string;
-    fullName: string;
+    name: string;
     email: string;
-    imageUrl: string;
-    firstName: string;
-    lastName: string;
-    role?: string;
-    volunteerEnabled?: boolean;
-    isOnboardingLocked?: boolean;
-    publicMetadata?: any;
-}
+    avatar: string;
+};
 
-const UserContext = createContext<UserData | null>(null);
+const UserContext = createContext<User | null>(null);
 
 export function UserProvider({
     user,
     children,
 }: {
-    user: UserData | null;
+    user: User | null;
     children: React.ReactNode;
 }) {
     return (
@@ -31,11 +25,6 @@ export function UserProvider({
     );
 }
 
-/**
- * Returns server-fetched user data from context.
- * This does NOT trigger any network requests — data is resolved once on the server
- * and passed down via the layout. No re-fetches on navigation.
- */
-export function useUserContext(): UserData | null {
+export function useUserContext() {
     return useContext(UserContext);
 }

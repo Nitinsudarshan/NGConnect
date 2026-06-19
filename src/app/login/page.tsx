@@ -1,5 +1,4 @@
 import { LoginForm } from "@/components/login-form"
-import { AuthFooter } from "@/components/auth-footer"
 import { Toaster } from "@/components/ui/sonner"
 
 export default function LoginPage() {
@@ -16,9 +15,6 @@ export default function LoginPage() {
       <div className="flex-1 w-full flex items-center justify-center p-4 z-10">
         <LoginForm />
       </div>
-
-      <AuthFooter />
     </div>
   )
 }
-

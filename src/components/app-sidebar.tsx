@@ -3,17 +3,10 @@
 import * as React from "react"
 import {
   BookOpen,
-  BookOpenCheck,
-  Building,
   LifeBuoy,
-  PieChart,
   Send,
-  UserCircle,
-  UserCog,
   LayoutDashboard,
-  Ticket,
-  Video,
-  Briefcase,
+  Settings,
 } from "lucide-react"
 
 import { NavMain, NavItem } from "@/components/nav-main"
@@ -27,20 +20,19 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { UserRole } from "@/lib/roles"
 import { Fingerprint } from "lucide-react"
 import Link from "next/link"
 
 const data = {
   navSecondary: [
     {
-      title: "Handbook",
+      title: "Documentation",
       url: "#",
       icon: BookOpen,
     },
     {
       title: "Support",
-      url: "/support",
+      url: "#",
       icon: LifeBuoy,
     },
     {
@@ -51,11 +43,8 @@ const data = {
   ],
 }
 
-export function AppSidebar({ role, devOverride, isLocked, ...props }: React.ComponentProps<typeof Sidebar> & { role?: UserRole, devOverride?: string, isLocked?: boolean }) {
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { setOpenMobile, isMobile } = useSidebar()
-  // Determine if it's a volunteer view
-  const activeRole = role || 'Volunteer';
-  const isVolunteer = activeRole === 'Volunteer';
 
   const navGeneral: NavItem[] = [
     {
@@ -64,146 +53,17 @@ export function AppSidebar({ role, devOverride, isLocked, ...props }: React.Comp
       icon: LayoutDashboard,
       isActive: true,
     },
-  ];
-
-  if (isVolunteer) {
-    navGeneral.push({
-      title: "Events",
-      url: "/events",
-      icon: Video,
-    });
-  }
-
-  // Role-specific Projects View labels for the general section
-  const projectLabel = activeRole === 'Admin' ? 'Projects (Admin)' 
-                    : activeRole === 'Program' ? 'Projects (Program)' 
-                    : 'Projects';
-
-  navGeneral.push({
-    title: projectLabel,
-    url: "/projects",
-    icon: Briefcase,
-  });
-
-  // Top-level Onboarding (for the user's own journey)
-  if (isVolunteer) {
-    navGeneral.push({
-      title: "Onboarding",
-      url: "/onboarding",
-      icon: BookOpenCheck,
-      items: [
-        {
-          title: "My Journey",
-          url: "/onboarding",
-        }
-      ]
-    });
-  }
-
-  // Everyone gets Profile at the bottom of the general section
-  navGeneral.push({
-    title: "My Profile",
-    url: "/profile",
-    icon: UserCircle,
-  });
-
-  const navManagement: NavItem[] = [];
-
-  // Admins & Program staff get Management section
-  if (activeRole !== 'Volunteer') {
-    navManagement.push(
-      {
-        title: "User Management",
-        url: "#",
-        icon: UserCog,
-        items: [
-          {
-            title: "User Registry",
-            url: "/users-registry",
-          },
-          {
-            title: "User Trends",
-            url: "/users-trends",
-          },
-        ]
-      },
-      {
-        title: projectLabel,
-        url: "/management/projects",
-        icon: Briefcase,
-      },
-      {
-        title: "Onboarding",
-        url: "#",
-        icon: BookOpen,
-        items: [
-          {
-            title: "Skills Management",
-            url: "/skills",
-          },
-          {
-            title: "Onboarding Config",
-            url: "/management/onboarding",
-          },
-        ]
-      },
-      {
-        title: "Support Ops Hub",
-        url: "#",
-        icon: LifeBuoy,
-        items: [
-          {
-            title: "Manage Departments",
-            url: "/management/departments",
-          },
-          {
-            title: "All Tickets",
-            url: "/management/ticketing/all-tickets",
-          },
-          {
-            title: "Ticketing Settings",
-            url: "/management/ticketing/settings",
-          },
-          {
-            title: "FAQs Editor",
-            url: "/management/support/faqs",
-          },
-          {
-            title: "Contact US Directory",
-            url: "/management/support/contact",
-          },
-          {
-            title: "Feedback Forms & Logs",
-            url: "/management/support/feedback",
-          },
-          {
-            title: "Webinars",
-            url: "/management/support/webinars",
-          },
-        ]
-      },
-      {
-        title: "Analytics Dashboard",
-        url: "/admin",
-        icon: PieChart,
-      }
-    );
-  }
-
-  const navComponents: NavItem[] = [];
-  if (activeRole === 'Admin') {
-    navComponents.push({
-      title: "Design System",
+    {
+      title: "Components Showcase",
+      url: "/components",
+      icon: BookOpen,
+    },
+    {
+      title: "Settings",
       url: "#",
-      icon: LayoutDashboard,
-      items: [
-        {
-          title: "Toasts / Sonner",
-          url: "/management/components/toasts",
-        },
-      ]
-    });
-  }
+      icon: Settings,
+    },
+  ];
 
   return (
     <Sidebar
@@ -224,12 +84,9 @@ export function AppSidebar({ role, devOverride, isLocked, ...props }: React.Comp
                   <Fingerprint className="size-6" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">NG Connect</span>
+                  <span className="truncate font-semibold">Boilerplate App</span>
                   <span className="truncate text-xs text-muted-foreground">
-                    {activeRole === 'Volunteer' && "Volunteer Hub"}
-                    {activeRole === 'Operations' && "Operations Hub"}
-                    {activeRole === 'Program' && "Program Hub"}
-                    {activeRole === 'Admin' && "Admin Hub"}
+                    Admin Workspace
                   </span>
                 </div>
               </Link>
@@ -239,15 +96,8 @@ export function AppSidebar({ role, devOverride, isLocked, ...props }: React.Comp
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navGeneral} />
-        {navManagement.length > 0 && (
-          <NavMain items={navManagement} label="Management" />
-        )}
-        {navComponents.length > 0 && (
-          <NavMain items={navComponents} label="Components" />
-        )}
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
     </Sidebar>
   )
 }
-

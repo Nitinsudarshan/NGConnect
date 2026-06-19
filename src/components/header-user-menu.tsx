@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useUserContext } from "@/contexts/user-context";
-import { useAuthActions } from "@/hooks/use-auth";
 
 function toTitleCase(str: string) {
     return str
@@ -25,18 +24,16 @@ function toTitleCase(str: string) {
 export function HeaderUserMenu() {
     const router = useRouter();
     const user = useUserContext();
-    const { signOut } = useAuthActions();
 
-    // Show first name only in title case
-    const firstName = user?.firstName
-        ? toTitleCase(user.firstName)
-        : user?.fullName?.split(" ")[0]
-            ? toTitleCase(user.fullName.split(" ")[0])
-            : "";
-    const fullName = user?.fullName ? toTitleCase(user.fullName) : "";
-    const userEmail = user?.email || "";
-    const userAvatar = user?.imageUrl || "";
-    const displayLabel = firstName || userEmail.split("@")[0] || "Account";
+    const signOut = () => {
+        router.push("/login");
+    };
+
+    const firstName = user?.name ? toTitleCase(user.name.split(" ")[0]) : "User";
+    const fullName = user?.name ? toTitleCase(user.name) : "User";
+    const userEmail = user?.email || "user@example.com";
+    const userAvatar = user?.avatar || "";
+    const displayLabel = firstName;
     const initials = fullName
         ? fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
         : displayLabel.slice(0, 2).toUpperCase();
@@ -80,7 +77,7 @@ export function HeaderUserMenu() {
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut({ redirectUrl: "/login" })}>
+                <DropdownMenuItem onClick={() => signOut()}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Log out
                 </DropdownMenuItem>

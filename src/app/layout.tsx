@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NG Volunteer Connect",
-  description: "Empowering communities through purposeful volunteering and skill-based missions for NavGurukul students.",
+  title: "Next.js Shadcn Boilerplate",
+  description: "A clean, modern boilerplate with Next.js, Tailwind CSS, and Shadcn UI.",
 };
 
 import { ThemeProvider } from "@/components/theme-provider"
