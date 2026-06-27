@@ -3,7 +3,8 @@ export { }
 declare global {
     interface CustomJwtSessionClaims {
         metadata: {
-            role?: "Admin" | "Program" | "Operations" | "Volunteer";
+            role?: "Super Admin" | "Admin" | "Manager" | "Operator" | "Analyst" | "Viewer" | "Program" | "Operations" | "Volunteer";
+            team?: "CEO's Office" | "Alumni Growth" | "Pay-Forward" | "None";
             volunteerEnabled?: boolean;
             userManagementEnabled?: boolean;
         };

@@ -1,45 +1,17 @@
 import React from 'react';
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-function formatRelativeTime(dateString?: string | null) {
-  if (!dateString) return "Never";
-
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-
-  if (diffMs < 0) return "Just now"; // Handle slight future drift
-
-  const totalMins = Math.floor(diffMs / 60000);
-  const days = Math.floor(totalMins / 1440);
-  const hours = Math.floor((totalMins % 1440) / 60);
-  const mins = totalMins % 60;
-
-  if (days > 0) {
-    return `${days} day${days !== 1 ? 's' : ''}, ${hours} hr${hours !== 1 ? 's' : ''} ago`;
-  } else if (hours > 0) {
-    return `${hours} hr${hours !== 1 ? 's' : ''}, ${mins} min${mins !== 1 ? 's' : ''} ago`;
-  } else if (mins > 0) {
-    return `${mins} min${mins !== 1 ? 's' : ''} ago`;
-  } else {
-    return "Just now";
-  }
-}
+import { createClient } from "@/lib/supabase/server";
+import { UsersTable } from "./users-table";
 
 export default async function ManageUsersPage() {
   const supabase = createAdminClient();
   const { data: { users }, error } = await supabase.auth.admin.listUsers();
+
+  const clientSupabase = await createClient();
+  const { data: { user: currentUser } } = await clientSupabase.auth.getUser();
+  const email = currentUser?.email;
+  const isSuper = email && ["nitin@navgurukul.org", "nitinsudarshan@gmail.com"].includes(email.toLowerCase());
+  const isAdmin = isSuper || currentUser?.user_metadata?.role === "Admin" || currentUser?.user_metadata?.role === "Super Admin";
 
   if (error) {
     return (
@@ -55,73 +27,19 @@ export default async function ManageUsersPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-8 w-full">
+    <div className="flex flex-col gap-4 p-8 w-full max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Users</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your application users and their roles.
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 dark:from-white dark:via-indigo-300 dark:to-white bg-clip-text text-transparent">
+            Users & Roles
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm font-medium">
+            Allocate Teams and Roles for your application users to enforce proper access control.
           </p>
         </div>
       </div>
 
-      <div className="rounded-md border bg-card p-1 sm:p-2">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Last Login</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users && users.length > 0 ? (
-              users.map((user) => {
-                const metadata = user.user_metadata || {};
-                const name = metadata.full_name || metadata.name || "Unknown";
-                const avatar = metadata.avatar_url || metadata.picture || "";
-                const initials = name !== "Unknown"
-                  ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
-                  : "U";
-
-                // Note: user.role is a Supabase internal role, not an app role
-                // To display an app role, you might check user_metadata.role or a separate profiles table.
-                const appRole = metadata.role || "Standard";
-
-                const lastSignIn = formatRelativeTime(user.last_sign_in_at);
-
-                return (
-                  <TableRow key={user.id}>
-                    <TableCell className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={avatar} alt={name} />
-                        <AvatarFallback>{initials}</AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{name}</span>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={appRole === 'Admin' ? 'default' : 'secondary'}>
-                        {appRole}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {lastSignIn}
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            ) : (
-              <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
-                  No users found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <UsersTable initialUsers={users || []} isAdmin={!!isAdmin} />
     </div>
   );
 }
