@@ -296,8 +296,6 @@ export default function MasterDataPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterColumn, setFilterColumn] = useState('all');
   const [selectedAlumni, setSelectedAlumni] = useState<AlumniMaster | null>(null);
-  const [courseraActivity, setCourseraActivity] = useState<any[]>([]);
-  const [loadingCoursera, setLoadingCoursera] = useState(false);
 
 
   const supabase = createClient();
@@ -339,49 +337,6 @@ export default function MasterDataPage() {
       }
     }
   }, [role]);
-
-  useEffect(() => {
-    if (selectedAlumni) {
-      const fetchCoursera = async () => {
-        setLoadingCoursera(true);
-        try {
-          // Check LocalStorage fallback first for demo/testing mode
-          if (typeof window !== 'undefined') {
-            const localActivity = localStorage.getItem('ngconnect_coursera_activity');
-            if (localActivity) {
-              const parsed = JSON.parse(localActivity);
-              const userCourses = parsed.filter(
-                (c: any) => c.email.toLowerCase() === selectedAlumni.email.toLowerCase()
-              );
-              if (userCourses.length > 0) {
-                setCourseraActivity(userCourses);
-                setLoadingCoursera(false);
-                return;
-              }
-            }
-          }
-
-          const { data, error } = await supabase
-            .from('coursera_activity')
-            .select('*')
-            .eq('email', selectedAlumni.email);
-          if (error) {
-            if (error.code !== '42P01') {
-              throw error;
-            }
-          }
-          setCourseraActivity(data || []);
-        } catch (err) {
-          console.error('Error fetching Coursera activity:', err);
-        } finally {
-          setLoadingCoursera(false);
-        }
-      };
-      fetchCoursera();
-    } else {
-      setCourseraActivity([]);
-    }
-  }, [selectedAlumni]);
 
 
 
@@ -846,70 +801,6 @@ export default function MasterDataPage() {
                   </div>
                 </div>
 
-              </div>
-
-              {/* Coursera Progress & Activity Section */}
-              <div className="space-y-4 bg-muted/20 border border-border/40 rounded-xl p-5 mt-6">
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center justify-between border-b border-border/40 pb-2">
-                  <span className="flex items-center gap-2">
-                    <GraduationCap className="w-4 h-4 text-amber-500" /> Coursera Learning Progress
-                  </span>
-                  {courseraActivity.length > 0 && (
-                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900 font-bold">
-                      {Math.round(courseraActivity.reduce((sum, c) => sum + c.approx_total_hours, 0) * 10) / 10} hrs logged
-                    </Badge>
-                  )}
-                </h4>
-
-                {loadingCoursera ? (
-                  <div className="py-6 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
-                    <RefreshCw className="w-4 h-4 animate-spin text-amber-500" />
-                    <span>Loading Coursera enrollment logs...</span>
-                  </div>
-                ) : courseraActivity.length === 0 ? (
-                  <p className="text-xs text-muted-foreground py-2 italic text-center">
-                    No active Coursera enrollments or progress history found for this email address.
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-                    {courseraActivity.map((course) => {
-                      const calculatedHours = Math.round(course.approx_total_hours * 10) / 10;
-                      return (
-                        <div key={course.id} className="p-3 bg-card rounded-xl border border-border/60 flex flex-col justify-between gap-3 shadow-sm">
-                          <div className="flex justify-between items-start gap-2">
-                            <div>
-                              <p className="font-semibold text-xs text-foreground leading-snug line-clamp-1">{course.course_name}</p>
-                              <p className="text-[10px] text-muted-foreground font-mono mt-0.5">ID: {course.course_id}</p>
-                            </div>
-                            <Badge 
-                              variant="outline" 
-                              className={`text-[8px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
-                                course.completed 
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900' 
-                                  : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900'
-                              }`}
-                            >
-                              {course.completed ? 'COMPLETED' : 'IN PROGRESS'}
-                            </Badge>
-                          </div>
-                          
-                          <div className="space-y-1.5">
-                            <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground">
-                              <span>Overall Progress: {Math.round(course.overall_progress)}%</span>
-                              <span>{calculatedHours} hrs</span>
-                            </div>
-                            <div className="w-full bg-secondary rounded-full h-1 overflow-hidden">
-                              <div 
-                                className={`h-full rounded-full ${course.completed ? 'bg-emerald-500' : 'bg-amber-500'}`}
-                                style={{ width: `${course.overall_progress}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
 
 
