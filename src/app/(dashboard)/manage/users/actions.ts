@@ -7,7 +7,7 @@ import { UserRole, UserTeam } from "@/lib/roles";
 
 const SUPER_ADMINS = ["nitin@navgurukul.org", "nitinsudarshan@gmail.com"];
 
-export async function updateUserRoleAndTeam(userId: string, role: UserRole, team: UserTeam) {
+export async function updateUserRoleAndTeam(userId: string, role: UserRole, team: UserTeam, isAlumni: boolean) {
     try {
         const clientSupabase = await createClient();
         const { data: { user: currentUser } } = await clientSupabase.auth.getUser();
@@ -33,13 +33,15 @@ export async function updateUserRoleAndTeam(userId: string, role: UserRole, team
         const updatedUserMetadata = {
             ...(user.user_metadata || {}),
             role,
-            team
+            team,
+            is_alumni: isAlumni
         };
 
         const updatedAppMetadata = {
             ...(user.app_metadata || {}),
             role,
-            team
+            team,
+            is_alumni: isAlumni
         };
 
         const { error: updateError } = await adminSupabase.auth.admin.updateUserById(userId, {

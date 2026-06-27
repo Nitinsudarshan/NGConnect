@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Shield, Users, Edit3, Loader2 } from "lucide-react";
+import { Shield, Users, Edit3, Loader2, GraduationCap } from "lucide-react";
 
 interface UsersTableProps {
   initialUsers: any[];
@@ -69,6 +69,7 @@ export function UsersTable({ initialUsers, isAdmin }: UsersTableProps) {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [role, setRole] = useState<UserRole>("Viewer");
   const [team, setTeam] = useState<UserTeam>("None");
+  const [isAlumni, setIsAlumni] = useState<"Yes" | "No">("Yes");
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -83,6 +84,7 @@ export function UsersTable({ initialUsers, isAdmin }: UsersTableProps) {
     
     setRole(isHardcodedSuper ? "Super Admin" : (metadata.role || "Viewer"));
     setTeam(metadata.team || "None");
+    setIsAlumni(metadata.is_alumni !== false ? "Yes" : "No");
   };
 
   const handleSaveChanges = async () => {
@@ -90,11 +92,30 @@ export function UsersTable({ initialUsers, isAdmin }: UsersTableProps) {
     setIsSaving(true);
 
     try {
-      const result = await updateUserRoleAndTeam(selectedUser.id, role, team);
+      const result = await updateUserRoleAndTeam(selectedUser.id, role, team, isAlumni === "Yes");
       if (result?.error) {
         toast.error(result.error);
       } else {
         toast.success(`Successfully updated access for ${selectedUser.user_metadata?.full_name || selectedUser.email}`);
+        
+        // If the edited user is the current logged-in user, sync to localStorage as well
+        if (loggedInUser && loggedInUser.id === selectedUser.id) {
+          const stored = localStorage.getItem("ngconnect_profile");
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored);
+              parsed.isAlumni = isAlumni === "Yes";
+              localStorage.setItem("ngconnect_profile", JSON.stringify(parsed));
+            } catch (e) {
+              console.error("Failed to update localStorage", e);
+            }
+          } else {
+            localStorage.setItem("ngconnect_profile", JSON.stringify({
+              isAlumni: isAlumni === "Yes"
+            }));
+          }
+        }
+
         setSelectedUser(null);
       }
     } catch (error: any) {
@@ -152,6 +173,7 @@ export function UsersTable({ initialUsers, isAdmin }: UsersTableProps) {
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-[300px]">User</TableHead>
               <TableHead>Email</TableHead>
+              <TableHead>Alumni</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Team</TableHead>
               <TableHead>Last Login</TableHead>
@@ -173,6 +195,7 @@ export function UsersTable({ initialUsers, isAdmin }: UsersTableProps) {
                 
                 const appRole = (isSuper ? "Super Admin" : (metadata.role || "Viewer")) as UserRole;
                 const appTeam = (metadata.team || "None") as UserTeam;
+                const isUserAlumni = metadata.is_alumni !== false;
 
                 const lastSignIn = formatRelativeTime(user.last_sign_in_at);
 
@@ -186,6 +209,17 @@ export function UsersTable({ initialUsers, isAdmin }: UsersTableProps) {
                       <span className="font-semibold text-slate-900 dark:text-zinc-100">{name}</span>
                     </TableCell>
                     <TableCell className="text-muted-foreground font-medium">{email}</TableCell>
+                    <TableCell>
+                      {isUserAlumni ? (
+                        <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50 px-2.5 py-0.5 font-semibold">
+                          Yes
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-slate-100 text-slate-750 border border-slate-200 dark:bg-zinc-800/40 dark:text-zinc-400 dark:border-zinc-800 px-2.5 py-0.5 font-semibold">
+                          No
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge className={getRoleBadgeClasses(appRole)}>
                         {appRole}
@@ -230,7 +264,7 @@ export function UsersTable({ initialUsers, isAdmin }: UsersTableProps) {
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 6 : 5} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={isAdmin ? 7 : 6} className="h-24 text-center text-muted-foreground">
                   No users found.
                 </TableCell>
               </TableRow>
@@ -322,6 +356,26 @@ export function UsersTable({ initialUsers, isAdmin }: UsersTableProps) {
                   <SelectItem value="Alumni Growth" className="rounded-lg">Alumni Growth</SelectItem>
                   <SelectItem value="Pay-Forward" className="rounded-lg">Pay-Forward</SelectItem>
                   <SelectItem value="Alumni Network" className="rounded-lg">Alumni Network</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="alumni-select" className="text-xs font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
+                Is Alumni
+              </label>
+              <Select
+                value={isAlumni}
+                onValueChange={(val: "Yes" | "No") => setIsAlumni(val)}
+                disabled={isSaving}
+              >
+                <SelectTrigger id="alumni-select" className="w-full h-10 border-input rounded-xl focus:ring-primary/20 dark:bg-input/20">
+                  <SelectValue placeholder="Is Alumni?" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border bg-popover shadow-xl">
+                  <SelectItem value="Yes" className="rounded-lg">Yes</SelectItem>
+                  <SelectItem value="No" className="rounded-lg">No</SelectItem>
                 </SelectContent>
               </Select>
             </div>

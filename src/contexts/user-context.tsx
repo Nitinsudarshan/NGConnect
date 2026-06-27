@@ -10,6 +10,7 @@ export type User = {
     email: string;
     avatar: string;
     role?: UserRole;
+    isAlumni?: boolean;
 };
 
 const UserContext = createContext<User | null>(null);

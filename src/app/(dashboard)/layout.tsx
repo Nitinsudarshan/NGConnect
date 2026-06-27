@@ -26,6 +26,7 @@ export default async function DashboardLayout({
     const displayEmail = user?.email || "user@example.com"
     const displayAvatar = userMetadata.avatar_url || userMetadata.picture || ""
     const activeRole = await getUserRole(user)
+    const isAlumni = userMetadata.is_alumni !== false
 
     return (
         <UserProvider user={{
@@ -34,8 +35,9 @@ export default async function DashboardLayout({
             email: displayEmail,
             avatar: displayAvatar,
             role: activeRole,
+            isAlumni,
         }}>
-            <div className="[--header-height:calc(--spacing(14))] min-h-svh w-full flex flex-col overflow-hidden bg-background">
+            <div className="[--header-height:calc(--spacing(14))] h-svh w-full flex flex-col overflow-hidden bg-background">
                 <SidebarProvider className="flex flex-col flex-1 h-full w-full overflow-hidden">
                     <SiteHeader />
                     <div className="flex flex-1 min-h-0 w-full overflow-hidden">
