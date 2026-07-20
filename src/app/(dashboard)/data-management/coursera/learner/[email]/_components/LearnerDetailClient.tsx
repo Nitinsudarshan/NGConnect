@@ -108,7 +108,7 @@ export default function LearnerDetailClient({ monthlyHistory, courses }: Props) 
             <tbody>
               {[...monthlyHistory].reverse().map(r => (
                 <tr key={r.month} className="border-b border-border/40 last:border-0">
-                  <td className="py-2 pr-4">{r.month === firstMonth ? `Lifetime till ${formatMonthShort(r.month)}` : formatMonth(r.month)}</td>
+                  <td className="py-2 pr-4">{r.month === firstMonth || formatMonthShort(r.month) === 'Mar 26' ? `Lifetime till ${formatMonthShort(r.month)}` : formatMonth(r.month)}</td>
                   <td className="py-2 px-3 text-right tabular-nums">{r.monthly_hours.toFixed(1)}</td>
                   <td className="py-2 px-3 text-right tabular-nums text-muted-foreground">{r.cumulative_hours.toFixed(1)}</td>
                   <td className="py-2 px-3 text-center">

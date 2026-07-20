@@ -107,13 +107,17 @@ export default function CourseraDashboardClient({ metrics, trend, selectedMonth,
   const firstImportMonth = availableMonths[availableMonths.length - 1];
   const isSecondMonth = availableMonths.length >= 2 && selectedMonth === availableMonths[availableMonths.length - 2];
 
+  const isFirstImport = (monthStr: string) => {
+    return monthStr === firstImportMonth || formatMonthShort(monthStr) === 'Mar 26';
+  };
+
   const getLabel = (monthStr: string) => {
     if (availableMonthLabels && availableMonthLabels[monthStr]) return availableMonthLabels[monthStr];
-    return monthStr === firstImportMonth ? `Lifetime till ${formatMonth(monthStr)}` : formatMonth(monthStr);
+    return isFirstImport(monthStr) ? `Lifetime till ${formatMonthShort(monthStr)}` : formatMonth(monthStr);
   };
   const getShortLabel = (monthStr: string) => {
     if (availableMonthLabels && availableMonthLabels[monthStr]) return availableMonthLabels[monthStr];
-    return formatMonthShort(monthStr);
+    return isFirstImport(monthStr) ? `Lifetime till ${formatMonthShort(monthStr)}` : formatMonthShort(monthStr);
   };
 
   // Distribution chart data
