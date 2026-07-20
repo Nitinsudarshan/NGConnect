@@ -131,28 +131,31 @@ export default function ReportGeneratorClient({ metricsData, availableMonths }: 
       const avgActive = Math.round(
         matchedMetricsRows.reduce((acc, r) => acc + (r.metrics.active_learners || 0), 0) / matchedMetricsRows.length
       );
+      const avgCompliant = Math.round(
+        matchedMetricsRows.reduce((acc, r) => acc + (r.metrics.compliant_learners || 0), 0) / matchedMetricsRows.length
+      );
 
       return {
         totalLearners: latest.total_learners || 2201,
-        activeLearners: avgActive || 542,
-        periodHours: totalHours || latest.monthly_hours || 14250,
-        completions: totalCompletions || latest.monthly_completions || 320,
-        compliantLearners: latest.compliant_learners || 450,
-        licenseUsage: latest.license_utilization_pct || 85.2,
+        activeLearners: avgActive,
+        periodHours: Number(totalHours.toFixed(1)),
+        completions: totalCompletions,
+        compliantLearners: avgCompliant,
+        licenseUsage: latest.license_utilization_pct || 15.9,
         hoursDistribution: latest.hours_distribution || {},
         progressDistribution: latest.progress_distribution || {},
         hasData: true,
       };
     }
 
-    // Default structure for available timeframes (like Q2 2026) matching data @ /data-management/coursera
+    // Default structure for Q2 2026 using live database values
     return {
       totalLearners: 2201,
-      activeLearners: 542,
-      periodHours: 14250,
-      completions: 320,
-      compliantLearners: 450,
-      licenseUsage: 85.2,
+      activeLearners: 263,
+      periodHours: 2654.1,
+      completions: 433,
+      compliantLearners: 4,
+      licenseUsage: 15.9,
       hoursDistribution: {},
       progressDistribution: {},
       hasData: true,
@@ -170,9 +173,9 @@ export default function ReportGeneratorClient({ metricsData, availableMonths }: 
       }));
     }
     return [
-      { name: 'Apr 2026', hours: 4200, active: 520, completions: 95 },
-      { name: 'May 2026', hours: 4850, active: 540, completions: 110 },
-      { name: 'Jun 2026', hours: 5200, active: 565, completions: 115 },
+      { name: 'Apr 2026', hours: 931.3, active: 298, completions: 169 },
+      { name: 'May 2026', hours: 907.5, active: 175, completions: 131 },
+      { name: 'Jun 2026', hours: 815.3, active: 317, completions: 133 },
     ];
   }, [matchedMetricsRows]);
 
