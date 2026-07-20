@@ -133,11 +133,11 @@ export default function ReportGeneratorClient({ metricsData, availableMonths }: 
       );
 
       return {
-        totalLearners: latest.total_learners || 1240,
-        activeLearners: avgActive || latest.active_learners || 850,
+        totalLearners: latest.total_learners || 2201,
+        activeLearners: avgActive || 542,
         periodHours: totalHours || latest.monthly_hours || 14250,
         completions: totalCompletions || latest.monthly_completions || 320,
-        compliantLearners: latest.compliant_learners || 680,
+        compliantLearners: latest.compliant_learners || 450,
         licenseUsage: latest.license_utilization_pct || 85.2,
         hoursDistribution: latest.hours_distribution || {},
         progressDistribution: latest.progress_distribution || {},
@@ -145,13 +145,13 @@ export default function ReportGeneratorClient({ metricsData, availableMonths }: 
       };
     }
 
-    // Default structure for available timeframes (like Q2 2026) when specific DB sub-months are awaiting import
+    // Default structure for available timeframes (like Q2 2026) matching data @ /data-management/coursera
     return {
-      totalLearners: 1240,
-      activeLearners: 850,
+      totalLearners: 2201,
+      activeLearners: 542,
       periodHours: 14250,
       completions: 320,
-      compliantLearners: 680,
+      compliantLearners: 450,
       licenseUsage: 85.2,
       hoursDistribution: {},
       progressDistribution: {},
@@ -170,9 +170,9 @@ export default function ReportGeneratorClient({ metricsData, availableMonths }: 
       }));
     }
     return [
-      { name: 'Apr 2026', hours: 4200, active: 810, completions: 95 },
-      { name: 'May 2026', hours: 4850, active: 845, completions: 110 },
-      { name: 'Jun 2026', hours: 5200, active: 895, completions: 115 },
+      { name: 'Apr 2026', hours: 4200, active: 520, completions: 95 },
+      { name: 'May 2026', hours: 4850, active: 540, completions: 110 },
+      { name: 'Jun 2026', hours: 5200, active: 565, completions: 115 },
     ];
   }, [matchedMetricsRows]);
 
@@ -398,8 +398,9 @@ export default function ReportGeneratorClient({ metricsData, availableMonths }: 
                 <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{reportData.totalLearners.toLocaleString()}</span>
               </div>
               <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 space-y-1">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Active Learners</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Avg Active Learners</span>
                 <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{reportData.activeLearners.toLocaleString()}</span>
+                <span className="text-[10px] text-muted-foreground block font-medium">Monthly Avg</span>
               </div>
               <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 space-y-1">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Learning Hours</span>
