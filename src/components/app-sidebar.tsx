@@ -62,6 +62,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: LayoutDashboard,
       isActive: true,
     },
+    {
+      title: "Reports",
+      url: "/reports",
+      icon: BarChart,
+    },
   ];
 
   const navManage: NavItem[] = [
@@ -117,11 +122,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           url: "/crm/pay-forward/follow-ups",
         },
       ],
-    },
-    {
-      title: "Reports",
-      url: "/crm/reports",
-      icon: BarChart,
     },
     {
       title: "Settings",
