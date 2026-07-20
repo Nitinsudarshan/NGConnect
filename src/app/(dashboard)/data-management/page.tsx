@@ -117,52 +117,6 @@ const COURSERA_CATEGORY = {
   ],
 };
 
-const CONTEST_CATEGORY = {
-  title: 'Learn Along with Coursera',
-  links: [
-    {
-      href: '/contests/coursera',
-      label: 'Dashboard',
-      description: 'Analytics overview — contest progress, active learners, hours.',
-      icon: BarChart2,
-      badge: 'Admin',
-      gradient: 'from-orange-500/10 via-red-500/5 to-transparent',
-      border: 'hover:border-orange-500/30 dark:hover:border-orange-500/50',
-      iconBg: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 group-hover:bg-orange-600 group-hover:text-white',
-    },
-    {
-      href: '/contests/manage',
-      label: 'Manage Contests',
-      description: 'Configure contest series, sub-contests, and participant lists.',
-      icon: LayoutDashboard,
-      badge: 'Admin',
-      gradient: 'from-blue-500/10 via-indigo-500/5 to-transparent',
-      border: 'hover:border-blue-500/30 dark:hover:border-blue-500/50',
-      iconBg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white',
-    },
-    {
-      href: '/contests/coursera/activity-logs',
-      label: 'Activity Logs',
-      description: 'Browse, filter, and search per-learner monthly activity records for the contest.',
-      icon: Activity,
-      badge: 'Admin',
-      gradient: 'from-amber-500/10 via-yellow-500/5 to-transparent',
-      border: 'hover:border-amber-500/30 dark:hover:border-amber-500/50',
-      iconBg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-600 group-hover:text-white',
-    },
-    {
-      href: '/contests/coursera/import-reports',
-      label: 'Import Reports',
-      description: 'Upload monthly Coursera XLSX exports and manage import history for the contest.',
-      icon: Upload,
-      badge: 'Super Admin',
-      gradient: 'from-rose-500/10 via-pink-500/5 to-transparent',
-      border: 'hover:border-rose-500/30 dark:hover:border-rose-500/50',
-      iconBg: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 group-hover:bg-rose-600 group-hover:text-white',
-    },
-  ],
-};
-
 export default async function DataManagementPage() {
   const role = await getUserRole();
   if (role !== 'Super Admin' && role !== 'Admin') redirect('/');
@@ -241,48 +195,6 @@ export default async function DataManagementPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {COURSERA_CATEGORY.links.map((link) => {
-              const Icon = link.icon;
-              return (
-                <Link key={link.href} href={link.href} className="group block">
-                  <Card className={`h-full border border-border/80 bg-card/60 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group-hover:-translate-y-1 group-hover:shadow-lg ${link.border}`}>
-                    <div className={`absolute inset-0 bg-gradient-to-br ${link.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                    <div className="absolute right-4 top-4 opacity-0 group-hover:opacity-100 transition-all duration-300 text-muted-foreground">
-                      <ArrowRight className="w-4 h-4 translate-x-[-8px] group-hover:translate-x-0 transition-transform" />
-                    </div>
-                    <CardHeader className="flex flex-col items-start gap-4 space-y-0 relative z-10">
-                      <div className="flex flex-row items-center gap-4 pr-6 w-full">
-                        <div className={`p-3 rounded-xl transition-all duration-300 ${link.iconBg} shadow-sm group-hover:scale-105 group-hover:rotate-3 shrink-0 flex items-center justify-center`}>
-                          <Icon className="w-5 h-5" />
-                        </div>
-                        <div className="flex flex-col justify-center gap-2">
-                          <CardTitle className="text-lg font-bold tracking-tight text-foreground group-hover:text-primary dark:group-hover:text-white transition-colors duration-300 leading-none">
-                            {link.label}
-                          </CardTitle>
-                          <div className="flex items-center">
-                            <span className="text-[10px] px-2 py-0.5 font-bold rounded-md bg-secondary/80 border border-border/80 text-muted-foreground uppercase tracking-widest inline-block leading-none">
-                              {link.badge}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <CardDescription className="text-sm leading-relaxed text-muted-foreground group-hover:text-foreground/95 transition-colors duration-300 w-full">
-                        {link.description}
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Contest Section */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold tracking-tight text-foreground/90 border-b border-border/40 pb-2">
-            {CONTEST_CATEGORY.title}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {CONTEST_CATEGORY.links.map((link) => {
               const Icon = link.icon;
               return (
                 <Link key={link.href} href={link.href} className="group block">

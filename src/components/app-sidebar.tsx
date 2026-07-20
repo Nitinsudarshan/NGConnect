@@ -11,7 +11,6 @@ import {
   GraduationCap,
   Database,
   DatabaseBackup,
-  Trophy,
   Briefcase,
   CalendarClock,
   HeartHandshake,
@@ -85,14 +84,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Master Data",
       url: "/manage/master-data",
       icon: Database,
-    },
-  ];
-
-  const navContests: NavItem[] = [
-    {
-      title: "All Contests",
-      url: "/contests",
-      icon: Trophy,
     },
   ];
 
@@ -171,7 +162,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={navGeneral} />
         <NavMain items={navCrm} label="CRM" />
-        <NavMain items={navContests} label="Contests" />
         <NavMain items={navManage} label="Manage" />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
