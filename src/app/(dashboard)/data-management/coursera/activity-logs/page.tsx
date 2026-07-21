@@ -13,7 +13,11 @@ interface SearchParams {
 
 const PAGE_SIZE = 50;
 
-function formatMonth(dateStr: string) {
+function formatMonth(dateStr: string, firstMonth?: string | null) {
+  const short = new Date(dateStr + 'T12:00:00Z').toLocaleString('en-US', { month: 'short', year: '2-digit' });
+  if ((firstMonth && dateStr === firstMonth) || short === 'Mar 26') {
+    return `Lifetime till ${short}`;
+  }
   return new Date(dateStr + 'T12:00:00Z').toLocaleString('en-US', { month: 'long', year: 'numeric' });
 }
 
@@ -37,6 +41,7 @@ export default async function ActivityLogsPage({
     .select('month')
     .order('month', { ascending: false });
 
+  const firstImportMonth = monthsList?.[monthsList.length - 1]?.month;
   const selectedMonth = monthParam ?? monthsList?.[0]?.month ?? null;
 
   // Build query
@@ -90,7 +95,7 @@ export default async function ActivityLogsPage({
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Activity Logs</h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            {selectedMonth ? formatMonth(selectedMonth) : 'All months'} · {(count ?? 0).toLocaleString()} learners
+            {selectedMonth ? formatMonth(selectedMonth, firstImportMonth) : 'All months'} · {(count ?? 0).toLocaleString()} learners
           </p>
         </div>
       </div>
@@ -107,7 +112,7 @@ export default async function ActivityLogsPage({
             className="bg-background border border-border/80 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
           >
             {(monthsList ?? []).map(m => (
-              <option key={m.month} value={m.month}>{formatMonth(m.month)}</option>
+              <option key={m.month} value={m.month}>{formatMonth(m.month, firstImportMonth)}</option>
             ))}
           </select>
           <button type="submit" className="px-3 py-2 rounded-lg border border-border/80 text-sm hover:bg-accent transition-colors">Filter</button>

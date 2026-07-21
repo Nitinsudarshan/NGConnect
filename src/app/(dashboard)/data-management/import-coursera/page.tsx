@@ -28,7 +28,11 @@ interface UploadResult {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-function formatMonth(dateStr: string) {
+function formatMonth(dateStr: string, firstMonth?: string | null) {
+  const short = new Date(dateStr + 'T12:00:00Z').toLocaleString('en-US', { month: 'short', year: '2-digit' });
+  if ((firstMonth && dateStr === firstMonth) || short === 'Mar 26') {
+    return `Lifetime till ${short}`;
+  }
   return new Date(dateStr + 'T12:00:00Z').toLocaleString('en-US', { month: 'long', year: 'numeric' });
 }
 function formatDuration(ms: number | null) {
@@ -374,7 +378,7 @@ export default function ImportCourseraPage() {
 
                   return (
                     <tr key={`${row.id}-${idx}`} className="border-b border-border/40 last:border-0 hover:bg-accent/20 transition-colors">
-                      <td className="px-4 py-3 font-medium">{formatMonth(row.snapshot_month)}</td>
+                      <td className="px-4 py-3 font-medium">{formatMonth(row.snapshot_month, availableMonths[availableMonths.length - 1]?.month)}</td>
                       <td className="px-4 py-3 text-muted-foreground max-w-[160px] truncate">{row.filename ?? '—'}</td>
                       <td className="px-4 py-3 text-right tabular-nums">{formatRows(row.rows_imported)}</td>
                       <td className="px-4 py-3 text-right tabular-nums">{formatRows(row.learners_affected)}</td>
