@@ -9,6 +9,13 @@ import {
   CardDescription,
 } from "@/components/ui/card"
 import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from "@/components/ui/chart"
+import {
   BarChart,
   Bar,
   LineChart,
@@ -16,9 +23,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  Legend,
 } from "recharts"
 
 interface CourseraMonthlyMetric {
@@ -32,10 +36,19 @@ interface CourseraChartsProps {
   metrics: CourseraMonthlyMetric[]
 }
 
-const COLORS = {
-  primary: '#3b82f6', // blue-500
-  secondary: '#8b5cf6', // violet-500
-  tertiary: '#10b981', // emerald-500
+const chartConfig = {
+  total_learning_hours: {
+    label: "Learning Hours",
+    color: "#3b82f6",
+  },
+  course_completions: {
+    label: "Course Completions",
+    color: "#8b5cf6",
+  },
+  active_users: {
+    label: "Active Learners",
+    color: "#10b981",
+  },
 }
 
 export function CourseraCharts({ metrics }: CourseraChartsProps) {
@@ -58,26 +71,24 @@ export function CourseraCharts({ metrics }: CourseraChartsProps) {
           <CardDescription>Total learning hours per month</CardDescription>
         </CardHeader>
         <CardContent className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
+          <ChartContainer config={chartConfig} className="h-full w-full">
             <LineChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
               <XAxis dataKey="month_label" tick={{ fontSize: 12 }} />
               <YAxis />
-              <RechartsTooltip 
-                contentStyle={{ borderRadius: '8px' }} 
-              />
-              <Legend />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartLegend content={<ChartLegendContent />} />
               <Line 
                 type="monotone" 
                 dataKey="total_learning_hours" 
                 name="Learning Hours" 
-                stroke={COLORS.primary} 
+                stroke="var(--color-total_learning_hours)" 
                 strokeWidth={3}
-                dot={{ r: 4, fill: COLORS.primary }} 
+                dot={{ r: 4, fill: "var(--color-total_learning_hours)" }} 
                 activeDot={{ r: 6 }} 
               />
             </LineChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </CardContent>
       </Card>
 
@@ -88,21 +99,18 @@ export function CourseraCharts({ metrics }: CourseraChartsProps) {
           <CardDescription>Monthly course completions and active learners</CardDescription>
         </CardHeader>
         <CardContent className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
+          <ChartContainer config={chartConfig} className="h-full w-full">
             <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
               <XAxis dataKey="month_label" tick={{ fontSize: 12 }} />
-              <YAxis yAxisId="left" orientation="left" stroke={COLORS.secondary} />
-              <YAxis yAxisId="right" orientation="right" stroke={COLORS.tertiary} />
-              <RechartsTooltip 
-                cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }} 
-                contentStyle={{ borderRadius: '8px' }} 
-              />
-              <Legend />
-              <Bar yAxisId="left" dataKey="course_completions" name="Course Completions" fill={COLORS.secondary} radius={[4, 4, 0, 0]} />
-              <Bar yAxisId="right" dataKey="active_users" name="Active Learners" fill={COLORS.tertiary} radius={[4, 4, 0, 0]} />
+              <YAxis yAxisId="left" orientation="left" stroke="var(--color-course_completions)" />
+              <YAxis yAxisId="right" orientation="right" stroke="var(--color-active_users)" />
+              <ChartTooltip cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }} content={<ChartTooltipContent />} />
+              <ChartLegend content={<ChartLegendContent />} />
+              <Bar yAxisId="left" dataKey="course_completions" name="Course Completions" fill="var(--color-course_completions)" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="right" dataKey="active_users" name="Active Learners" fill="var(--color-active_users)" radius={[4, 4, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </CardContent>
       </Card>
     </div>

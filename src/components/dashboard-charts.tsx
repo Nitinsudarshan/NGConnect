@@ -9,6 +9,13 @@ import {
   CardDescription,
 } from "@/components/ui/card"
 import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from "@/components/ui/chart"
+import {
   PieChart,
   Pie,
   Cell,
@@ -17,16 +24,25 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  Legend,
 } from "recharts"
 
 interface DashboardChartsProps {
   data: any[]
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#d0ed57']
+const chartConfig = {
+  alumni: { label: "Alumni" },
+  color1: { color: "#0088FE" },
+  color2: { color: "#00C49F" },
+  color3: { color: "#FFBB28" },
+  color4: { color: "#FF8042" },
+  color5: { color: "#8884d8" },
+  color6: { color: "#82ca9d" },
+  color7: { color: "#ffc658" },
+  color8: { color: "#d0ed57" },
+}
+
+const getColorVar = (index: number) => `var(--color-color${(index % 8) + 1})`
 
 export function DashboardCharts({ data }: DashboardChartsProps) {
   // Aggregate data for Status
@@ -98,7 +114,7 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
           <CardDescription>Current status across all imported alumni</CardDescription>
         </CardHeader>
         <CardContent className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
+          <ChartContainer config={chartConfig} className="h-full w-full">
             <PieChart>
               <Pie
                 data={statusData}
@@ -112,13 +128,13 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
                 labelLine={false}
               >
                 {statusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={getColorVar(index)} />
                 ))}
               </Pie>
-              <RechartsTooltip formatter={(value) => [value, 'Count']} />
-              <Legend />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartLegend content={<ChartLegendContent />} />
             </PieChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </CardContent>
       </Card>
 
@@ -129,22 +145,19 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
           <CardDescription>Alumni distribution by primary campus</CardDescription>
         </CardHeader>
         <CardContent className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
+          <ChartContainer config={chartConfig} className="h-full w-full">
             <BarChart data={campusData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
               <XAxis dataKey="name" tick={{ fontSize: 12 }} />
               <YAxis />
-              <RechartsTooltip 
-                cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }} 
-                contentStyle={{ borderRadius: '8px' }} 
-              />
+              <ChartTooltip cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }} content={<ChartTooltipContent />} />
               <Bar dataKey="value" name="Alumni" radius={[4, 4, 0, 0]}>
                 {campusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[(index + 1) % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={getColorVar(index + 1)} />
                 ))}
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </CardContent>
       </Card>
 
@@ -155,19 +168,19 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
           <CardDescription>Alumni across different courses/schools</CardDescription>
         </CardHeader>
         <CardContent className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
+          <ChartContainer config={chartConfig} className="h-full w-full">
             <BarChart data={courseData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
               <XAxis type="number" />
               <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} />
-              <RechartsTooltip cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }} />
+              <ChartTooltip cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }} content={<ChartTooltipContent />} />
               <Bar dataKey="value" name="Alumni" radius={[0, 4, 4, 0]}>
                 {courseData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={getColorVar(index + 2)} />
                 ))}
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </CardContent>
       </Card>
 
@@ -178,7 +191,7 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
           <CardDescription>Overall gender ratio among alumni</CardDescription>
         </CardHeader>
         <CardContent className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
+          <ChartContainer config={chartConfig} className="h-full w-full">
             <PieChart>
               <Pie
                 data={genderData}
@@ -189,13 +202,13 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
                 label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
               >
                 {genderData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={getColorVar(index + 3)} />
                 ))}
               </Pie>
-              <RechartsTooltip />
-              <Legend />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartLegend content={<ChartLegendContent />} />
             </PieChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </CardContent>
       </Card>
     </div>
