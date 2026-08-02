@@ -2,22 +2,14 @@ import { auth } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 
-export type UserRole = "Super Admin" | "Admin" | "Manager" | "Operator" | "Analyst" | "Viewer" | "Member" | "Program" | "Operations" | "Volunteer" | "PNC";
+export type UserRole = "Super Admin" | "Admin" | "Manager" | "Program" | "Operations" | "Viewer" | "Member";
 
-export type UserTeam = "CEO's Office" | "Alumni Growth" | "Pay-Forward" | "Alumni Network" | "None";
-
-export type VolunteerType =
-    | "external_individual"
-    | "external_corporate"
-    | "internal_alumni_ext"
-    | "internal_alumni_staff";
+export type UserTeam = "CEO's Office" | "Alumni Growth" | "PNC" | "Finance" | "None";
 
 /** Shape of app_metadata stored on Supabase users */
 export interface UserAppMetadata {
     role?: UserRole;
     team?: UserTeam;
-    volunteer_type?: VolunteerType;
-    onboarding_completed?: boolean;
 }
 
 const SUPER_ADMIN_EMAILS = ["nitin@navgurukul.org", "nitinsudarshan@gmail.com"];
@@ -45,9 +37,8 @@ export const checkRole = async (role: UserRole) => {
 
     const { sessionClaims, userId } = await auth();
     const claimRole = (sessionClaims?.metadata?.role || (sessionClaims as any)?.role) as UserRole | undefined;
-    const isVolunteerEnabled = sessionClaims?.metadata?.volunteerEnabled === true || (sessionClaims as any)?.volunteerEnabled === true;
 
-    // Support role override for admins and opt-in volunteers
+    // Support role override for admins
     const cookieStore = await cookies();
     const devRole = cookieStore.get('dev-role-override')?.value as UserRole;
     if (devRole) {
@@ -56,8 +47,8 @@ export const checkRole = async (role: UserRole) => {
         } else if (
             ["Program", "Operations"].includes(claimRole as string)
         ) {
-            // Program/Ops can ONLY swap between their base role and "Volunteer", it's a safe sandbox downgrade.
-            if (devRole === "Volunteer" || devRole === claimRole) {
+            // Program/Ops can ONLY swap between their base role and "Member", it's a safe sandbox downgrade.
+            if (devRole === "Member" || devRole === claimRole) {
                 return devRole === role;
             }
         }
@@ -82,7 +73,7 @@ export const checkRole = async (role: UserRole) => {
 /**
  * Returns the active role of the current user.
  * If the user is the MASTER_USER_ID, forcefully identifies them as "Admin".
- * If no role is found on the user's claims, forcefully sets it to 'Volunteer' 
+ * If no role is found on the user's claims, forcefully sets it to 'Member' 
  * in the Supabase app_metadata.
  */
 export const getUserRole = async (freshUser?: any): Promise<UserRole> => {
@@ -91,9 +82,8 @@ export const getUserRole = async (freshUser?: any): Promise<UserRole> => {
 
     const { sessionClaims, userId } = await auth();
     const claimRole = (freshUser?.app_metadata?.role || sessionClaims?.metadata?.role || (sessionClaims as any)?.role) as UserRole | undefined;
-    const isVolunteerEnabled = freshUser?.app_metadata?.volunteerEnabled === true || sessionClaims?.metadata?.volunteerEnabled === true || (sessionClaims as any)?.volunteerEnabled === true;
 
-    // Support role override for admins and opt-in volunteers
+    // Support role override for admins
     const cookieStore = await cookies();
     const devRole = cookieStore.get('dev-role-override')?.value as UserRole;
     if (devRole) {
@@ -102,8 +92,8 @@ export const getUserRole = async (freshUser?: any): Promise<UserRole> => {
         } else if (
             ["Program", "Operations"].includes(claimRole as string)
         ) {
-            // Program/Ops can ONLY swap between their base role and "Volunteer", it's a safe sandbox downgrade.
-            if (devRole === "Volunteer" || devRole === claimRole) {
+            // Program/Ops can ONLY swap between their base role and "Member", it's a safe sandbox downgrade.
+            if (devRole === "Member" || devRole === claimRole) {
                 return devRole;
             }
         }
@@ -120,10 +110,10 @@ export const getUserRole = async (freshUser?: any): Promise<UserRole> => {
 
     const role = claimRole;
 
-    // If no role is found in the JWT session claims, default to "Volunteer" for the UI.
+    // If no role is found in the JWT session claims, default to "Member" for the UI.
     // We strictly do NOT persist this to Supabase here, as sessionClaims might just be stale
     // from a recent manual dashboard edit before a new JWT was issued.
-    return role || "Volunteer";
+    return role || "Member";
 };
 
 /**

@@ -48,7 +48,7 @@ Stores the courses which correspond to the school departments.
 Tracks every CSV/XLSX file imported from GHAR.
 
 - **Columns**: `id` (UUID PK), `file_name`, `file_type` (`csv`/`xlsx`), `file_size`, `uploaded_by` (FK → auth.users), `uploaded_by_name`, `uploaded_at`, `records_processed`, `records_created`, `records_updated`, `records_failed`, `status` (`processing`/`completed`/`failed`/`rolled_back`), `notes`.
-- **RLS**: Super Admin full access. Manager/Operator/Admin read-only. Alumni no access.
+- **RLS**: Super Admin full access. Manager/Admin read-only. Alumni no access.
 
 ---
 
@@ -76,7 +76,7 @@ Alumni self-service profile data. Never overwritten by imports.
 Per-row import activity log — one record per alumni per import attempt.
 
 - **Columns**: `id` (UUID PK), `import_batch_id` (FK → import_batches), `alumni_email` (FK → alumni_master(email)), `action` (`created`/`updated`/`skipped`/`failed`), `status` (`success`/`error`), `error_message`, `created_at`.
-- **RLS**: Super Admin full access. Manager/Operator/Admin read-only.
+- **RLS**: Super Admin full access. Manager/Admin read-only.
 
 ---
 

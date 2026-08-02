@@ -69,7 +69,7 @@ const DUMMY_BATCHES: ImportBatch[] = [
 
 export default async function ImportHistoryPage() {
   const role = await getUserRole();
-  if (role !== 'Super Admin' && role !== 'Admin' && role !== 'Manager' && role !== 'Operator') {
+  if (role !== 'Super Admin' && role !== 'Admin' && role !== 'Manager') { // TODO(roles-refactor): confirm access level
     redirect('/');
   }
 

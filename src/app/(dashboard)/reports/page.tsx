@@ -5,7 +5,7 @@ import ReportGeneratorClient from './_components/ReportGeneratorClient';
 
 export default async function ReportsPage() {
   const role = await getUserRole();
-  if (!role || (role !== 'Super Admin' && role !== 'Admin' && role !== 'Manager' && role !== 'Analyst' && role !== 'Program' && role !== 'Operations')) {
+  if (!role || (role !== 'Super Admin' && role !== 'Admin' && role !== 'Manager' && role !== 'Program' && role !== 'Operations')) { // TODO(roles-refactor): confirm access level
     redirect('/');
   }
 

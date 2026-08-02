@@ -11,7 +11,6 @@ const TEMPLATE_HEADERS = [
   'Enrollment Time',
   'Last Course Activity Time',
   'Overall Progress',
-  'Total Estimated Learning Hours (since enrolled)',
   'Completed',
   'Removed From Program',
   'Program Name',
@@ -32,7 +31,6 @@ const EXAMPLE_ROW = [
   '2024-01-26 10:16:04',
   '2024-01-26 10:26:59',
   1.41,
-  12.0,
   'No',
   'No',
   'NavGurukul',
@@ -58,7 +56,6 @@ export async function GET() {
     { wch: 22 }, // Enrollment Time
     { wch: 26 }, // Last Course Activity Time
     { wch: 18 }, // Overall Progress
-    { wch: 48 }, // Total Estimated Learning Hours (since enrolled)
     { wch: 12 }, // Completed
     { wch: 22 }, // Removed From Program
     { wch: 20 }, // Program Name

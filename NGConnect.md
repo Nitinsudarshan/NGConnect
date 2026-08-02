@@ -47,18 +47,16 @@ Access control in NGConnect is highly granular and managed via `src/lib/roles.ts
 A user can have one of the following primary roles:
 - **Super Admin**: Highest level access, hardcoded by specific emails (e.g., `nitin@navgurukul.org`). Bypasses all Role and RLS checks.
 - **Admin**: Full administrative access. A `MASTER_USER_ID` environment variable allows omnipresent fallback access.
-- **Manager / Operator / Analyst**: Specific administrative functions with tailored read/write permissions.
-- **Viewer**: Read-only access to specific dashboards.
-- **Member**: Standard Alumni user.
+- **Manager**: Specific administrative functions with tailored read/write permissions.
 - **Program / Operations**: Internal staff roles.
-- **Volunteer**: The default fallback role for unassigned users.
+- **Viewer**: Read-only access to specific dashboards.
+- **Member**: Standard Alumni user. This is the default fallback role for unassigned users.
 
-### 4.2 Volunteer Types & Teams
-- **Volunteer Types:** `external_individual`, `external_corporate`, `internal_alumni_ext`, `internal_alumni_staff`.
-- **Teams:** `CEO's Office`, `Alumni Growth`, `Pay-Forward`, `Alumni Network`, or `None`.
+### 4.2 Teams
+- **Teams:** `CEO's Office`, `Alumni Growth`, `PNC`, `Finance`, or `None`.
 
 ### 4.3 Developer Overrides
-The `getUserRole` utility supports a `dev-role-override` cookie, allowing Admins or Super Admins to safely spoof their role (e.g., viewing the UI exactly as a 'Member' or 'Operator' would see it) without altering the actual database claims.
+The `getUserRole` utility supports a `dev-role-override` cookie, allowing Admins or Super Admins to safely spoof their role (e.g., viewing the UI exactly as a 'Member' would see it) without altering the actual database claims.
 
 ## 5. The Audit & Data Management Engine
 Because NGConnect handles critical organizational data, it incorporates a foolproof audit engine (`src/lib/audit.ts`).

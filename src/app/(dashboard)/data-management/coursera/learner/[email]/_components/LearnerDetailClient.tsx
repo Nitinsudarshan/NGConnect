@@ -144,7 +144,6 @@ export default function LearnerDetailClient({ monthlyHistory, courses }: Props) 
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">Type</th>
                   <th className="text-right px-4 py-3 font-medium text-muted-foreground">Progress</th>
                   <th className="text-right px-4 py-3 font-medium text-muted-foreground">Hours</th>
-                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">Est. Total</th>
                   <th className="text-center px-4 py-3 font-medium text-muted-foreground">Done</th>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">Last Active</th>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">Links</th>
@@ -170,9 +169,6 @@ export default function LearnerDetailClient({ monthlyHistory, courses }: Props) 
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums">{c.cumulative_learning_hours.toFixed(1)}h</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                      {c.estimated_course_hours != null ? `${c.estimated_course_hours.toFixed(0)}h` : '—'}
-                    </td>
                     <td className="px-4 py-3 text-center">
                       {c.completed
                         ? <CheckCircle2 className="w-4 h-4 text-emerald-500 mx-auto" />

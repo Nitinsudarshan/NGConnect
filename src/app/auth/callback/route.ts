@@ -17,7 +17,7 @@ export async function GET(request: Request) {
         const metadata = user.user_metadata || {}
         if (!metadata.role || !metadata.team) {
           const defaultRole = metadata.role || "Member"
-          const defaultTeam = metadata.team || "Alumni Network"
+          const defaultTeam = metadata.team || "None"
           try {
             const { createAdminClient } = await import("@/lib/supabase/admin")
             const adminClient = createAdminClient()

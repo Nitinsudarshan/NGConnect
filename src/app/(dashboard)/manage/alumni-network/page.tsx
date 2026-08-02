@@ -33,6 +33,7 @@ export default async function AlumniNetworkPage() {
     const role = isSuperUser ? "Super Admin" : (user.user_metadata?.role || "Member");
     const team = user.user_metadata?.team || "Alumni Network";
     
+    // TODO(roles-refactor): "Alumni Network" team no longer exists, decide which team this page should filter on (likely "PNC" or a dedicated new team)
     return role === "Member" && team === "Alumni Network";
   });
 

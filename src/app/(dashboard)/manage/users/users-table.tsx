@@ -162,16 +162,14 @@ export function UsersTable({ initialUsers, isAdmin }: UsersTableProps) {
         return "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50 px-2.5 py-0.5";
       case "Manager":
         return "bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-400 dark:border-indigo-900/50 px-2.5 py-0.5";
-      case "Operator":
+      case "Program":
         return "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50 px-2.5 py-0.5";
-      case "Analyst":
+      case "Operations":
         return "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/50 px-2.5 py-0.5";
       case "Viewer":
         return "bg-slate-50 text-slate-700 border border-slate-200 dark:bg-slate-900/50 dark:text-slate-400 dark:border-slate-800 px-2.5 py-0.5";
       case "Member":
         return "bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-950/30 dark:text-sky-400 dark:border-sky-900/50 px-2.5 py-0.5";
-      case "PNC":
-        return "bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200 dark:bg-fuchsia-950/30 dark:text-fuchsia-400 dark:border-fuchsia-900/50 px-2.5 py-0.5";
       default:
         return "bg-secondary text-secondary-foreground px-2.5 py-0.5";
     }
@@ -184,9 +182,9 @@ export function UsersTable({ initialUsers, isAdmin }: UsersTableProps) {
         return "bg-cyan-50 text-cyan-700 border border-cyan-200 dark:bg-cyan-950/30 dark:text-cyan-400 dark:border-cyan-900/50 px-2.5 py-0.5";
       case "Alumni Growth":
         return "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/50 px-2.5 py-0.5";
-      case "Pay-Forward":
-        return "bg-pink-50 text-pink-700 border border-pink-200 dark:bg-pink-950/30 dark:text-pink-400 dark:border-pink-900/50 px-2.5 py-0.5";
-      case "Alumni Network":
+      case "PNC":
+        return "bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200 dark:bg-fuchsia-950/30 dark:text-fuchsia-400 dark:border-fuchsia-900/50 px-2.5 py-0.5";
+      case "Finance":
         return "bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-950/30 dark:text-teal-400 dark:border-teal-900/50 px-2.5 py-0.5";
       default:
         return "";
@@ -429,10 +427,9 @@ export function UsersTable({ initialUsers, isAdmin }: UsersTableProps) {
                   ) : (
                     <>
                       <SelectItem value="Admin" className="rounded-lg">Admin</SelectItem>
-                      <SelectItem value="PNC" className="rounded-lg">PNC</SelectItem>
                       <SelectItem value="Manager" className="rounded-lg">Manager</SelectItem>
-                      <SelectItem value="Operator" className="rounded-lg">Operator</SelectItem>
-                      <SelectItem value="Analyst" className="rounded-lg">Analyst</SelectItem>
+                      <SelectItem value="Program" className="rounded-lg">Program</SelectItem>
+                      <SelectItem value="Operations" className="rounded-lg">Operations</SelectItem>
                       <SelectItem value="Viewer" className="rounded-lg">Viewer</SelectItem>
                       <SelectItem value="Member" className="rounded-lg">Member</SelectItem>
                     </>
@@ -458,8 +455,8 @@ export function UsersTable({ initialUsers, isAdmin }: UsersTableProps) {
                   <SelectItem value="None" className="rounded-lg">No Team</SelectItem>
                   <SelectItem value="CEO's Office" className="rounded-lg">CEO's Office</SelectItem>
                   <SelectItem value="Alumni Growth" className="rounded-lg">Alumni Growth</SelectItem>
-                  <SelectItem value="Pay-Forward" className="rounded-lg">Pay-Forward</SelectItem>
-                  <SelectItem value="Alumni Network" className="rounded-lg">Alumni Network</SelectItem>
+                  <SelectItem value="PNC" className="rounded-lg">PNC</SelectItem>
+                  <SelectItem value="Finance" className="rounded-lg">Finance</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -176,11 +176,12 @@ CREATE TABLE IF NOT EXISTS public.import_batches (
 ALTER TABLE public.import_batches ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "import_batches_select_internal" ON public.import_batches;
+-- [Migration: Roles Refactor] Removed 'Operator' from allowed roles
 CREATE POLICY "import_batches_select_internal"
     ON public.import_batches FOR SELECT TO authenticated
     USING (
         public.is_super_admin()
-        OR (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Manager', 'Operator', 'Admin')
+        OR (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Manager', 'Admin')
     );
 
 DROP POLICY IF EXISTS "import_batches_write_super_admin" ON public.import_batches;
@@ -346,11 +347,12 @@ CREATE TABLE IF NOT EXISTS public.import_batch_records (
 ALTER TABLE public.import_batch_records ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "import_batch_records_select_internal" ON public.import_batch_records;
+-- [Migration: Roles Refactor] Removed 'Operator' from allowed roles
 CREATE POLICY "import_batch_records_select_internal"
     ON public.import_batch_records FOR SELECT TO authenticated
     USING (
         public.is_super_admin()
-        OR (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Manager', 'Operator', 'Admin')
+        OR (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Manager', 'Admin')
     );
 
 DROP POLICY IF EXISTS "import_batch_records_write_super_admin" ON public.import_batch_records;
@@ -388,12 +390,13 @@ CREATE TABLE IF NOT EXISTS public.audit_log (
 ALTER TABLE public.audit_log ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "audit_log_select_internal" ON public.audit_log;
+-- [Migration: Roles Refactor] Removed 'Operator' from allowed roles
 CREATE POLICY "audit_log_select_internal"
     ON public.audit_log FOR SELECT
     TO authenticated
     USING (
         public.is_super_admin()
-        OR (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Manager', 'Operator', 'Admin')
+        OR (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Manager', 'Admin')
     );
 
 CREATE INDEX IF NOT EXISTS idx_audit_record_id   ON public.audit_log(record_id);

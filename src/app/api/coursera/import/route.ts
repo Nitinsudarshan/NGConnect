@@ -146,9 +146,7 @@ export async function POST(request: NextRequest) {
     last_activity_time:        parseDate(row['Last Course Activity Time']),
     overall_progress:          parseFloat(row['Overall Progress']) || 0,
     cumulative_learning_hours: parseFloat(row['Learning Hours']) || 0,
-    estimated_course_hours:    row['Total Estimated Learning Hours (since enrolled)'] != null
-                                 ? parseFloat(row['Total Estimated Learning Hours (since enrolled)']) || null
-                                 : null,
+    estimated_course_hours:    null,
     completed:                 row['Completed']?.toString().trim() === 'Yes',
     removed_from_program:      row['Removed From Program']?.toString().trim() === 'Yes',
     completion_time:           parseDate(row['Completion Time']),
