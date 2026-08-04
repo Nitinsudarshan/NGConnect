@@ -117,9 +117,12 @@ const COURSERA_CATEGORY = {
   ],
 };
 
+import { checkAccess } from '@/lib/permissions';
+
 export default async function DataManagementPage() {
   const role = await getUserRole();
-  if (role !== 'Super Admin' && role !== 'Admin') redirect('/');
+  const hasAccess = await checkAccess(role, 'data_management');
+  if (!hasAccess) redirect('/');
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-20 animate-in fade-in slide-in-from-bottom-3 duration-500">

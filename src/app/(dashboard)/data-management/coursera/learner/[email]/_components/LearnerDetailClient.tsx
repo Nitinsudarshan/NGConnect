@@ -1,7 +1,12 @@
 'use client';
 
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
@@ -40,22 +45,9 @@ function formatMonthShort(dateStr: string) {
   return new Date(dateStr + 'T12:00:00Z').toLocaleString('en-US', { month: 'short', year: '2-digit' });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function ChartTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-popover border border-border rounded-lg px-3 py-2 shadow-lg text-sm">
-      <div className="font-medium mb-1">{label}</div>
-      {payload.map((p: { name: string; value: number; color: string }, i: number) => (
-        <div key={i} className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-          <span className="text-muted-foreground">{p.name}:</span>
-          <span className="font-semibold">{p.value.toFixed(1)}h</span>
-        </div>
-      ))}
-    </div>
-  );
-}
+const chartConfig = {
+  monthly_hours: { label: "Hours", color: "#6366f1" },
+};
 
 function formatMonth(dateStr: string) {
   return new Date(dateStr + 'T12:00:00Z').toLocaleString('en-US', { month: 'long', year: 'numeric' });
@@ -77,21 +69,21 @@ export default function LearnerDetailClient({ monthlyHistory, courses }: Props) 
       {/* Monthly Hours Chart */}
       <div className="rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm p-5">
         <h2 className="text-sm font-semibold mb-4">Monthly Learning Hours</h2>
-        <ResponsiveContainer width="100%" height={220}>
+        <ChartContainer config={chartConfig} className="w-full h-[220px]">
           <BarChart data={chartData} barSize={28}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis dataKey="label" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-            <Tooltip content={<ChartTooltip />} />
+            <ChartTooltip content={<ChartTooltipContent />} />
             <Bar
               dataKey="monthly_hours"
               name="Hours"
               radius={[4, 4, 0, 0]}
               // Compliant bars are indigo, non-compliant are amber
-              fill="#6366f1"
+              fill="var(--color-monthly_hours)"
             />
           </BarChart>
-        </ResponsiveContainer>
+        </ChartContainer>
 
         {/* Monthly table below chart */}
         <div className="mt-4 overflow-x-auto">

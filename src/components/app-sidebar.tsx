@@ -17,6 +17,7 @@ import {
   BarChart,
   Settings,
   TrendingUp,
+  ShieldCheck,
 } from "lucide-react"
 
 import { NavMain, NavItem } from "@/components/nav-main"
@@ -31,6 +32,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import Link from "next/link"
+import { useUserContext } from "@/contexts/user-context"
 
 const data = {
   navSecondary: [
@@ -54,6 +56,8 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { setOpenMobile, isMobile } = useSidebar()
+  const user = useUserContext()
+  const isExcludedRole = user?.role === "Member" || user?.role === "Viewer"
 
   const navGeneral: NavItem[] = [
     {
@@ -62,11 +66,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: LayoutDashboard,
       isActive: true,
     },
-    {
-      title: "Reports",
-      url: "/reports",
-      icon: BarChart,
-    },
+    ...(isExcludedRole ? [] : [
+      {
+        title: "Reports",
+        url: "/reports",
+        icon: BarChart,
+      }
+    ]),
   ];
 
   const navManage: NavItem[] = [
@@ -90,6 +96,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       url: "/manage/master-data",
       icon: Database,
     },
+    ...(user?.role === "Super Admin" || user?.role === "Admin" ? [
+      {
+        title: "RBAC",
+        url: "/manage/rbac",
+        icon: ShieldCheck,
+      }
+    ] : []),
   ];
 
   const navCrm: NavItem[] = [
@@ -161,9 +174,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navGeneral} />
-        <NavMain items={navCrm} label="CRM" />
-        <NavMain items={navManage} label="Manage" />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        {!isExcludedRole && (
+          <>
+            <NavMain items={navCrm} label="CRM" />
+            <NavMain items={navManage} label="Manage" />
+            <NavSecondary items={data.navSecondary} className="mt-auto" />
+          </>
+        )}
       </SidebarContent>
     </Sidebar>
   )

@@ -2,7 +2,12 @@
 
 import React, { useState, useMemo } from 'react';
 import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import {
   FileText, Download, Printer, Filter, Calendar, BarChart2, CheckCircle2,
@@ -25,6 +30,11 @@ interface Props {
 
 type Periodicity = 'monthly' | 'quarterly' | 'halfyearly' | 'yearly';
 type ReportType = 'executive' | 'activity' | 'compliance';
+
+const chartConfig = {
+  hours: { label: "Learning Hours", color: "#6366f1" },
+  active: { label: "Active Learners", color: "#10b981" },
+};
 
 export default function ReportGeneratorClient({ metricsData, availableMonths }: Props) {
   // Form State
@@ -425,30 +435,30 @@ export default function ReportGeneratorClient({ metricsData, availableMonths }: 
                 <h3 className="text-sm font-semibold flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-primary" /> Learning Hours Trend
                 </h3>
-                <ResponsiveContainer width="100%" height={220}>
+                <ChartContainer config={chartConfig} className="w-full h-[220px]">
                   <BarChart data={chartTrend} barSize={32}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                     <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                    <Tooltip />
-                    <Bar dataKey="hours" name="Learning Hours" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="hours" name="Learning Hours" fill="var(--color-hours)" radius={[4, 4, 0, 0]} />
                   </BarChart>
-                </ResponsiveContainer>
+                </ChartContainer>
               </div>
 
               <div className="p-5 rounded-xl border border-border/60 bg-muted/10 space-y-3">
                 <h3 className="text-sm font-semibold flex items-center gap-2">
                   <Users className="w-4 h-4 text-emerald-500" /> Active Engagement
                 </h3>
-                <ResponsiveContainer width="100%" height={220}>
+                <ChartContainer config={chartConfig} className="w-full h-[220px]">
                   <LineChart data={chartTrend}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                     <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="active" name="Active Learners" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4, fill: '#10b981' }} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line type="monotone" dataKey="active" name="Active Learners" stroke="var(--color-active)" strokeWidth={2.5} dot={{ r: 4, fill: 'var(--color-active)' }} />
                   </LineChart>
-                </ResponsiveContainer>
+                </ChartContainer>
               </div>
             </div>
 

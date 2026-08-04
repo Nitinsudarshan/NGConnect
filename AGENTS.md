@@ -21,6 +21,7 @@ This is a **Next.js + TypeScript + Supabase + shadcn/ui** project (NGConnect). Y
 - [data-import.md](rules/data-import.md): Excel/CSV import safety (alumni, Coursera).
 - [api-conventions.md](rules/api-conventions.md): Route handler response shape, validation, and error handling.
 - [performance.md](rules/performance.md): Bundle size, lazy loading, and memoization basics.
+- [rbac-settings.md](rules/rbac-settings.md): RBAC system architecture and SQL configuration.
 
 ## Precedence
 

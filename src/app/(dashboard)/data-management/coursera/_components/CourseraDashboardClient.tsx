@@ -2,7 +2,12 @@
 
 import { useRouter } from 'next/navigation';
 import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Cell,
 } from 'recharts';
 import {
   Users, Activity, Clock, BookOpen, CheckSquare, TrendingUp, TrendingDown, Award,
@@ -77,26 +82,17 @@ function KpiCard({
   );
 }
 
-// ── Chart tooltip ─────────────────────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function ChartTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-popover border border-border rounded-lg px-3 py-2 shadow-lg text-sm">
-      <div className="font-medium mb-1">{label}</div>
-      {payload.map((p: { name: string; value: number; color: string }, i: number) => (
-        <div key={i} className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-          <span className="text-muted-foreground">{p.name}:</span>
-          <span className="font-semibold">{typeof p.value === 'number' ? fmt(p.value, 1) : p.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── Bar colours for distribution charts ───────────────────────────────────────
-const DIST_COLORS = ['#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe', '#ede9fe'];
+const chartConfig = {
+  monthly_hours: { label: "Monthly Hours", color: "#6366f1" },
+  active_learners: { label: "Active Learners", color: "#10b981" },
+  dist1: { color: "#6366f1" },
+  dist2: { color: "#8b5cf6" },
+  dist3: { color: "#a78bfa" },
+  dist4: { color: "#c4b5fd" },
+  dist5: { color: "#ddd6fe" },
+  dist6: { color: "#ede9fe" },
+};
+const getDistColorVar = (i: number) => `var(--color-dist${(i % 6) + 1})`;
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function CourseraDashboardClient({ metrics, trend, selectedMonth, availableMonths, availableMonthLabels, basePath, queryParam, generatedAt }: Props) {
@@ -223,27 +219,27 @@ export default function CourseraDashboardClient({ metrics, trend, selectedMonth,
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm p-5">
             <h3 className="text-sm font-semibold mb-4">Monthly Learning Hours</h3>
-            <ResponsiveContainer width="100%" height={200}>
+            <ChartContainer config={chartConfig} className="w-full h-[200px]">
               <BarChart data={trendWithLabel} barSize={28}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Bar dataKey="monthly_hours" name="Hours" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="monthly_hours" name="Hours" fill="var(--color-monthly_hours)" radius={[4, 4, 0, 0]} />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </div>
           <div className="rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm p-5">
             <h3 className="text-sm font-semibold mb-4">Active Learners</h3>
-            <ResponsiveContainer width="100%" height={200}>
+            <ChartContainer config={chartConfig} className="w-full h-[200px]">
               <LineChart data={trendWithLabel}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Line type="monotone" dataKey="active_learners" name="Active" stroke="#10b981" strokeWidth={2} dot={{ r: 4, fill: '#10b981' }} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Line type="monotone" dataKey="active_learners" name="Active" stroke="var(--color-active_learners)" strokeWidth={2} dot={{ r: 4, fill: 'var(--color-active_learners)' }} />
               </LineChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </div>
         </div>
       )}
@@ -252,31 +248,31 @@ export default function CourseraDashboardClient({ metrics, trend, selectedMonth,
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm p-5">
           <h3 className="text-sm font-semibold mb-4">Hours Distribution This Month</h3>
-          <ResponsiveContainer width="100%" height={200}>
+          <ChartContainer config={chartConfig} className="w-full h-[200px]">
             <BarChart data={hoursDistData} barSize={32}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} />
+              <ChartTooltip content={<ChartTooltipContent />} />
               <Bar dataKey="value" name="Learners" radius={[4, 4, 0, 0]}>
-                {hoursDistData.map((_, i) => <Cell key={i} fill={DIST_COLORS[i % DIST_COLORS.length]} />)}
+                {hoursDistData.map((_, i) => <Cell key={i} fill={getDistColorVar(i)} />)}
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </div>
         <div className="rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm p-5">
           <h3 className="text-sm font-semibold mb-4">Progress Distribution</h3>
-          <ResponsiveContainer width="100%" height={200}>
+          <ChartContainer config={chartConfig} className="w-full h-[200px]">
             <BarChart data={progressDistData} barSize={32}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} />
+              <ChartTooltip content={<ChartTooltipContent />} />
               <Bar dataKey="value" name="Learners" radius={[4, 4, 0, 0]}>
-                {progressDistData.map((_, i) => <Cell key={i} fill={DIST_COLORS[i % DIST_COLORS.length]} />)}
+                {progressDistData.map((_, i) => <Cell key={i} fill={getDistColorVar(i)} />)}
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </div>
       </div>
 
