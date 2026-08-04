@@ -98,7 +98,7 @@ export function DashboardStats({ initialUsers, error }: DashboardStatsProps) {
       {/* Stat Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Total Alumni */}
-        <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow group">
+        <div className="bg-card/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
           <div className="flex justify-between items-start">
             <div className="space-y-2">
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Alumni</p>
@@ -114,7 +114,7 @@ export function DashboardStats({ initialUsers, error }: DashboardStatsProps) {
         </div>
 
         {/* Activation Rate */}
-        <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow group">
+        <div className="bg-card/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
           <div className="flex justify-between items-start">
             <div className="space-y-2">
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Activation Rate</p>
@@ -135,7 +135,7 @@ export function DashboardStats({ initialUsers, error }: DashboardStatsProps) {
         </div>
 
         {/* Team Coverage */}
-        <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow group">
+        <div className="bg-card/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
           <div className="flex justify-between items-start">
             <div className="space-y-2">
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Team Coverage</p>

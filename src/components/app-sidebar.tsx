@@ -105,40 +105,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     ] : []),
   ];
 
-  const navCrm: NavItem[] = [
+  const navAlumniGrowth: NavItem[] = [
     {
-      title: "Alumni Growth",
-      url: "#",
-      icon: TrendingUp,
-      items: [
-        {
-          title: "Workspace",
-          url: "/crm/alumni-growth/workspace",
-        },
-        {
-          title: "Follow-ups",
-          url: "/crm/alumni-growth/follow-ups",
-        },
-      ],
+      title: "Workspace",
+      url: "/alumni-growth/workspace",
+      icon: Briefcase,
     },
     {
-      title: "Pay Forward",
-      url: "#",
-      icon: HeartHandshake,
-      items: [
-        {
-          title: "Workspace",
-          url: "/crm/pay-forward/workspace",
-        },
-        {
-          title: "Follow-ups",
-          url: "/crm/pay-forward/follow-ups",
-        },
-      ],
+      title: "Followups",
+      url: "/alumni-growth/follow-ups",
+      icon: CalendarClock,
+    },
+    {
+      title: "All Data",
+      url: "/alumni-growth/all-data",
+      icon: Database,
+    },
+    {
+      title: "Reports",
+      url: "/alumni-growth/reports",
+      icon: BarChart,
     },
     {
       title: "Settings",
-      url: "/crm/settings",
+      url: "/alumni-growth/settings",
       icon: Settings,
     },
   ];
@@ -176,7 +166,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={navGeneral} />
         {!isExcludedRole && (
           <>
-            <NavMain items={navCrm} label="CRM" />
+            <NavMain items={navAlumniGrowth} label="Alumni Growth" />
             <NavMain items={navManage} label="Manage" />
             <NavSecondary items={data.navSecondary} className="mt-auto" />
           </>

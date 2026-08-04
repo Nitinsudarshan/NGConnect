@@ -232,7 +232,7 @@ export function AlumniNetworkStatsCharts({ users }: AlumniNetworkStatsProps) {
   const trendChartConfig = {
     cumulative: {
       label: "Activated Alumni",
-      color: "var(--color-primary)",
+      color: "var(--color-chart-primary)",
     }
   };
 
@@ -271,8 +271,8 @@ export function AlumniNetworkStatsCharts({ users }: AlumniNetworkStatsProps) {
             >
               <defs>
                 <linearGradient id="colorAlumniCumulative" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.25}/>
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.0}/>
+                  <stop offset="5%" stopColor="var(--color-chart-primary)" stopOpacity={0.25}/>
+                  <stop offset="95%" stopColor="var(--color-chart-primary)" stopOpacity={0.0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -290,18 +290,18 @@ export function AlumniNetworkStatsCharts({ users }: AlumniNetworkStatsProps) {
                 allowDecimals={false}
               />
               <ChartTooltip
-                cursor={{ stroke: "hsl(var(--primary))", strokeWidth: 1, strokeDasharray: "4 4" }}
+                cursor={{ stroke: "var(--color-chart-primary)", strokeWidth: 1, strokeDasharray: "4 4" }}
                 content={<ChartTooltipContent indicator="dot" />}
               />
               <Area
                 type="monotone"
                 dataKey="cumulative"
-                stroke="hsl(var(--primary))"
+                stroke="var(--color-chart-primary)"
                 strokeWidth={2.5}
                 fillOpacity={1}
                 fill="url(#colorAlumniCumulative)"
                 name="Activated Alumni"
-                dot={{ r: 2, strokeWidth: 1, fill: "hsl(var(--primary))" }}
+                dot={{ r: 2, strokeWidth: 1, fill: "var(--color-chart-primary)" }}
                 activeDot={{ r: 5, strokeWidth: 1 }}
               />
             </AreaChart>

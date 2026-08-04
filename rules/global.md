@@ -18,6 +18,7 @@ to the task at hand.
 | `project-structure.md` | Folder layout — where new files go |
 | `design-system.md` | Colors, spacing, radius, typography tokens |
 | `ui-components.md` | shadcn/ui usage, styling approach |
+| `charts.md` | Charts, graphs, and data visualizations |
 | `responsive-design.md` | Mobile-first / breakpoint rules |
 | `accessibility.md` | a11y requirements |
 | `documentation.md` | Comment/docstring format |
@@ -40,7 +41,7 @@ If two rules conflict, resolve in this order (most specific wins):
 3. `server-client-boundary.md`, `api-conventions.md` (architecture correctness)
 4. `code-standards.md` / `component-architecture.md` / `project-structure.md`
 5. `forms-and-validation.md` / `testing.md` / `performance.md`
-6. `design-system.md` / `ui-components.md` / `responsive-design.md` / `accessibility.md`
+6. `design-system.md` / `ui-components.md` / `charts.md` / `responsive-design.md` / `accessibility.md`
 7. `documentation.md`
 
 If a conflict can't be resolved this way, stop and ask rather than guessing.

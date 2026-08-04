@@ -178,14 +178,14 @@ export function UsersStatsCharts({ users }: UsersStatsProps) {
   const roleChartConfig = {
     value: {
       label: "Users",
-      color: "var(--color-primary)",
+      color: "var(--color-chart-primary)",
     }
   };
 
   const teamChartConfig = {
     value: {
       label: "Members",
-      color: "var(--color-accent)",
+      color: "var(--color-chart-primary)",
     }
   };
 
@@ -220,7 +220,7 @@ export function UsersStatsCharts({ users }: UsersStatsProps) {
                 <ChartTooltip content={<ChartTooltipContent indicator="dashed" />} />
                 <Bar
                   dataKey="value"
-                  fill="hsl(var(--primary))"
+                  fill="var(--color-chart-primary)"
                   radius={[0, 4, 4, 0]}
                   name="Users"
                   barSize={16}
@@ -272,7 +272,7 @@ export function UsersStatsCharts({ users }: UsersStatsProps) {
                 <ChartTooltip content={<ChartTooltipContent indicator="dashed" />} />
                 <Bar
                   dataKey="value"
-                  fill="hsl(var(--secondary))"
+                  fill="var(--color-chart-primary)"
                   radius={[0, 4, 4, 0]}
                   name="Members"
                   barSize={16}

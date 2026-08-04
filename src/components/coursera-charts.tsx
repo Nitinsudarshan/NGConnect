@@ -39,15 +39,15 @@ interface CourseraChartsProps {
 const chartConfig = {
   total_learning_hours: {
     label: "Learning Hours",
-    color: "#3b82f6",
+    color: "var(--color-chart-primary)",
   },
   course_completions: {
     label: "Course Completions",
-    color: "#8b5cf6",
+    color: "var(--color-chart-primary)",
   },
   active_users: {
     label: "Active Learners",
-    color: "#10b981",
+    color: "var(--color-chart-accent-1)",
   },
 }
 

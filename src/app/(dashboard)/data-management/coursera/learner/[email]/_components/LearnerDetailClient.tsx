@@ -6,7 +6,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell
 } from 'recharts';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
@@ -46,7 +46,7 @@ function formatMonthShort(dateStr: string) {
 }
 
 const chartConfig = {
-  monthly_hours: { label: "Hours", color: "#6366f1" },
+  monthly_hours: { label: "Hours", color: "var(--color-chart-primary)" },
 };
 
 function formatMonth(dateStr: string) {
@@ -76,12 +76,11 @@ export default function LearnerDetailClient({ monthlyHistory, courses }: Props) 
             <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
             <ChartTooltip content={<ChartTooltipContent />} />
             <Bar
-              dataKey="monthly_hours"
-              name="Hours"
-              radius={[4, 4, 0, 0]}
-              // Compliant bars are indigo, non-compliant are amber
-              fill="var(--color-monthly_hours)"
-            />
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.is_compliant ? "var(--color-chart-success)" : "var(--color-chart-warning)"} />
+              ))}
+            </Bar>
           </BarChart>
         </ChartContainer>
 

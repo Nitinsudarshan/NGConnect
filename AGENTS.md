@@ -10,6 +10,7 @@ This is a **Next.js + TypeScript + Supabase + shadcn/ui** project (NGConnect). Y
 - [project-structure.md](rules/project-structure.md): Folder layout and where new files go.
 - [design-system.md](rules/design-system.md): Design tokens (colors, spacing, radius, typography).
 - [ui-components.md](rules/ui-components.md): shadcn/ui usage and styling conventions, including charts.
+- [charts.md](rules/charts.md): Charts, graphs, and data visualizations.
 - [responsive-design.md](rules/responsive-design.md): Mobile-first responsive layout rules.
 - [accessibility.md](rules/accessibility.md): Accessibility requirements for UI.
 - [documentation.md](rules/documentation.md): Code commenting and documentation format.
@@ -31,7 +32,7 @@ If two rules conflict, resolve in this order (most specific wins):
 3. `server-client-boundary.md` / `api-conventions.md` (architecture correctness).
 4. `code-standards.md` / `component-architecture.md` / `project-structure.md`.
 5. `forms-and-validation.md` / `testing.md` / `performance.md`.
-6. `design-system.md` / `ui-components.md` / `responsive-design.md` / `accessibility.md`.
+6. `design-system.md` / `ui-components.md` / `charts.md` / `responsive-design.md` / `accessibility.md`.
 7. `documentation.md`.
 
 ## Known Drift

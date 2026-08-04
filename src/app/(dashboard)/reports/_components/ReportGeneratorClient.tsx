@@ -32,8 +32,8 @@ type Periodicity = 'monthly' | 'quarterly' | 'halfyearly' | 'yearly';
 type ReportType = 'executive' | 'activity' | 'compliance';
 
 const chartConfig = {
-  hours: { label: "Learning Hours", color: "#6366f1" },
-  active: { label: "Active Learners", color: "#10b981" },
+  hours: { label: "Learning Hours", color: "var(--color-chart-primary)" },
+  active: { label: "Active Learners", color: "var(--color-chart-primary)" },
 };
 
 export default function ReportGeneratorClient({ metricsData, availableMonths }: Props) {

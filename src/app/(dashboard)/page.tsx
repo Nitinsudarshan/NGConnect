@@ -10,7 +10,7 @@ import { CourseraCharts } from "@/components/coursera-charts"
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   const activeRole = await getUserRole(user)
   const isExcludedRole = activeRole === "Viewer" || activeRole === "Member"
 
@@ -34,7 +34,7 @@ export default async function DashboardPage() {
         .from('alumni_master')
         .select('status, campus, course, gender')
         .limit(5000) // Just to be safe with large datasets
-      
+
       if (!alumniError) {
         alumniData = alumni || []
       }
@@ -78,10 +78,10 @@ export default async function DashboardPage() {
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-20">
       <DashboardGreeting />
       {!isExcludedRole && (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-1">
           <DashboardStats initialUsers={users} error={errorMsg} />
           {alumniData.length > 0 && <DashboardCharts data={alumniData} />}
-          
+
           <div className="mt-4 pt-4 border-t border-slate-200 dark:border-zinc-800">
             <CourseraStats metrics={courseraMetrics} />
             {courseraMonthlyMetrics.length > 0 && <CourseraCharts metrics={courseraMonthlyMetrics} />}

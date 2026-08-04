@@ -83,16 +83,16 @@ function KpiCard({
 }
 
 const chartConfig = {
-  monthly_hours: { label: "Monthly Hours", color: "#6366f1" },
-  active_learners: { label: "Active Learners", color: "#10b981" },
-  dist1: { color: "#6366f1" },
-  dist2: { color: "#8b5cf6" },
-  dist3: { color: "#a78bfa" },
-  dist4: { color: "#c4b5fd" },
-  dist5: { color: "#ddd6fe" },
-  dist6: { color: "#ede9fe" },
+  monthly_hours: { label: "Monthly Hours", color: "var(--color-chart-primary)" },
+  active_learners: { label: "Active Learners", color: "var(--color-chart-primary)" },
+  dist1: { color: "var(--color-chart-primary)" },
+  dist2: { color: "var(--color-chart-primary)" },
+  dist3: { color: "var(--color-chart-primary)" },
+  dist4: { color: "var(--color-chart-primary)" },
+  dist5: { color: "var(--color-chart-primary)" },
+  dist6: { color: "var(--color-chart-primary)" },
 };
-const getDistColorVar = (i: number) => `var(--color-dist${(i % 6) + 1})`;
+const getDistColorVar = (i: number) => `var(--color-chart-primary)`;
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function CourseraDashboardClient({ metrics, trend, selectedMonth, availableMonths, availableMonthLabels, basePath, queryParam, generatedAt }: Props) {

@@ -38,17 +38,22 @@ interface DashboardChartsProps {
 
 const chartConfig = {
   alumni: { label: "Alumni" },
-  color1: { color: "#0088FE" },
-  color2: { color: "#00C49F" },
-  color3: { color: "#FFBB28" },
-  color4: { color: "#FF8042" },
-  color5: { color: "#8884d8" },
-  color6: { color: "#82ca9d" },
-  color7: { color: "#ffc658" },
-  color8: { color: "#d0ed57" },
+  color1: { color: "var(--color-chart-primary)" },
+  color2: { color: "var(--color-chart-accent-1)" },
+  color3: { color: "var(--color-chart-accent-2)" },
 }
 
-const getColorVar = (index: number) => `var(--color-color${(index % 8) + 1})`
+const getColorVar = (index: number) => {
+  const baseIndex = index % 3;
+  const cycle = Math.floor(index / 3);
+  const opacity = Math.max(20, 100 - (cycle * 50));
+  const baseColor = baseIndex === 0
+    ? "var(--color-chart-primary)"
+    : baseIndex === 1
+      ? "var(--color-chart-accent-1)"
+      : "var(--color-chart-accent-2)";
+  return opacity === 100 ? baseColor : `color-mix(in srgb, ${baseColor} ${opacity}%, transparent)`;
+}
 
 export function DashboardCharts({ data }: DashboardChartsProps) {
   // Aggregate data for Status
@@ -84,17 +89,17 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
 
     sortedEntries.forEach(([key, val], index) => {
       const safeKey = key.replace(/[^a-zA-Z0-9]/g, '') || `campus_${index}`
-      
+
       chartData.push({
         campus: safeKey,
         label: key,
         count: val,
-        fill: `var(--color-${safeKey})`
+        fill: getColorVar(index)
       })
-      
+
       config[safeKey] = {
         label: key,
-        color: `var(--chart-${(index % 5) + 1})`,
+        color: getColorVar(index),
       }
     })
 
@@ -120,17 +125,17 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
 
     sortedEntries.forEach(([key, val], index) => {
       const safeKey = key.replace(/[^a-zA-Z0-9]/g, '') || `course_${index}`
-      
+
       chartData.push({
         course: safeKey,
         label: key,
         count: val,
-        fill: `var(--color-${safeKey})`
+        fill: getColorVar(index)
       })
-      
+
       config[safeKey] = {
         label: key,
-        color: `var(--chart-${(index % 5) + 1})`,
+        color: getColorVar(index),
       }
     })
 
@@ -146,7 +151,7 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
     }, {} as Record<string, number>)
 
     const sortedEntries = Object.entries(counts).sort((a, b) => (b[1] as number) - (a[1] as number))
-    
+
     const singleDataPoint: any = { category: "gender" }
     const config: any = {}
     const bars: { key: string, label: string }[] = []
@@ -157,7 +162,7 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
       singleDataPoint[safeKey] = val
       config[safeKey] = {
         label: key,
-        color: `var(--chart-${(index % 5) + 1})`,
+        color: getColorVar(index),
       }
       bars.push({
         key: safeKey,
@@ -254,7 +259,7 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
                 <LabelList
                   position="insideStart"
                   dataKey="label"
-                  className="fill-white capitalize mix-blend-luminosity"
+                  className="fill-foreground capitalize"
                   fontSize={11}
                 />
               </RadialBar>
@@ -283,7 +288,7 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
                 <LabelList
                   position="insideStart"
                   dataKey="label"
-                  className="fill-white capitalize mix-blend-luminosity"
+                  className="fill-foreground capitalize"
                   fontSize={11}
                 />
               </RadialBar>
@@ -338,13 +343,13 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
                   }}
                 />
               </PolarRadiusAxis>
-              {genderStats.bars.map((bar) => (
+              {genderStats.bars.map((bar, index) => (
                 <RadialBar
                   key={bar.key}
                   dataKey={bar.key}
                   stackId="a"
                   cornerRadius={5}
-                  fill={`var(--color-${bar.key})`}
+                  fill={getColorVar(index)}
                   className="stroke-transparent stroke-2"
                 />
               ))}
