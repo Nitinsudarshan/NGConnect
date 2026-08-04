@@ -2,10 +2,13 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getUserRole } from '@/lib/roles';
 import ReportGeneratorClient from './_components/ReportGeneratorClient';
+import { checkAccess } from '@/lib/permissions';
 
 export default async function ReportsPage() {
   const role = await getUserRole();
-  if (!role || (role !== 'Super Admin' && role !== 'Admin' && role !== 'Manager' && role !== 'Program' && role !== 'Operations')) { // TODO(roles-refactor): confirm access level
+  const hasAccess = await checkAccess(role, 'reports');
+  
+  if (!hasAccess) {
     redirect('/');
   }
 

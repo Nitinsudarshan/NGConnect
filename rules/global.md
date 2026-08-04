@@ -29,6 +29,7 @@ to the task at hand.
 | `data-import.md` | Excel/CSV import safety (alumni, Coursera) |
 | `api-conventions.md` | Route handler response shape, validation, error handling |
 | `performance.md` | Bundle size, lazy loading, memoization basics |
+| `rbac-settings.md` | RBAC system architecture and SQL configuration |
 
 ## Precedence
 

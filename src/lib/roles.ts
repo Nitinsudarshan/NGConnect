@@ -14,7 +14,7 @@ export interface UserAppMetadata {
 
 const SUPER_ADMIN_EMAILS = ["nitin@navgurukul.org", "nitinsudarshan@gmail.com"];
 
-async function getSupabaseUserEmail() {
+export async function getSupabaseUserEmail() {
     try {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();

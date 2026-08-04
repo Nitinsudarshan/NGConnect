@@ -96,86 +96,62 @@ export function DashboardStats({ initialUsers, error }: DashboardStatsProps) {
   return (
     <div className="space-y-6">
       {/* Stat Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Total Alumni */}
-        <Card className="hover:shadow-md hover:scale-[1.01] transition-all duration-300 bg-card/60 backdrop-blur-md border-slate-200 dark:border-zinc-800">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Total Alumni
-            </CardTitle>
-            <div className="h-8 w-8 rounded-md bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center text-indigo-500 border border-indigo-100 dark:border-indigo-900/30">
-              <Users className="h-4.5 w-4.5" />
+        <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow group">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Alumni</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.total}</p>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-black tracking-tight">{stats.total}</div>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">
-              Active Alumni members
-            </p>
-          </CardContent>
-        </Card>
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 transition-colors">
+              <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center text-sm text-slate-500 font-medium">
+            Active Alumni members
+          </div>
+        </div>
 
         {/* Activation Rate */}
-        <Card className="hover:shadow-md hover:scale-[1.01] transition-all duration-300 bg-card/60 backdrop-blur-md border-slate-200 dark:border-zinc-800">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Activation Rate
-            </CardTitle>
-            <div className="h-8 w-8 rounded-md bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-500 border border-emerald-100 dark:border-emerald-900/30">
-              <CheckCircle2 className="h-4.5 w-4.5" />
+        <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow group">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Activation Rate</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">
+                {stats.activated} <span className="text-lg text-slate-400">/ {stats.total}</span>
+              </p>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-black tracking-tight">
-              {stats.activated} <span className="text-sm font-bold text-muted-foreground">/ {stats.total}</span>
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40 transition-colors">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <p className="text-xs text-muted-foreground mt-1 font-medium flex items-center gap-1">
-              <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 font-bold border-none text-[9px] h-4.5 py-0">
-                {stats.activationPercentage}%
-              </Badge> have logged in at least once
-            </p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="mt-4 flex items-center text-sm">
+            <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-md text-xs">
+              <i className="fa-solid fa-arrow-up mr-1 text-[10px]"></i> {stats.activationPercentage}%
+            </span>
+            <span className="text-slate-500 ml-2 font-medium text-xs">logged in at least once</span>
+          </div>
+        </div>
 
-        {/* Team Assignments */}
-        <Card className="hover:shadow-md hover:scale-[1.01] transition-all duration-300 bg-card/60 backdrop-blur-md border-slate-200 dark:border-zinc-800">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Team Coverage
-            </CardTitle>
-            <div className="h-8 w-8 rounded-md bg-pink-50 dark:bg-pink-950/40 flex items-center justify-center text-pink-500 border border-pink-100 dark:border-pink-900/30">
-              <Layers className="h-4.5 w-4.5" />
+        {/* Team Coverage */}
+        <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow group">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Team Coverage</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.withTeam}</p>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-black tracking-tight">{stats.withTeam}</div>
-            <p className="text-xs text-muted-foreground mt-1 font-medium flex items-center gap-1">
-              <Badge className="bg-pink-100 text-pink-800 dark:bg-pink-950/40 dark:text-pink-400 font-bold border-none text-[9px] h-4.5 py-0">
-                {stats.teamPercentage}%
-              </Badge> assigned to functional teams
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Recent Activity */}
-        <Card className="hover:shadow-md hover:scale-[1.01] transition-all duration-300 bg-card/60 backdrop-blur-md border-slate-200 dark:border-zinc-800">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Active Recently
-            </CardTitle>
-            <div className="h-8 w-8 rounded-md bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center text-amber-500 border border-amber-100 dark:border-amber-900/30">
-              <Activity className="h-4.5 w-4.5" />
+            <div className="p-2 bg-pink-50 dark:bg-pink-900/20 rounded-lg group-hover:bg-pink-100 dark:group-hover:bg-pink-900/40 transition-colors">
+              <Layers className="w-5 h-5 text-pink-600 dark:text-pink-400" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-black tracking-tight">{stats.activeRecently}</div>
-            <p className="text-xs text-muted-foreground mt-1 font-medium flex items-center gap-1">
-              <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 font-bold border-none text-[9px] h-4.5 py-0">
-                {stats.activePercentage}%
-              </Badge> logged in within last 7 days
-            </p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="mt-4 flex items-center text-sm">
+            <span className="text-pink-600 dark:text-pink-400 font-medium flex items-center bg-pink-50 dark:bg-pink-900/20 px-2 py-0.5 rounded-md text-xs">
+              <i className="fa-solid fa-arrow-up mr-1 text-[10px]"></i> {stats.teamPercentage}%
+            </span>
+            <span className="text-slate-500 ml-2 font-medium text-xs">assigned to functional teams</span>
+          </div>
+        </div>
       </div>
     </div>
   )

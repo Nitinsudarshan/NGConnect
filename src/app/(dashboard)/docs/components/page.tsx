@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { Activity, Sun, Sparkles, Moon, Award, Smile, Flame, TrendingUp, Clock, Coffee } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -417,6 +418,396 @@ export default function ComponentsShowcasePage() {
               </BreadcrumbList>
             </Breadcrumb>
           </div>
+        </div>
+      </section>
+
+      {/* 6. Welcome Banners */}
+      <section className="space-y-6 mt-10">
+        <h2 className="text-2xl font-semibold tracking-tight border-b pb-2">Welcome Banners</h2>
+        <div className="grid grid-cols-1 gap-6">
+          {/* Option 1: Vibrant Ocean */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-blue-500/10 via-cyan-400/10 to-transparent bg-white dark:bg-slate-950 border border-blue-200 dark:border-blue-800 p-6 rounded-xl shadow-sm group">
+            <div className="absolute right-0 top-0 w-40 h-40 opacity-20 blur-3xl rounded-full -mr-10 -mt-10 bg-blue-500 pointer-events-none group-hover:scale-110 transition-transform duration-700" />
+            <div className="flex items-start gap-4 sm:gap-6 relative z-10">
+              <div className="flex-1 space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                  Welcome back, Alex!
+                </h1>
+                <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base font-medium">
+                  Here's what's happening with your projects today.
+                </p>
+              </div>
+              <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900/50 p-4 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm group-hover:rotate-12 transition-transform duration-500">
+                <Activity className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+          </div>
+
+          {/* Option 2: Sunset Glow */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-orange-500/15 via-rose-400/10 to-transparent bg-white dark:bg-slate-950 border border-orange-200 dark:border-orange-900/50 p-6 rounded-xl shadow-sm group">
+            <div className="absolute right-0 top-0 w-40 h-40 opacity-20 blur-3xl rounded-full -mr-10 -mt-10 bg-orange-500 pointer-events-none group-hover:scale-110 transition-transform duration-700" />
+            <div className="flex items-start gap-4 sm:gap-6 relative z-10">
+              <div className="flex-1 space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                  Good afternoon, Alex.
+                </h1>
+                <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base font-medium">
+                  You have 3 tasks pending for today.
+                </p>
+              </div>
+              <div className="flex-shrink-0 bg-orange-100 dark:bg-orange-900/50 p-4 rounded-xl border border-orange-200 dark:border-orange-800 shadow-sm group-hover:-rotate-12 transition-transform duration-500">
+                <Sun className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+              </div>
+            </div>
+          </div>
+
+          {/* Option 3: Aurora Emerald */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500/15 via-teal-400/10 to-transparent bg-white dark:bg-slate-950 border border-emerald-200 dark:border-emerald-900/50 p-6 rounded-xl shadow-sm group">
+            <div className="absolute right-0 top-0 w-40 h-40 opacity-20 blur-3xl rounded-full -mr-10 -mt-10 bg-emerald-500 pointer-events-none group-hover:scale-110 transition-transform duration-700" />
+            <div className="flex items-start gap-4 sm:gap-6 relative z-10">
+              <div className="flex-1 space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                  Morning, Alex!
+                </h1>
+                <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base font-medium">
+                  Your weekly report is ready to view.
+                </p>
+              </div>
+              <div className="flex-shrink-0 bg-emerald-100 dark:bg-emerald-900/50 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                <Sparkles className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+              </div>
+            </div>
+          </div>
+
+          {/* Option 4: Royal Purple */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-purple-500/15 via-indigo-400/10 to-transparent bg-white dark:bg-slate-950 border border-purple-200 dark:border-purple-900/50 p-6 rounded-xl shadow-sm group">
+            <div className="absolute right-0 top-0 w-40 h-40 opacity-20 blur-3xl rounded-full -mr-10 -mt-10 bg-purple-500 pointer-events-none group-hover:scale-110 transition-transform duration-700" />
+            <div className="flex items-start gap-4 sm:gap-6 relative z-10">
+              <div className="flex-1 space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                  Evening, Alex.
+                </h1>
+                <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base font-medium">
+                  Time to wrap up for the day. Excellent work!
+                </p>
+              </div>
+              <div className="flex-shrink-0 bg-purple-100 dark:bg-purple-900/50 p-4 rounded-xl border border-purple-200 dark:border-purple-800 shadow-sm group-hover:rotate-12 transition-transform duration-500">
+                <Moon className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+          </div>
+
+          {/* Option 5: Midnight Solid (High impact) */}
+          <div className="relative overflow-hidden bg-slate-900 dark:bg-slate-950 border border-slate-800 p-6 rounded-xl shadow-md group">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20 opacity-50 pointer-events-none" />
+            <div className="absolute right-0 top-0 w-40 h-40 opacity-30 blur-3xl rounded-full -mr-10 -mt-10 bg-blue-500 pointer-events-none group-hover:scale-125 transition-transform duration-1000" />
+            <div className="flex items-start gap-4 sm:gap-6 relative z-10">
+              <div className="flex-1 space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                  Hello, Alex!
+                </h1>
+                <p className="text-slate-300 text-sm sm:text-base font-medium">
+                  Ready to conquer the day? You have 2 unread messages.
+                </p>
+              </div>
+              <div className="flex-shrink-0 bg-slate-800/80 p-4 rounded-xl border border-slate-700 shadow-inner group-hover:scale-110 transition-transform duration-500">
+                <Award className="h-8 w-8 text-blue-400" />
+              </div>
+            </div>
+          </div>
+
+          {/* Option 6: Action-Oriented Layout */}
+          <div className="relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm flex flex-col md:flex-row items-center justify-between p-6 sm:p-8 gap-6 group">
+            <div className="absolute left-0 top-0 bottom-0 w-2 bg-indigo-500 rounded-l-xl" />
+            <div className="flex-1 space-y-3 z-10">
+              <div className="inline-flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-2">
+                <Sun className="w-4 h-4" />
+                <span>Good Morning</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                Ready to dive in, Alex?
+              </h1>
+              <p className="text-slate-600 dark:text-slate-400 font-medium max-w-xl">
+                Your performance is up 12% this week. Keep up the great work and check out your new potential leads.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3 shrink-0 z-10">
+              <Button className="w-full sm:w-auto shadow-md hover:shadow-lg transition-shadow bg-indigo-600 hover:bg-indigo-700 text-white">
+                View Reports
+              </Button>
+              <Button variant="outline" className="w-full sm:w-auto bg-transparent border-slate-300 dark:border-slate-700">
+                Dismiss
+              </Button>
+            </div>
+          </div>
+
+          {/* Option 7: Split Design with Geometric Shapes */}
+          <div className="relative overflow-hidden bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm flex flex-col sm:flex-row group">
+            <div className="flex-1 p-6 sm:p-8 space-y-2 z-10">
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                Welcome back!
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 font-medium">
+                Here's a quick overview of your workspace. You have 5 new notifications waiting for your review.
+              </p>
+              <div className="pt-4">
+                <a href="#" className="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline inline-flex items-center">
+                  Review notifications <i className="fa-solid fa-arrow-right ml-2 text-sm"></i>
+                </a>
+              </div>
+            </div>
+            {/* Geometric right side */}
+            <div className="relative w-full sm:w-1/3 min-h-[160px] sm:min-h-[auto] bg-emerald-50 dark:bg-emerald-950/30 overflow-hidden flex items-center justify-center border-t sm:border-t-0 sm:border-l border-emerald-100 dark:border-emerald-900/50">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-emerald-200/50 dark:bg-emerald-800/30 rounded-full blur-xl" />
+              <div className="absolute top-0 right-0 w-24 h-24 bg-teal-400/20 rounded-bl-full" />
+              <div className="absolute bottom-0 left-0 w-20 h-20 bg-green-400/20 rounded-tr-full" />
+              <Sparkles className="w-12 h-12 text-emerald-600 dark:text-emerald-500 relative z-10 group-hover:rotate-180 transition-transform duration-1000" />
+            </div>
+          </div>
+
+          {/* Option 8: Centered Spotlight */}
+          <div className="relative overflow-hidden bg-slate-900 border border-slate-800 p-8 sm:p-12 rounded-xl shadow-xl text-center group">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-fuchsia-900/40 via-slate-900/80 to-slate-900 pointer-events-none" />
+            
+            <div className="relative z-10 flex flex-col items-center space-y-4 max-w-2xl mx-auto">
+              <div className="bg-fuchsia-500/20 p-4 rounded-full border border-fuchsia-500/30 shadow-[0_0_30px_-5px_rgba(217,70,239,0.4)] group-hover:shadow-[0_0_50px_-10px_rgba(217,70,239,0.6)] transition-shadow duration-500">
+                <Flame className="w-10 h-10 text-fuchsia-400" />
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+                You're on fire, Alex!
+              </h1>
+              <p className="text-slate-300 text-lg">
+                You've hit your weekly target 2 days early. Take a breather, or keep the momentum going.
+              </p>
+            </div>
+          </div>
+
+          {/* Option 9: Progress/Goal Driven */}
+          <div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-6 sm:p-8 group overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-slate-100 dark:bg-slate-800">
+              <div className="h-full bg-blue-500 w-[75%]" />
+            </div>
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10 pt-2">
+              <div className="flex-1 space-y-2">
+                <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                  <TrendingUp className="w-6 h-6 text-blue-500" />
+                  Great progress, Alex!
+                </h1>
+                <p className="text-slate-600 dark:text-slate-400 font-medium">
+                  You are 75% of the way to your monthly revenue goal. Just a little more push!
+                </p>
+              </div>
+              <div className="flex items-center gap-4 shrink-0 bg-slate-50 dark:bg-slate-950 p-4 rounded-lg border border-slate-100 dark:border-slate-800">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-slate-500">Current</p>
+                  <p className="text-xl font-bold text-slate-900 dark:text-white">$15,000</p>
+                </div>
+                <div className="w-px h-10 bg-slate-200 dark:bg-slate-700" />
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-slate-500">Goal</p>
+                  <p className="text-xl font-bold text-slate-900 dark:text-white">$20,000</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Option 10: Minimalist Typographic */}
+          <div className="bg-slate-950 text-white rounded-xl p-8 sm:p-10 flex flex-col justify-center border border-slate-900 relative overflow-hidden group">
+            <div className="absolute -right-20 -top-20 opacity-5 group-hover:opacity-10 group-hover:rotate-12 transition-all duration-700">
+              <Sparkles className="w-96 h-96" />
+            </div>
+            <div className="relative z-10 max-w-3xl">
+              <p className="text-slate-400 uppercase tracking-[0.2em] text-xs font-bold mb-4">Monday, August 4</p>
+              <h1 className="text-4xl sm:text-5xl font-black tracking-tighter leading-none mb-4">
+                GOOD MORNING, ALEX.
+              </h1>
+              <p className="text-slate-400 text-lg sm:text-xl font-medium max-w-xl leading-relaxed">
+                Your schedule is clear until 2 PM. It's the perfect window for deep work.
+              </p>
+            </div>
+          </div>
+
+          {/* Option 11: Frosted Glass / Pattern Background */}
+          <div className="relative rounded-xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden group">
+            {/* Pattern background simulated with repeating linear gradient */}
+            <div className="absolute inset-0 opacity-[0.03] dark:opacity-5 bg-[repeating-linear-gradient(45deg,_#000_0,_#000_2px,_transparent_2px,_transparent_8px)] dark:bg-[repeating-linear-gradient(45deg,_#fff_0,_#fff_2px,_transparent_2px,_transparent_8px)] pointer-events-none" />
+            <div className="absolute -right-32 -bottom-32 w-96 h-96 bg-amber-400/20 rounded-full blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-1000" />
+            
+            <div className="relative z-10 flex items-start gap-6 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-xl border border-white/40 dark:border-slate-700/50 shadow-sm">
+              <div className="bg-amber-100 dark:bg-amber-900/50 p-4 rounded-full shrink-0 mt-1 shadow-inner border border-amber-200 dark:border-amber-800">
+                <Coffee className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                  Time for a break?
+                </h1>
+                <p className="text-slate-700 dark:text-slate-300 font-medium">
+                  You've been focused for 2 hours straight. Grab some coffee and stretch your legs.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Option 12: Alert / Notice Style */}
+          <div className="bg-amber-50 dark:bg-amber-950/30 border-l-4 border-amber-500 rounded-r-xl shadow-sm p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="bg-amber-100 dark:bg-amber-900/50 p-3 rounded-full text-amber-600 dark:text-amber-500 shrink-0">
+                <Clock className="w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-amber-900 dark:text-amber-400">
+                  System Maintenance Scheduled
+                </h1>
+                <p className="text-amber-700 dark:text-amber-500/80 text-sm font-medium mt-1">
+                  The dashboard will be in read-only mode in 30 minutes for an update.
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" className="shrink-0 border-amber-200 hover:bg-amber-100 dark:border-amber-800 dark:hover:bg-amber-900/50 text-amber-800 dark:text-amber-300 w-full sm:w-auto">
+              Learn More
+            </Button>
+          </div>
+
+          {/* Option 13: Multi-Metric Dashboard Header */}
+          <div className="relative overflow-hidden bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm group">
+            <div className="absolute right-0 top-0 w-64 h-64 opacity-10 bg-teal-500 blur-3xl rounded-full pointer-events-none" />
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800/60 relative z-10 flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                  Welcome back, Alex!
+                </h1>
+                <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">
+                  Here's your quick snapshot for today.
+                </p>
+              </div>
+              <Button size="sm" className="hidden sm:flex">
+                New Project
+              </Button>
+            </div>
+            <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-slate-800/60 relative z-10 bg-slate-50/50 dark:bg-slate-900/20">
+              <div className="p-4 sm:p-5 flex flex-col justify-center items-center text-center hover:bg-slate-100 dark:hover:bg-slate-900/50 transition-colors cursor-pointer">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active</span>
+                <span className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-1">12</span>
+              </div>
+              <div className="p-4 sm:p-5 flex flex-col justify-center items-center text-center hover:bg-slate-100 dark:hover:bg-slate-900/50 transition-colors cursor-pointer">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending</span>
+                <span className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-500 mt-1">4</span>
+              </div>
+              <div className="p-4 sm:p-5 flex flex-col justify-center items-center text-center hover:bg-slate-100 dark:hover:bg-slate-900/50 transition-colors cursor-pointer">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Completed</span>
+                <span className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-500 mt-1">89</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. Dashboard Cards */}
+      <section className="space-y-6 mt-10">
+        <h2 className="text-2xl font-semibold tracking-tight border-b pb-2">Dashboard Cards</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          {/* Card Option 1: Clean Minimal */}
+          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Revenue</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">$45,231</p>
+              </div>
+              <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <Activity className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-sm">
+              <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center">
+                <i className="fa-solid fa-arrow-up mr-1 text-xs"></i> +20.1%
+              </span>
+              <span className="text-slate-500 ml-2">from last month</span>
+            </div>
+          </div>
+
+          {/* Card Option 2: Soft Tinted Background */}
+          <div className="bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 rounded-xl p-5 shadow-sm hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors">
+            <div className="flex justify-between items-start">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">Active Users</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">+2,350</p>
+              </div>
+              <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
+                <Smile className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="w-full bg-indigo-100 dark:bg-indigo-900/30 rounded-full h-1.5">
+                <div className="bg-indigo-600 h-1.5 rounded-full" style={{ width: "70%" }}></div>
+              </div>
+              <p className="text-xs text-slate-500 mt-2">70% to monthly goal</p>
+            </div>
+          </div>
+
+          {/* Card Option 3: Modern Outline with Icon Accent */}
+          <div className="relative bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm overflow-hidden group">
+            <div className="absolute right-0 top-0 h-full w-1 bg-emerald-500" />
+            <div className="flex justify-between items-start">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Completion Rate</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">94%</p>
+              </div>
+              <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg group-hover:scale-110 transition-transform">
+                <Award className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-sm">
+              <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                Excellent
+              </span>
+              <span className="text-slate-500 ml-2">performance</span>
+            </div>
+          </div>
+
+          {/* Card Option 4: Gradient Border Glow */}
+          <div className="relative bg-white dark:bg-slate-950 rounded-xl p-5 shadow-sm overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-rose-400 opacity-20 blur-xl -z-10" />
+            <div className="flex justify-between items-start">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Sales</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">12,234</p>
+              </div>
+              <div className="p-2 bg-gradient-to-br from-orange-400 to-rose-400 rounded-lg shadow-sm text-white">
+                <Flame className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-sm">
+              <span className="text-rose-600 dark:text-rose-400 font-medium flex items-center">
+                <i className="fa-solid fa-arrow-up mr-1 text-xs"></i> +12.5%
+              </span>
+              <span className="text-slate-500 ml-2">vs last week</span>
+            </div>
+          </div>
+
+          {/* Card Option 5: Solid Vibrant Fill */}
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-xl p-5 shadow-md relative overflow-hidden group">
+            <div className="absolute right-0 top-0 opacity-10 scale-150 -mt-4 -mr-4 group-hover:scale-110 transition-transform duration-500">
+              <Sparkles className="w-32 h-32" />
+            </div>
+            <div className="relative z-10">
+              <div className="flex justify-between items-start">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-blue-100">Premium Users</p>
+                  <p className="text-3xl font-bold text-white">4,392</p>
+                </div>
+                <div className="p-2 bg-white/20 backdrop-blur-md rounded-lg">
+                  <Activity className="w-5 h-5 text-white" />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center text-sm">
+                <span className="text-blue-100 font-medium">
+                  Top tier growth
+                </span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 

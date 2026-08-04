@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import { useUserContext } from "@/contexts/user-context"
-import { hourlyGreetings } from "@/components/dashboard-greeting"
+import { hourlyGreetings } from "@/components/greetings-data"
 import { ArrowLeft, Search, Sun, Moon, Sunrise, Sunset } from "lucide-react"
 import Link from "next/link"
 
@@ -100,8 +100,8 @@ export default function GreetingsPreviewPage() {
             // Filter by search query
             const filteredTemplates = templates.filter(
               (t) =>
-                t.text(firstName).toLowerCase().includes(searchQuery.toLowerCase()) ||
-                t.subtext(firstName).toLowerCase().includes(searchQuery.toLowerCase())
+                t.text.replace("{name}", firstName).toLowerCase().includes(searchQuery.toLowerCase()) ||
+                t.subtext.replace("{name}", firstName).toLowerCase().includes(searchQuery.toLowerCase())
             )
 
             if (filteredTemplates.length === 0) return null
@@ -138,14 +138,17 @@ export default function GreetingsPreviewPage() {
                       <div className="flex items-start gap-3 mt-2">
                         <div className="flex-1 space-y-1">
                           <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
-                            {template.text(firstName)}
+                            {template.text.replace("{name}", firstName)}
                           </h3>
                           <p className="text-slate-600 dark:text-zinc-300 text-xs sm:text-sm font-medium leading-relaxed">
-                            {template.subtext(firstName)}
+                            {template.subtext.replace("{name}", firstName)}
                           </p>
                         </div>
                         <div className="flex-shrink-0 bg-slate-50/50 dark:bg-zinc-900/60 p-2 rounded-full border border-slate-100 dark:border-zinc-850 shadow-inner">
-                          {template.icon}
+                          {(() => {
+                            const Icon = template.icon;
+                            return <Icon className={`h-6 w-6 ${template.iconClass}`} />;
+                          })()}
                         </div>
                       </div>
                     </div>

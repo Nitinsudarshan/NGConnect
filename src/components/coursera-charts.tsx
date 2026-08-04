@@ -76,7 +76,7 @@ export function CourseraCharts({ metrics }: CourseraChartsProps) {
               <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
               <XAxis dataKey="month_label" tick={{ fontSize: 12 }} />
               <YAxis />
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
               <ChartLegend content={<ChartLegendContent />} />
               <Line 
                 type="monotone" 
@@ -105,10 +105,10 @@ export function CourseraCharts({ metrics }: CourseraChartsProps) {
               <XAxis dataKey="month_label" tick={{ fontSize: 12 }} />
               <YAxis yAxisId="left" orientation="left" stroke="var(--color-course_completions)" />
               <YAxis yAxisId="right" orientation="right" stroke="var(--color-active_users)" />
-              <ChartTooltip cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }} content={<ChartTooltipContent />} />
+              <ChartTooltip cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }} content={<ChartTooltipContent indicator="dot" />} />
               <ChartLegend content={<ChartLegendContent />} />
-              <Bar yAxisId="left" dataKey="course_completions" name="Course Completions" fill="var(--color-course_completions)" radius={[4, 4, 0, 0]} />
-              <Bar yAxisId="right" dataKey="active_users" name="Active Learners" fill="var(--color-active_users)" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="left" dataKey="course_completions" name="Course Completions" fill="var(--color-course_completions)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+              <Bar yAxisId="right" dataKey="active_users" name="Active Learners" fill="var(--color-active_users)" radius={[4, 4, 0, 0]} maxBarSize={40} />
             </BarChart>
           </ChartContainer>
         </CardContent>
