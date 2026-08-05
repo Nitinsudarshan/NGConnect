@@ -68,6 +68,36 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: LayoutDashboard,
       isActive: pathname === "/",
     },
+    {
+      title: "Learning Center",
+      url: "/learning-center",
+      icon: GraduationCap,
+      isActive: pathname.startsWith("/learning-center"),
+      items: [
+        {
+          title: "Dashboard",
+          url: "/learning-center",
+        },
+        {
+          title: "Recordings",
+          url: "/learning-center/recordings",
+        },
+        {
+          title: "Sessions",
+          url: "/learning-center/sessions",
+        },
+        {
+          title: isExcludedRole ? "Learning Hub" : "Content Hub",
+          url: "/learning-center/content-hub",
+        },
+        ...(!isExcludedRole ? [
+          {
+            title: "Settings",
+            url: "/learning-center/settings",
+          }
+        ] : []),
+      ],
+    },
     ...(isExcludedRole ? [] : [
       {
         title: "Reports",
