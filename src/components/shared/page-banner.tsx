@@ -34,7 +34,7 @@ export function PageBanner({ title, description, icon, actions }: PageBannerProp
               {title}
             </h1>
             {description && (
-              <div className="text-slate-700 dark:text-zinc-300 text-sm sm:text-base font-medium leading-relaxed max-w-2xl transition-all duration-700">
+              <div className="text-slate-700 dark:text-zinc-300 text-sm sm:text-base font-medium leading-relaxed max-w-4xl xl:max-w-none transition-all duration-700">
                 {description}
               </div>
             )}

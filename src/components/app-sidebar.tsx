@@ -32,6 +32,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useUserContext } from "@/contexts/user-context"
 
 const data = {
@@ -56,6 +57,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { setOpenMobile, isMobile } = useSidebar()
+  const pathname = usePathname()
   const user = useUserContext()
   const isExcludedRole = user?.role === "Member" || user?.role === "Viewer"
 
@@ -64,72 +66,99 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Dashboard",
       url: "/",
       icon: LayoutDashboard,
-      isActive: true,
+      isActive: pathname === "/",
     },
     ...(isExcludedRole ? [] : [
       {
         title: "Reports",
         url: "/reports",
         icon: BarChart,
+        isActive: pathname.startsWith("/reports"),
       }
     ]),
   ];
 
   const navManage: NavItem[] = [
     {
-      title: "Users",
-      url: "/manage/users",
-      icon: Users,
-    },
-    {
-      title: "Alumni Network",
-      url: "/manage/alumni-network",
-      icon: GraduationCap,
-    },
-    {
-      title: "Data Management",
-      url: "/data-management",
-      icon: DatabaseBackup,
-    },
-    {
-      title: "Master Data",
-      url: "/manage/master-data",
-      icon: Database,
-    },
-    ...(user?.role === "Super Admin" || user?.role === "Admin" ? [
-      {
-        title: "RBAC",
-        url: "/manage/rbac",
-        icon: ShieldCheck,
-      }
-    ] : []),
+      title: "Manage",
+      url: "#",
+      icon: Settings,
+      isActive: pathname.startsWith("/manage") || pathname.startsWith("/data-management"),
+      items: [
+        {
+          title: "Users",
+          url: "/manage/users",
+          icon: Users,
+          isActive: pathname === "/manage/users",
+        },
+        {
+          title: "Alumni Network",
+          url: "/manage/alumni-network",
+          icon: GraduationCap,
+          isActive: pathname === "/manage/alumni-network",
+        },
+        {
+          title: "Data Management",
+          url: "/data-management",
+          icon: DatabaseBackup,
+          isActive: pathname === "/data-management",
+        },
+        {
+          title: "Master Data",
+          url: "/manage/master-data",
+          icon: Database,
+          isActive: pathname === "/manage/master-data",
+        },
+        ...(user?.role === "Super Admin" || user?.role === "Admin" ? [
+          {
+            title: "RBAC",
+            url: "/manage/rbac",
+            icon: ShieldCheck,
+            isActive: pathname === "/manage/rbac",
+          }
+        ] : []),
+      ],
+    }
   ];
 
   const navAlumniGrowth: NavItem[] = [
     {
-      title: "Workspace",
-      url: "/alumni-growth/workspace",
-      icon: Briefcase,
-    },
-    {
-      title: "Followups",
-      url: "/alumni-growth/follow-ups",
-      icon: CalendarClock,
-    },
-    {
-      title: "All Data",
-      url: "/alumni-growth/all-data",
-      icon: Database,
-    },
-    {
-      title: "Reports",
-      url: "/alumni-growth/reports",
-      icon: BarChart,
-    },
-    {
-      title: "Settings",
-      url: "/alumni-growth/settings",
-      icon: Settings,
+      title: "Alumni Growth",
+      url: "#",
+      icon: TrendingUp,
+      isActive: pathname.startsWith("/alumni-growth"),
+      items: [
+        {
+          title: "Workspace",
+          url: "/alumni-growth/workspace",
+          icon: Briefcase,
+          isActive: pathname === "/alumni-growth/workspace",
+        },
+        {
+          title: "Followups",
+          url: "/alumni-growth/follow-ups",
+          icon: CalendarClock,
+          isActive: pathname === "/alumni-growth/follow-ups",
+        },
+        {
+          title: "All Data",
+          url: "/alumni-growth/all-data",
+          icon: Database,
+          isActive: pathname === "/alumni-growth/all-data",
+        },
+        {
+          title: "Reports",
+          url: "/alumni-growth/reports",
+          icon: BarChart,
+          isActive: pathname === "/alumni-growth/reports",
+        },
+        {
+          title: "Settings",
+          url: "/alumni-growth/settings",
+          icon: Settings,
+          isActive: pathname === "/alumni-growth/settings",
+        },
+      ],
     },
   ];
 
@@ -163,14 +192,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navGeneral} />
-        {!isExcludedRole && (
-          <>
-            <NavMain items={navAlumniGrowth} label="Alumni Growth" />
-            <NavMain items={navManage} label="Manage" />
-            <NavSecondary items={data.navSecondary} className="mt-auto" />
-          </>
-        )}
+        <NavMain items={[
+          ...navGeneral,
+          ...(!isExcludedRole ? navAlumniGrowth : []),
+          ...(!isExcludedRole ? navManage : []),
+        ]} />
+        <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
     </Sidebar>
   )
