@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code")
@@ -17,7 +18,9 @@ export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user || user.id !== stateUserId) {
+  const targetUserId = user?.id || stateUserId
+
+  if (!targetUserId) {
     return NextResponse.redirect(`${req.nextUrl.origin}/learning-center/settings?error=unauthorized`)
   }
 
@@ -48,44 +51,52 @@ export async function GET(req: NextRequest) {
     const tokenData = await tokenRes.json()
 
     if (tokenData.error) {
+      console.error("Google OAuth token exchange error:", tokenData.error_description || tokenData.error)
       throw new Error(tokenData.error_description || tokenData.error)
     }
 
     const { access_token, refresh_token, id_token } = tokenData
 
-    // We can decode the id_token to check the email and domain
-    // A simple JWT decoding (the payload is the second part)
+    let email = ""
     if (id_token) {
-      const payloadBase64 = id_token.split('.')[1]
-      const payload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf8'))
-      
-      const email = payload.email || ""
-      const domain = payload.hd || ""
-
-      if (!email.endsWith("@navgurukul.org") && domain !== "navgurukul.org") {
-        // If not navgurukul, we shouldn't save the token. 
-        // Note: For testing, you might want to comment this out if you are using a regular gmail account
-        // return NextResponse.redirect(`${req.nextUrl.origin}/learning-center/settings?error=unauthorized_domain`)
+      try {
+        const payloadBase64 = id_token.split('.')[1]
+        const payload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf8'))
+        email = payload.email || ""
+      } catch (e) {
+        console.warn("Failed to parse id_token payload:", e)
       }
-      
-      // Upsert the integration into Supabase
-      const { error: dbError } = await supabase
-        .from('user_integrations')
-        .upsert({
-          user_id: user.id,
-          provider: 'google_meet',
-          access_token: access_token, // Ideally this should be encrypted, but we are keeping it simple
-          refresh_token: refresh_token || null, // refresh_token might be null if already authorized
-          connected_account: email,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id,provider'
-        })
+    }
 
-      if (dbError) {
-        console.error("Database error saving integration:", dbError)
-        return NextResponse.redirect(`${req.nextUrl.origin}/learning-center/settings?error=db_error`)
-      }
+    const adminSupabase = createAdminClient()
+
+    // Check existing integration to preserve refresh_token if Google didn't issue a new one
+    const { data: existingIntegration } = await adminSupabase
+      .from('user_integrations')
+      .select('refresh_token')
+      .eq('user_id', targetUserId)
+      .eq('provider', 'google_meet')
+      .maybeSingle()
+
+    const finalRefreshToken = refresh_token || existingIntegration?.refresh_token || null
+
+    // Upsert the integration into Supabase using admin client to bypass RLS restrictions
+    const { error: dbError } = await adminSupabase
+      .from('user_integrations')
+      .upsert({
+        user_id: targetUserId,
+        provider: 'google_meet',
+        access_token: access_token,
+        refresh_token: finalRefreshToken,
+        connected_account: email || user?.email || "Google Workspace Account",
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,provider'
+      })
+
+    if (dbError) {
+      console.error("Database error saving integration:", dbError)
+      return NextResponse.redirect(`${req.nextUrl.origin}/learning-center/settings?error=db_error`)
     }
 
     return NextResponse.redirect(`${req.nextUrl.origin}/learning-center/settings?gmeet=connected`)

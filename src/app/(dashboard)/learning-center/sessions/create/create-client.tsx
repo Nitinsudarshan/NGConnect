@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { toast } from "sonner"
 import { Mentor, LearningAudience, LearningSessionType, LearningCategory } from "@/lib/learning-center/queries"
-import { createSessionAction } from "@/lib/learning-center/actions"
+import { createSessionAction, generateGoogleMeetLinkAction } from "@/lib/learning-center/actions"
 
 export function CreateSessionClient({ 
   mentors, 
@@ -33,6 +33,8 @@ export function CreateSessionClient({
   const [durationMinutes, setDurationMinutes] = useState<number | "">(60)
   const [mode, setMode] = useState("Online")
   const [platform, setPlatform] = useState("Zoom")
+  const [meetingLink, setMeetingLink] = useState("")
+  const [generatingGmeet, setGeneratingGmeet] = useState(false)
   const [audienceId, setAudienceId] = useState("")
   const [categoryId, setCategoryId] = useState("")
   const [subcategoryId, setSubcategoryId] = useState("")
@@ -48,6 +50,30 @@ export function CreateSessionClient({
   const handleCategoryChange = (newCatId: string) => {
     setCategoryId(newCatId)
     setSubcategoryId("") // Reset subcategory when category changes
+  }
+
+  const handleGenerateGmeet = async () => {
+    if (!topic.trim()) {
+      toast.error("Topic is required to generate a Google Meet link")
+      return
+    }
+    if (!date) {
+      toast.error("Date is required to generate a Google Meet link")
+      return
+    }
+    setGeneratingGmeet(true)
+    try {
+      const parsedDuration = typeof durationMinutes === "number" ? durationMinutes : (parseInt(durationMinutes as string, 10) || 60)
+      const res = await generateGoogleMeetLinkAction(topic, date, startTime, parsedDuration)
+      if (res.success && res.meetLink) {
+        setMeetingLink(res.meetLink)
+        toast.success("Google Meet link generated successfully!")
+      } else {
+        toast.error(res.error || "Failed to generate Google Meet link")
+      }
+    } finally {
+      setGeneratingGmeet(false)
+    }
   }
 
   const handleSave = async (e: React.FormEvent) => {
@@ -72,6 +98,7 @@ export function CreateSessionClient({
         duration_minutes: parsedDuration,
         mode,
         platform: platform || null,
+        meeting_link: meetingLink || null,
         audience_id: audienceId || null,
         category_id: categoryId || null,
         subcategory_id: subcategoryId || null,
@@ -255,17 +282,56 @@ export function CreateSessionClient({
                   ))}
                 </select>
               </div>
-            </div>
-            
-            <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-md p-4 mt-2">
-              <div className="flex gap-2 text-blue-700 dark:text-blue-400">
-                <Info className="w-5 h-5 flex-shrink-0" />
-                <div className="text-sm">
-                  <p className="font-semibold">Zoom Auto-creation enabled</p>
-                  <p className="opacity-90 mt-1">This will automatically schedule a meeting on the NGConnect Zoom Enterprise account and generate join links for the mentor and participants.</p>
+              <div className="space-y-2 col-span-full">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium flex items-center gap-1.5">
+                    <Link2 className="w-4 h-4 text-muted-foreground" /> Meeting Join Link
+                  </label>
+                  {platform === "Google Meet" && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateGmeet}
+                      disabled={generatingGmeet}
+                      className="h-7 text-xs px-2.5 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
+                    >
+                      {generatingGmeet ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Video className="w-3.5 h-3.5 mr-1" />}
+                      Generate Meet Link
+                    </Button>
+                  )}
                 </div>
+                <Input
+                  placeholder={platform === "Google Meet" ? "e.g. https://meet.google.com/abc-defg-hij" : "e.g. https://zoom.us/j/123456789"}
+                  value={meetingLink}
+                  onChange={(e) => setMeetingLink(e.target.value)}
+                />
               </div>
             </div>
+            
+            {platform === "Zoom" && (
+              <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-md p-4 mt-2">
+                <div className="flex gap-2 text-blue-700 dark:text-blue-400">
+                  <Info className="w-5 h-5 flex-shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-semibold">Zoom Auto-creation enabled</p>
+                    <p className="opacity-90 mt-1">This will automatically schedule a meeting on the NGConnect Zoom Enterprise account and generate join links for the mentor and participants.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {platform === "Google Meet" && (
+              <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-900/30 rounded-md p-4 mt-2">
+                <div className="flex gap-2 text-emerald-700 dark:text-emerald-400">
+                  <Video className="w-5 h-5 flex-shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-semibold">Google Meet Integration</p>
+                    <p className="opacity-90 mt-1">Click &apos;Generate Meet Link&apos; above to schedule a Google Meet event directly in your connected Google Workspace Calendar.</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

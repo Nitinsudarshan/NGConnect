@@ -1,8 +1,10 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { MentorFormValues } from "./schema"
+import { createGoogleMeetLink } from "@/lib/google-meet"
 
 export async function logLearningCenterActivity(
   entityType: "mentor" | "audience" | "session_type" | "integration" | "category" | "subcategory",
@@ -227,6 +229,52 @@ export async function logIntegrationAction(integrationName: string, action: "con
   return { success: true }
 }
 
+export async function disconnectGoogleMeetAction() {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: "Unauthenticated" }
+
+    const { error } = await supabase
+      .from('user_integrations')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('provider', 'google_meet')
+
+    if (error) return { success: false, error: error.message }
+
+    await logLearningCenterActivity("integration", null, "disconnect", "Disconnected Google Meet integration")
+    revalidatePath("/learning-center/settings")
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to disconnect Google Meet" }
+  }
+}
+
+export async function generateGoogleMeetLinkAction(
+  topic: string,
+  dateStr: string,
+  timeStr?: string | null,
+  durationMinutes: number = 60
+) {
+  try {
+    let startTime: Date
+    if (dateStr && timeStr) {
+      startTime = new Date(`${dateStr}T${timeStr}:00`)
+    } else if (dateStr) {
+      startTime = new Date(`${dateStr}T10:00:00`)
+    } else {
+      startTime = new Date()
+    }
+
+    const result = await createGoogleMeetLink(topic, startTime, durationMinutes)
+    return { success: true, meetLink: result.meetLink, eventId: result.eventId }
+  } catch (err: any) {
+    console.error("[generateGoogleMeetLinkAction] error:", err)
+    return { success: false, error: err.message || "Failed to generate Google Meet link" }
+  }
+}
+
 export async function createSessionAction(
   data: {
     topic: string
@@ -251,7 +299,8 @@ export async function createSessionAction(
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false, error: "Unauthenticated" }
 
-    const { data: inserted, error } = await supabase
+    const adminSupabase = createAdminClient()
+    const { data: inserted, error } = await adminSupabase
       .from("learning_sessions")
       .insert([{
         ...data,
@@ -288,7 +337,8 @@ export async function updateSessionMedia(
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false, error: "Unauthenticated" }
 
-    const { error } = await supabase
+    const adminSupabase = createAdminClient()
+    const { error } = await adminSupabase
       .from("learning_sessions")
       .update({
         ...data,
@@ -332,7 +382,8 @@ export async function updateSessionAction(
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false, error: "Unauthenticated" }
 
-    const { error } = await supabase
+    const adminSupabase = createAdminClient()
+    const { error } = await adminSupabase
       .from("learning_sessions")
       .update({
         ...data,
@@ -359,8 +410,8 @@ export async function syncSessionDurationAction(sessionId: string, durationMinut
   try {
     if (!sessionId || durationMinutes <= 0) return { success: false }
 
-    const supabase = await createClient()
-    const { error } = await supabase
+    const adminSupabase = createAdminClient()
+    const { error } = await adminSupabase
       .from("learning_sessions")
       .update({
         duration_minutes: durationMinutes,

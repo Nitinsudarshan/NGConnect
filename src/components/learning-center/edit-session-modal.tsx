@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { LearningSession, Mentor, LearningAudience, LearningCategory } from "@/lib/learning-center/queries"
-import { updateSessionAction } from "@/lib/learning-center/actions"
+import { updateSessionAction, generateGoogleMeetLinkAction } from "@/lib/learning-center/actions"
 
 interface EditSessionModalProps {
   session: LearningSession | null
@@ -49,6 +49,31 @@ export function EditSessionModal({
   const [subcategoryId, setSubcategoryId] = useState("")
   const [description, setDescription] = useState("")
   const [saving, setSaving] = useState(false)
+  const [generatingGmeet, setGeneratingGmeet] = useState(false)
+
+  const handleGenerateGmeet = async () => {
+    if (!topic.trim()) {
+      toast.error("Topic is required to generate a Google Meet link")
+      return
+    }
+    if (!date) {
+      toast.error("Date is required to generate a Google Meet link")
+      return
+    }
+    setGeneratingGmeet(true)
+    try {
+      const parsedDuration = typeof durationMinutes === "number" ? durationMinutes : (parseInt(durationMinutes as string, 10) || 60)
+      const res = await generateGoogleMeetLinkAction(topic, date, startTime, parsedDuration)
+      if (res.success && res.meetLink) {
+        setMeetingLink(res.meetLink)
+        toast.success("Google Meet link generated successfully!")
+      } else {
+        toast.error(res.error || "Failed to generate Google Meet link")
+      }
+    } finally {
+      setGeneratingGmeet(false)
+    }
+  }
 
   useEffect(() => {
     if (session) {
@@ -312,11 +337,26 @@ export function EditSessionModal({
 
           {/* Meeting Link */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold flex items-center gap-1">
-              <LinkIcon className="w-3.5 h-3.5 text-muted-foreground" /> Meeting Join Link
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-semibold flex items-center gap-1">
+                <LinkIcon className="w-3.5 h-3.5 text-muted-foreground" /> Meeting Join Link
+              </Label>
+              {platform === "Google Meet" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateGmeet}
+                  disabled={generatingGmeet}
+                  className="h-6 text-[11px] px-2 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
+                >
+                  {generatingGmeet ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Video className="w-3 h-3 mr-1" />}
+                  Generate Meet Link
+                </Button>
+              )}
+            </div>
             <Input
-              placeholder="e.g. https://zoom.us/j/123456789"
+              placeholder="e.g. https://meet.google.com/abc-defg-hij"
               value={meetingLink}
               onChange={(e) => setMeetingLink(e.target.value)}
               className="text-xs"

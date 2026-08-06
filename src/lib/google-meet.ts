@@ -14,10 +14,10 @@ export async function createGoogleMeetLink(topic: string, startTime: Date, durat
     .select('*')
     .eq('user_id', user.id)
     .eq('provider', 'google_meet')
-    .single()
+    .maybeSingle()
 
   if (error || !integration || !integration.refresh_token) {
-    throw new Error("Google Meet is not connected or refresh token is missing.")
+    throw new Error("Google Meet account is not connected. Please go to Settings > Integrations > Google Meet and click 'Connect Google Account' to authorize.")
   }
 
   const clientId = process.env.GOOGLE_CLIENT_ID

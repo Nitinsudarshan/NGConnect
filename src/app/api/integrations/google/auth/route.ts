@@ -28,8 +28,7 @@ export async function GET(req: NextRequest) {
   authUrl.searchParams.set("response_type", "code")
   authUrl.searchParams.set("scope", scopes)
   authUrl.searchParams.set("access_type", "offline")
-  authUrl.searchParams.set("prompt", "consent") // Force consent to ensure we get a refresh token
-  authUrl.searchParams.set("hd", "navgurukul.org") // Hint to use navgurukul.org domain
+  authUrl.searchParams.set("prompt", "consent") // Force consent screen to guarantee refresh token
   
   // Pass the user ID in the state so we can link the integration when the callback returns
   authUrl.searchParams.set("state", user.id)

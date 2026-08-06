@@ -56,7 +56,8 @@ import {
   deleteCategoryAction,
   saveSubcategoryAction,
   deleteSubcategoryAction,
-  logIntegrationAction 
+  logIntegrationAction,
+  disconnectGoogleMeetAction
 } from "@/lib/learning-center/actions"
 import { Switch } from "@/components/ui/switch"
 
@@ -66,7 +67,9 @@ export function SettingsClient({
   initialSessionTypes,
   initialCategories = [],
   initialAuditLogs = [],
-  initialCourseraConfig
+  initialCourseraConfig,
+  initialGmeetConnected = false,
+  initialGmeetEmail = ""
 }: { 
   initialMentors: Mentor[]
   initialAudiences: LearningAudience[]
@@ -74,11 +77,14 @@ export function SettingsClient({
   initialCategories?: LearningCategory[]
   initialAuditLogs?: LearningCenterAuditLog[]
   initialCourseraConfig?: CourseraConfig
+  initialGmeetConnected?: boolean
+  initialGmeetEmail?: string
 }) {
   const [testingZoom, setTestingZoom] = useState(false)
   const [saving, setSaving] = useState(false)
   const [zoomConnected, setZoomConnected] = useState(false)
-  const [gmeetConnected, setGmeetConnected] = useState(false)
+  const [gmeetConnected, setGmeetConnected] = useState(initialGmeetConnected)
+  const [gmeetEmail, setGmeetEmail] = useState(initialGmeetEmail)
   const [connectingGmeet, setConnectingGmeet] = useState(false)
   const [courseraConnected, setCourseraConnected] = useState(true)
   const [testingCoursera, setTestingCoursera] = useState(false)
@@ -418,6 +424,19 @@ export function SettingsClient({
     window.location.href = "/api/integrations/google/auth"
   }
 
+  const handleDisconnectGmeet = async () => {
+    setConnectingGmeet(true)
+    const result = await disconnectGoogleMeetAction()
+    setConnectingGmeet(false)
+    if (result.success) {
+      setGmeetConnected(false)
+      toast.success("Google Meet account disconnected")
+      addLocalAuditLog("integration", null, "disconnect", "Google Meet Workspace account disconnected")
+    } else {
+      toast.error(`Failed to disconnect: ${result.error}`)
+    }
+  }
+
   const handleSaveSettings = async () => {
     setSaving(true)
     setTimeout(async () => {
@@ -662,12 +681,21 @@ export function SettingsClient({
                       <div className="flex items-center justify-between p-4 border rounded-lg bg-slate-50 dark:bg-zinc-900">
                         <div>
                           <p className="font-medium text-sm">Google Workspace OAuth</p>
-                          <p className="text-xs text-muted-foreground">navgurukul.org domain authorized</p>
+                          <p className="text-xs text-muted-foreground">
+                            {gmeetConnected && gmeetEmail ? `Connected as ${gmeetEmail}` : "Google Calendar & Meet access"}
+                          </p>
                         </div>
-                        <Button variant="outline" className="shrink-0" onClick={handleConnectGmeet} disabled={connectingGmeet}>
-                          {connectingGmeet ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Link2 className="w-4 h-4 mr-2" />}
-                          {gmeetConnected ? "Reconnect Account" : "Connect Google Account"}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          {gmeetConnected && (
+                            <Button variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50" onClick={handleDisconnectGmeet} disabled={connectingGmeet}>
+                              Disconnect
+                            </Button>
+                          )}
+                          <Button variant="outline" className="shrink-0" onClick={handleConnectGmeet} disabled={connectingGmeet}>
+                            {connectingGmeet ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Link2 className="w-4 h-4 mr-2" />}
+                            {gmeetConnected ? "Reconnect Account" : "Connect Google Account"}
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

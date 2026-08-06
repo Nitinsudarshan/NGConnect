@@ -1,18 +1,27 @@
 import { SettingsClient } from "./settings-client"
-import { getMentors, getAudiences, getSessionTypes, getCategories, getLearningCenterAuditLogs, getCourseraConfig } from "@/lib/learning-center/queries"
+import { 
+  getMentors, 
+  getAudiences, 
+  getSessionTypes, 
+  getCategories, 
+  getLearningCenterAuditLogs, 
+  getCourseraConfig,
+  getGoogleMeetIntegrationStatus
+} from "@/lib/learning-center/queries"
 
 export const metadata = {
   title: "Settings | Learning Center",
 }
 
 export default async function SettingsPage() {
-  const [mentors, audiences, sessionTypes, categories, auditLogs, courseraConfig] = await Promise.all([
+  const [mentors, audiences, sessionTypes, categories, auditLogs, courseraConfig, gmeetStatus] = await Promise.all([
     getMentors(),
     getAudiences(),
     getSessionTypes(),
     getCategories(),
     getLearningCenterAuditLogs(),
     getCourseraConfig(),
+    getGoogleMeetIntegrationStatus(),
   ])
 
   return (
@@ -23,6 +32,8 @@ export default async function SettingsPage() {
       initialCategories={categories}
       initialAuditLogs={auditLogs}
       initialCourseraConfig={courseraConfig}
+      initialGmeetConnected={gmeetStatus.connected}
+      initialGmeetEmail={gmeetStatus.accountEmail}
     />
   )
 }

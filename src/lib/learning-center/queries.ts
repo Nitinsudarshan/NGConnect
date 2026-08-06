@@ -825,3 +825,31 @@ export async function saveCourseraConfig(config: Partial<CourseraConfig>): Promi
     return { success: false, error: e?.message ?? "Unknown error" }
   }
 }
+
+export async function getGoogleMeetIntegrationStatus(): Promise<{ connected: boolean; accountEmail?: string }> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { connected: false }
+
+    const adminSupabase = createAdminClient()
+    const { data, error } = await adminSupabase
+      .from('user_integrations')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('provider', 'google_meet')
+      .maybeSingle()
+
+    if (error || !data || !data.refresh_token) {
+      return { connected: false }
+    }
+
+    return {
+      connected: true,
+      accountEmail: data.connected_account || user.email || ""
+    }
+  } catch (err) {
+    console.error("Error fetching Google Meet integration status:", err)
+    return { connected: false }
+  }
+}
