@@ -35,7 +35,8 @@ import { PageBanner } from "@/components/shared/page-banner"
 import { SessionPlaybackModal } from "@/components/shared/session-playback-modal"
 import { ContinueWatchingCard } from "@/components/learning-center/continue-watching-card"
 import { CustContainer } from "@/components/learning-center/cust-container"
-import { LearningSession, UserWatchStats, ContinueWatchingItem, LearningCenterAuditLog, UserCourseraData } from "@/lib/learning-center/queries"
+import { toast } from "sonner"
+import { LearningSession, UserWatchStats, ContinueWatchingItem, LearningCenterAuditLog, UserCourseraData, isSessionActiveOrUpcoming } from "@/lib/learning-center/queries"
 
 export function LearningCenterDashboardClient({ 
   mentors, 
@@ -62,10 +63,13 @@ export function LearningCenterDashboardClient({
 }) {
   const [activeResumeSession, setActiveResumeSession] = useState<LearningSession | null>(null)
   const [watchPage, setWatchPage] = useState(0)
+  const activeUpcomingSessions = useMemo(() => {
+    return (upcomingSessionsData || []).filter(isSessionActiveOrUpcoming)
+  }, [upcomingSessionsData])
 
   const metrics = {
-    totalSessions: allSessions.length || upcomingSessionsData.length,
-    upcoming: upcomingSessionsData.length,
+    totalSessions: allSessions.length || activeUpcomingSessions.length,
+    upcoming: activeUpcomingSessions.length,
     activeMentors: mentors.filter(m => m.status === 'Active').length,
     totalWatchHours: watchStats?.total_hours_formatted || "0 mins",
     completedCount: watchStats?.completed_sessions_count || 0,
@@ -402,20 +406,30 @@ export function LearningCenterDashboardClient({
         {/* Left Column / Full Width: Upcoming Sessions (3 items max) */}
         <CustContainer
           title="Upcoming Sessions"
-          description="Scheduled sessions in the next 30 days"
+          description="Scheduled sessions"
           icon={<Calendar className="w-4 h-4 text-blue-500" />}
         >
-          {upcomingSessionsData.length === 0 ? (
+          {activeUpcomingSessions.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground text-xs border border-dashed rounded-lg">
               No upcoming sessions scheduled.
             </div>
           ) : (
             <div className="space-y-2.5">
-              {upcomingSessionsData.slice(0, 3).map((session) => (
-                <div key={session.id} className="flex items-start justify-between p-3 border rounded-lg bg-card/50 hover:bg-card border-slate-200/60 dark:border-zinc-800 transition-colors">
-                  <div className="space-y-1">
+              {activeUpcomingSessions.slice(0, 3).map((session) => (
+                <div 
+                  key={session.id} 
+                  onClick={() => {
+                    if (session.meeting_link) {
+                      window.open(session.meeting_link, '_blank')
+                    } else {
+                      toast.info(`Session '${session.topic}' - Meeting link has not been added yet.`)
+                    }
+                  }}
+                  className="flex items-center justify-between p-3 border rounded-lg bg-card/50 hover:bg-card border-slate-200/60 dark:border-zinc-800 hover:border-indigo-300 dark:hover:border-indigo-700/60 transition-all cursor-pointer group"
+                >
+                  <div className="space-y-1 flex-1 pr-3">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-semibold text-xs sm:text-sm line-clamp-1">{session.topic}</h4>
+                      <h4 className="font-semibold text-xs sm:text-sm line-clamp-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{session.topic}</h4>
                       <Badge variant="outline" className="text-[10px] font-normal px-1.5 py-0">{session.mode}</Badge>
                     </div>
                     <div className="flex flex-wrap items-center text-[11px] text-muted-foreground gap-x-3 gap-y-1">
@@ -424,6 +438,24 @@ export function LearningCenterDashboardClient({
                       {session.platform && <span className="flex items-center gap-1"><Video className="w-3 h-3 text-purple-500" /> {session.platform}</span>}
                     </div>
                   </div>
+                  {session.meeting_link ? (
+                    <a
+                      href={session.meeting_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0"
+                    >
+                      <Button size="sm" className="h-7 text-xs px-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium gap-1 rounded-md shadow-sm">
+                        <Video className="w-3.5 h-3.5" />
+                        Join
+                      </Button>
+                    </a>
+                  ) : (
+                    <Badge variant="secondary" className="text-[10px] text-muted-foreground shrink-0 font-normal">
+                      Link TBD
+                    </Badge>
+                  )}
                 </div>
               ))}
             </div>
