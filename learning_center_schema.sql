@@ -1,97 +1,121 @@
--- Mentors Table
-CREATE TABLE mentors (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
-  phone TEXT,
-  email TEXT,
-  linkedin TEXT,
-  domain TEXT,
-  city TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+-- ==========================================
+-- NGConnect Learning Center Schema
+-- Run this entire script in the Supabase SQL Editor
+-- ==========================================
+
+-- 1. User Integrations (Google Meet, Zoom)
+CREATE TABLE IF NOT EXISTS public.user_integrations (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    provider TEXT NOT NULL,
+    access_token TEXT,
+    refresh_token TEXT,
+    connected_account TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, provider)
 );
 
--- Sessions Table
-CREATE TABLE sessions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  mentor_id UUID REFERENCES mentors(id),
-  topic TEXT NOT NULL,
-  date DATE NOT NULL,
-  time TIME NOT NULL,
-  duration INTEGER NOT NULL,
-  mode TEXT NOT NULL,
-  platform TEXT NOT NULL,
-  audience TEXT NOT NULL,
-  zoom_meeting_id TEXT,
-  join_url TEXT,
-  start_url TEXT,
-  recording_url TEXT,
-  feedback_form_link TEXT,
-  status TEXT DEFAULT 'Scheduled',
-  trigger_overrides JSONB,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+ALTER TABLE public.user_integrations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own integrations"
+    ON public.user_integrations
+    FOR ALL
+    USING (auth.uid() = user_id);
+
+-- 2. Audiences (Settings)
+CREATE TABLE IF NOT EXISTS public.learning_audiences (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL,
+    is_campus_specific BOOLEAN DEFAULT FALSE,
+    campuses TEXT[] DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Learning Center Settings & Templates
-CREATE TABLE learning_center_settings (
-  id INTEGER PRIMARY KEY DEFAULT 1,
-  master_trigger_config JSONB NOT NULL
+ALTER TABLE public.learning_audiences ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Authenticated users can read audiences" ON public.learning_audiences FOR SELECT USING (auth.role() = 'authenticated');
+
+-- 3. Session Types (Settings)
+CREATE TABLE IF NOT EXISTS public.learning_session_types (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE message_templates (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  type TEXT NOT NULL,
-  channel TEXT NOT NULL,
-  body TEXT NOT NULL,
-  variables JSONB
+ALTER TABLE public.learning_session_types ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Authenticated users can read session types" ON public.learning_session_types FOR SELECT USING (auth.role() = 'authenticated');
+
+-- 4. Mentors
+CREATE TABLE IF NOT EXISTS public.mentors (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL, -- Nullable if they are just tracked by email initially
+    name TEXT NOT NULL,
+    email TEXT UNIQUE,
+    role TEXT,
+    status TEXT DEFAULT 'Active', -- Active, Inactive, Waitlisted
+    expertise TEXT[] DEFAULT '{}',
+    rating NUMERIC DEFAULT 0.0,
+    total_sessions INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE reminders_log (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  session_id UUID REFERENCES sessions(id),
-  type TEXT NOT NULL,
-  channel TEXT NOT NULL,
-  sent_at TIMESTAMPTZ DEFAULT NOW(),
-  status TEXT NOT NULL
+ALTER TABLE public.mentors ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Authenticated users can read mentors" ON public.mentors FOR SELECT USING (auth.role() = 'authenticated');
+
+-- 5. Sessions
+CREATE TABLE IF NOT EXISTS public.learning_sessions (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    mentor_id UUID REFERENCES public.mentors(id) ON DELETE SET NULL,
+    topic TEXT NOT NULL,
+    description TEXT,
+    date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    duration_minutes INTEGER NOT NULL,
+    mode TEXT DEFAULT 'Online', -- Online, Offline
+    platform TEXT, -- Zoom, Google Meet
+    meeting_link TEXT,
+    recording_url TEXT,
+    audience_id UUID REFERENCES public.learning_audiences(id) ON DELETE SET NULL,
+    session_type_id UUID REFERENCES public.learning_session_types(id) ON DELETE SET NULL,
+    created_by UUID REFERENCES auth.users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE feedback_responses (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  session_id UUID REFERENCES sessions(id),
-  email TEXT NOT NULL,
-  respondent_type TEXT,
-  overall_rating INTEGER,
-  mentor_rating INTEGER,
-  relevance_rating INTEGER,
-  liked_text TEXT,
-  suggestions_text TEXT,
-  submitted_at TIMESTAMPTZ DEFAULT NOW()
+ALTER TABLE public.learning_sessions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Authenticated users can read sessions" ON public.learning_sessions FOR SELECT USING (auth.role() = 'authenticated');
+
+-- 6. Content Hub (Courses/Recordings)
+CREATE TABLE IF NOT EXISTS public.learning_courses (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    thumbnail_url TEXT,
+    status TEXT DEFAULT 'draft', -- draft, published
+    total_time_minutes INTEGER DEFAULT 0,
+    audience_id UUID REFERENCES public.learning_audiences(id) ON DELETE SET NULL,
+    created_by UUID REFERENCES auth.users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- RLS Policies
-ALTER TABLE mentors ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE learning_center_settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE message_templates ENABLE ROW LEVEL SECURITY;
-ALTER TABLE reminders_log ENABLE ROW LEVEL SECURITY;
-ALTER TABLE feedback_responses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.learning_courses ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Authenticated users can read published courses" ON public.learning_courses FOR SELECT USING (auth.role() = 'authenticated' AND status = 'published');
 
--- Note: The following policies allow read access to everyone for frontend listing
--- and full access to authenticated admins/programs.
-CREATE POLICY "Enable read access for all authenticated users" ON mentors FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable read access for all authenticated users" ON sessions FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable all access for admins" ON mentors USING (((auth.jwt() ->> 'role')::text = ANY (ARRAY['Admin'::text, 'Super Admin'::text, 'Program'::text])));
-CREATE POLICY "Enable all access for admins" ON sessions USING (((auth.jwt() ->> 'role')::text = ANY (ARRAY['Admin'::text, 'Super Admin'::text, 'Program'::text])));
-
--- Seed data for master settings
-INSERT INTO learning_center_settings (id, master_trigger_config) VALUES (
-  1,
-  '{
-    "announcement": {"enabled": true, "offsetDays": 2},
-    "invitation": {"enabled": true},
-    "reminder_1": {"enabled": true, "offsetDays": 1},
-    "reminder_2": {"enabled": true, "offsetHours": 9},
-    "welcome": {"enabled": true, "offsetMinutes": 2},
-    "feedback": {"enabled": true, "channels": ["email"]},
-    "mentor_thankyou": {"enabled": true}
-  }'::jsonb
+-- 7. User Course Progress
+CREATE TABLE IF NOT EXISTS public.learning_course_progress (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    course_id UUID REFERENCES public.learning_courses(id) ON DELETE CASCADE,
+    progress_percentage INTEGER DEFAULT 0,
+    completed_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, course_id)
 );
+
+ALTER TABLE public.learning_course_progress ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can read and update their own progress" ON public.learning_course_progress FOR ALL USING (auth.uid() = user_id);
+
+-- Note: In a real production setup, you will need to add INSERT/UPDATE/DELETE RLS policies 
+-- restricted to Admin/Super roles based on your custom claims or RBAC table.

@@ -1,11 +1,10 @@
-"use client"
-
-import React, { use } from "react"
+import React from "react"
 import Link from "next/link"
-import { ChevronLeft, Edit, Star, Video, Users, Clock, MessageSquareQuote } from "lucide-react"
+import { ChevronLeft, Star, Video, Users, Clock, MessageSquareQuote, Linkedin, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { MentorEditButton } from "@/components/settings/mentor-edit-button"
 import {
   Table,
   TableBody,
@@ -14,31 +13,38 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { getMentorById, getMentorSessions } from "@/lib/learning-center/queries"
 
-export default function MentorDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default async function MentorDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  
+  const [mentor, sessions] = await Promise.all([
+    getMentorById(id),
+    getMentorSessions(id)
+  ])
 
-  // Mock Mentor Data
-  const mentor = {
-    id,
-    name: "Alex Johnson",
-    domain: "Backend & Systems",
-    email: "alex@example.com",
-    linkedin: "linkedin.com/in/alexj",
-    city: "Bangalore",
-    stats: {
-      totalSessions: 12,
-      totalDuration: "840 min",
-      avgOverall: 4.8,
-      avgDelivery: 4.7,
-      avgRelevance: 4.9,
-      totalFeedback: 145,
-    },
-    sessions: [
-      { id: "S-101", topic: "Database Indexing Strategies", date: "Sep 28, 2026", duration: "60", audience: "Internal Alumni", rating: 4.9, responses: 24 },
-      { id: "S-085", topic: "Microservices Anti-patterns", date: "Aug 12, 2026", duration: "90", audience: "Both", rating: 4.7, responses: 45 },
-      { id: "S-042", topic: "Docker for Beginners", date: "Jan 10, 2026", duration: "60", audience: "External Alumni", rating: 4.8, responses: 76 },
-    ]
+  if (!mentor) {
+    return <div className="p-10 flex justify-center text-muted-foreground">Mentor not found.</div>
+  }
+  // Aggregate stats from real sessions
+  const stats = {
+    totalSessions: sessions.length,
+    totalDuration: sessions.reduce((acc, curr) => acc + curr.duration_minutes, 0) + " min",
+    avgOverall: mentor.rating,
+    avgDelivery: 4.7, // Mocked for now until feedback table exists
+    avgRelevance: 4.9,
+    totalFeedback: 145,
+  }
+
+  const getMentorStatusColor = (status: string) => {
+    switch (status) {
+      case 'Being Reviewed': return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+      case 'Waitlisted': return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+      case 'Onboarded': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800'
+      case 'Active': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+      case 'Inactive': return 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-900/50'
+      default: return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200'
+    }
   }
 
   return (
@@ -53,14 +59,33 @@ export default function MentorDetailsPage({ params }: { params: Promise<{ id: st
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold tracking-tight">{mentor.name}</h1>
-              <Badge variant="outline">{mentor.domain}</Badge>
+              <Badge variant="outline">{mentor.role || 'No Role'}</Badge>
+              <Badge variant="outline" className={`font-normal ${getMentorStatusColor(mentor.status)}`}>
+                {mentor.status}
+              </Badge>
             </div>
-            <p className="text-muted-foreground text-sm mt-1">{mentor.email} • {mentor.city}</p>
+            <div className="flex flex-wrap items-center gap-3 text-muted-foreground text-sm mt-1">
+              <span>{mentor.email}</span>
+              <span>•</span>
+              <span>{mentor.city}</span>
+              {mentor.contact_number && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {mentor.contact_number}</span>
+                </>
+              )}
+              {mentor.linkedin_url && (
+                <>
+                  <span>•</span>
+                  <a href={mentor.linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-500 hover:text-blue-600">
+                    <Linkedin className="w-3 h-3" /> LinkedIn
+                  </a>
+                </>
+              )}
+            </div>
           </div>
         </div>
-        <Button variant="outline">
-          <Edit className="w-4 h-4 mr-2" /> Edit Details
-        </Button>
+        <MentorEditButton mentor={mentor} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -71,7 +96,7 @@ export default function MentorDetailsPage({ params }: { params: Promise<{ id: st
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <div className="text-2xl font-bold">{mentor.stats.totalSessions}</div>
+            <div className="text-2xl font-bold">{stats.totalSessions}</div>
           </CardContent>
         </Card>
         
@@ -82,22 +107,30 @@ export default function MentorDetailsPage({ params }: { params: Promise<{ id: st
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <div className="text-2xl font-bold">{mentor.stats.totalDuration}</div>
+            <div className="text-2xl font-bold">{stats.totalDuration}</div>
           </CardContent>
         </Card>
 
-        <Card className="bg-card shadow-sm border-emerald-200 dark:border-emerald-900/30 bg-emerald-50/50 dark:bg-emerald-900/10">
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-xs font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
-              <Star className="w-4 h-4" /> Avg Overall Rating
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-300 flex items-end gap-2">
-              {mentor.stats.avgOverall.toFixed(1)} <span className="text-sm font-normal opacity-70 mb-1">/ 5.0</span>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 gap-2">
+                <div>
+                  <div className="text-sm text-muted-foreground mb-1">Content Relevance</div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(stats.avgRelevance/5)*100}%` }}></div>
+                    </div>
+                    <span className="text-sm font-medium">{stats.avgRelevance}</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground mb-1">Delivery & Engagement</div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(stats.avgDelivery/5)*100}%` }}></div>
+                    </div>
+                    <span className="text-sm font-medium">{stats.avgDelivery}</span>
+                  </div>
+                </div>
+        </div>
 
         <Card className="bg-card shadow-sm border-slate-200 dark:border-zinc-800">
           <CardHeader className="p-4 pb-2">
@@ -106,7 +139,7 @@ export default function MentorDetailsPage({ params }: { params: Promise<{ id: st
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <div className="text-2xl font-bold">{mentor.stats.totalFeedback}</div>
+            <div className="text-2xl font-bold">{stats.totalFeedback}</div>
           </CardContent>
         </Card>
       </div>
@@ -120,27 +153,36 @@ export default function MentorDetailsPage({ params }: { params: Promise<{ id: st
           <Table>
             <TableHeader className="bg-slate-50 dark:bg-zinc-900/50">
               <TableRow>
-                <TableHead className="pl-6">Topic</TableHead>
+                <TableHead className="pl-6">ID</TableHead>
+                <TableHead>Topic</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Duration</TableHead>
                 <TableHead>Audience</TableHead>
-                <TableHead className="text-right">Responses</TableHead>
                 <TableHead className="text-right pr-6">Avg Rating</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mentor.sessions.map((session) => (
-                <TableRow key={session.id}>
-                  <TableCell className="pl-6 font-medium">{session.topic}</TableCell>
-                  <TableCell>{session.date}</TableCell>
-                  <TableCell>{session.duration} min</TableCell>
-                  <TableCell><Badge variant="secondary" className="font-normal">{session.audience}</Badge></TableCell>
-                  <TableCell className="text-right text-muted-foreground">{session.responses}</TableCell>
-                  <TableCell className="text-right pr-6 font-medium text-emerald-600 dark:text-emerald-400">
-                    ★ {session.rating.toFixed(1)}
-                  </TableCell>
-                </TableRow>
-              ))}
+                {sessions.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-6">No sessions found for this mentor.</TableCell>
+                  </TableRow>
+                )}
+                {sessions.map((session) => (
+                  <TableRow key={session.id}>
+                    <TableCell className="pl-6 font-medium text-muted-foreground">{session.id.substring(0, 8)}</TableCell>
+                    <TableCell className="font-medium">{session.topic}</TableCell>
+                    <TableCell>{new Date(session.date).toLocaleDateString("en-US")}</TableCell>
+                    <TableCell>{session.duration_minutes} min</TableCell>
+                    <TableCell><Badge variant="secondary" className="font-normal">{session.learning_audiences?.name || 'Global'}</Badge></TableCell>
+                    <TableCell className="text-right pr-6">
+                      <div className="flex items-center justify-end gap-2 text-emerald-600 dark:text-emerald-400 font-medium">
+                        <Star className="w-3.5 h-3.5 fill-emerald-600 dark:fill-emerald-400" />
+                        -
+                        <span className="text-muted-foreground text-xs font-normal">(- resp)</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </CardContent>

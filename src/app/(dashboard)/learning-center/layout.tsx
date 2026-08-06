@@ -16,9 +16,18 @@ export default async function LearningCenterLayout({
   const pathname = headersList.get("x-invoke-path") || "";
 
   if (isMember) {
-    if (pathname === "/learning-center" || pathname.endsWith("/create") || pathname.endsWith("/settings")) {
-        // Members cannot access dashboard, create, or settings. Redirect to sessions.
-        redirect("/learning-center/sessions");
+    if (
+      pathname.startsWith("/learning-center/sessions") ||
+      pathname.endsWith("/create") ||
+      pathname.endsWith("/settings")
+    ) {
+      // Members cannot access create, settings, or session management. Redirect to Past Sessions (recordings).
+      redirect("/learning-center/recordings");
+    }
+  } else {
+    if (pathname.startsWith("/learning-center/recordings")) {
+      // Non-members cannot access Past Sessions (recordings page). Redirect to sessions.
+      redirect("/learning-center/sessions");
     }
   }
 

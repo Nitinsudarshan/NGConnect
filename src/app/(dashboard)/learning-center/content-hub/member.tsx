@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { PageBanner } from "@/components/shared/page-banner"
 
 export default function LearningHubMember() {
   const [search, setSearch] = useState("")
@@ -21,23 +22,24 @@ export default function LearningHubMember() {
 
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto w-full">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Learning Hub</h1>
-          <p className="text-muted-foreground mt-1">Explore self-paced courses and expand your skills.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search courses..."
-              className="pl-8 bg-card"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+      <PageBanner
+        title="Learning Hub"
+        description="Explore self-paced courses and expand your skills."
+        icon={<GraduationCap className="w-6 h-6" />}
+        actions={
+          <div className="flex items-center gap-2">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search courses..."
+                className="pl-8 bg-card"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredCourses.length === 0 ? (

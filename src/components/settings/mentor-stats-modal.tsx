@@ -1,32 +1,47 @@
-import React from "react"
-import { Edit, Star, Video, Clock, MessageSquareQuote } from "lucide-react"
+"use client"
+
+import React, { useState, useEffect } from "react"
+import { Edit, Star, Video, Clock, MessageSquareQuote, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { getMentorById, getMentorSessions, Mentor, LearningSession } from "@/lib/learning-center/queries"
 
 export function MentorStatsModalContent({ mentorId }: { mentorId: string }) {
-  // Mock Mentor Data
-  const mentor = {
-    id: mentorId,
-    name: mentorId === "m2" ? "Jane Smith" : mentorId === "m3" ? "Michael Chen" : "Alex Johnson",
-    domain: mentorId === "m2" ? "UI/UX Design" : mentorId === "m3" ? "Frontend React" : "Backend & Systems",
-    email: mentorId === "m2" ? "jane@example.com" : mentorId === "m3" ? "michael@example.com" : "alex@example.com",
-    linkedin: "linkedin.com/in/mentor",
-    city: mentorId === "m2" ? "Remote" : mentorId === "m3" ? "Pune" : "Bangalore",
-    stats: {
-      totalSessions: 12,
-      totalDuration: "840 min",
-      avgOverall: 4.8,
-      avgDelivery: 4.7,
-      avgRelevance: 4.9,
-      totalFeedback: 145,
-    },
-    sessions: [
-      { id: "S-101", topic: "Database Indexing Strategies", date: "Sep 28, 2026", duration: "60", audience: "Internal Alumni", rating: 4.9, responses: 24 },
-      { id: "S-085", topic: "Microservices Anti-patterns", date: "Aug 12, 2026", duration: "90", audience: "Both", rating: 4.7, responses: 45 },
-      { id: "S-042", topic: "Docker for Beginners", date: "Jan 10, 2026", duration: "60", audience: "External Alumni", rating: 4.8, responses: 76 },
-    ]
+  const [mentor, setMentor] = useState<Mentor | null>(null)
+  const [sessions, setSessions] = useState<LearningSession[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true)
+      const [m, s] = await Promise.all([
+        getMentorById(mentorId),
+        getMentorSessions(mentorId)
+      ])
+      setMentor(m)
+      setSessions(s)
+      setLoading(false)
+    }
+    loadData()
+  }, [mentorId])
+
+  if (loading) {
+    return <div className="p-10 flex justify-center text-muted-foreground"><Loader2 className="w-6 h-6 animate-spin" /></div>
+  }
+
+  if (!mentor) {
+    return <div className="p-10 flex justify-center text-muted-foreground">Mentor not found.</div>
+  }
+
+  const stats = {
+    totalSessions: sessions.length,
+    totalDuration: sessions.reduce((acc, curr) => acc + curr.duration_minutes, 0) + " min",
+    avgOverall: mentor.rating,
+    avgDelivery: 4.7, // Mocked for now until feedback table exists
+    avgRelevance: 4.9,
+    totalFeedback: 145,
   }
 
   return (
@@ -35,13 +50,10 @@ export function MentorStatsModalContent({ mentorId }: { mentorId: string }) {
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{mentor.name}</h2>
-            <Badge variant="outline">{mentor.domain}</Badge>
+            <Badge variant="outline">{mentor.role || 'No Role'}</Badge>
           </div>
           <p className="text-muted-foreground text-xs sm:text-sm mt-1">{mentor.email} • {mentor.city}</p>
         </div>
-        <Button variant="outline" className="w-full sm:w-auto">
-          <Edit className="w-4 h-4 mr-2" /> Edit Details
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -52,7 +64,7 @@ export function MentorStatsModalContent({ mentorId }: { mentorId: string }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <div className="text-2xl font-bold">{mentor.stats.totalSessions}</div>
+            <div className="text-2xl font-bold">{stats.totalSessions}</div>
           </CardContent>
         </Card>
         
@@ -63,7 +75,7 @@ export function MentorStatsModalContent({ mentorId }: { mentorId: string }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <div className="text-2xl font-bold">{mentor.stats.totalDuration}</div>
+            <div className="text-2xl font-bold">{stats.totalDuration}</div>
           </CardContent>
         </Card>
 
@@ -75,7 +87,7 @@ export function MentorStatsModalContent({ mentorId }: { mentorId: string }) {
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-300 flex items-end gap-2">
-              {mentor.stats.avgOverall.toFixed(1)} <span className="text-sm font-normal opacity-70 mb-1">/ 5.0</span>
+              {stats.avgOverall.toFixed(1)} <span className="text-sm font-normal opacity-70 mb-1">/ 5.0</span>
             </div>
           </CardContent>
         </Card>
@@ -87,7 +99,7 @@ export function MentorStatsModalContent({ mentorId }: { mentorId: string }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <div className="text-2xl font-bold">{mentor.stats.totalFeedback}</div>
+            <div className="text-2xl font-bold">{stats.totalFeedback}</div>
           </CardContent>
         </Card>
       </div>
@@ -110,15 +122,20 @@ export function MentorStatsModalContent({ mentorId }: { mentorId: string }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mentor.sessions.map((session) => (
+              {sessions.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-6">No sessions found.</TableCell>
+                </TableRow>
+              )}
+              {sessions.map((session) => (
                 <TableRow key={session.id}>
                   <TableCell className="pl-6 font-medium">{session.topic}</TableCell>
-                  <TableCell>{session.date}</TableCell>
-                  <TableCell>{session.duration} min</TableCell>
-                  <TableCell><Badge variant="secondary" className="font-normal">{session.audience}</Badge></TableCell>
-                  <TableCell className="text-right text-muted-foreground">{session.responses}</TableCell>
+                  <TableCell>{new Date(session.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{session.duration_minutes} min</TableCell>
+                  <TableCell><Badge variant="secondary" className="font-normal">{session.learning_audiences?.name || 'Global'}</Badge></TableCell>
+                  <TableCell className="text-right text-muted-foreground">-</TableCell>
                   <TableCell className="text-right pr-6 font-medium text-emerald-600 dark:text-emerald-400">
-                    ★ {session.rating.toFixed(1)}
+                    ★ -
                   </TableCell>
                 </TableRow>
               ))}

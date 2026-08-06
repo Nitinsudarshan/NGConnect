@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
+import { PageBanner } from "@/components/shared/page-banner"
 
 export default function ContentHubAdmin() {
   // Mock courses for admin authoring view
@@ -30,16 +31,17 @@ export default function ContentHubAdmin() {
 
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto w-full">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Content Hub (Admin)</h1>
-          <p className="text-muted-foreground mt-1">Author and manage recorded courses, articles, and quizzes.</p>
-        </div>
-        <Button onClick={handleCreateNew}>
-          <Plus className="w-4 h-4 mr-2" />
-          Create Course
-        </Button>
-      </div>
+      <PageBanner
+        title="Content Hub (Admin)"
+        description="Author and manage recorded courses, articles, and quizzes."
+        icon={<LayoutTemplate className="w-6 h-6" />}
+        actions={
+          <Button onClick={handleCreateNew}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create Course
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-900/30">

@@ -122,3 +122,24 @@ CREATE POLICY "Enable read access for all authenticated users" ON quiz_options F
 CREATE POLICY "Enable read/write for own progress" ON watch_progress USING (user_id = auth.uid());
 CREATE POLICY "Enable read/write for own progress" ON quiz_attempts USING (user_id = auth.uid());
 CREATE POLICY "Enable read/write for own progress" ON course_progress USING (user_id = auth.uid());
+
+-- Learning Center Audit Logs
+CREATE TABLE IF NOT EXISTS learning_center_audit_logs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  entity_type TEXT NOT NULL,
+  entity_id TEXT,
+  action TEXT NOT NULL,
+  details TEXT NOT NULL,
+  user_id UUID REFERENCES auth.users(id),
+  user_email TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE learning_center_audit_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow read access for authenticated users" 
+ON learning_center_audit_logs FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "Allow insert for authenticated users" 
+ON learning_center_audit_logs FOR INSERT TO authenticated WITH CHECK (true);
+
