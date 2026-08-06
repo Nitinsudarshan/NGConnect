@@ -36,7 +36,8 @@ import { SessionPlaybackModal } from "@/components/shared/session-playback-modal
 import { ContinueWatchingCard } from "@/components/learning-center/continue-watching-card"
 import { CustContainer } from "@/components/learning-center/cust-container"
 import { toast } from "sonner"
-import { LearningSession, UserWatchStats, ContinueWatchingItem, LearningCenterAuditLog, UserCourseraData, isSessionActiveOrUpcoming } from "@/lib/learning-center/queries"
+import { LearningSession, UserWatchStats, ContinueWatchingItem, LearningCenterAuditLog, UserCourseraData } from "@/lib/learning-center/queries"
+import { isSessionActiveOrUpcoming } from "@/lib/learning-center/utils"
 
 export function LearningCenterDashboardClient({ 
   mentors, 
