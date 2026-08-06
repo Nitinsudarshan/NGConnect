@@ -267,8 +267,8 @@ export function LearningCenterDashboardClient({
         )}
       </div>
 
-      {/* Continue Watching Row */}
-      {continueWatching && continueWatching.length > 0 && (() => {
+      {/* Continue Watching Row (Members only) */}
+      {isMember && continueWatching && continueWatching.length > 0 && (() => {
         const itemsPerPage = 3
         const totalPages = Math.ceil(continueWatching.length / itemsPerPage)
         const visibleItems = continueWatching.slice(watchPage * itemsPerPage, (watchPage + 1) * itemsPerPage)
@@ -367,8 +367,8 @@ export function LearningCenterDashboardClient({
         </CustContainer>
       )}
 
-      {/* 2. Coursera Access Banner (Rendered when user is NOT found in DB & NOT active on Coursera, and callouts are enabled) */}
-      {courseraShowCallouts && courseraData && courseraData.show_contact_banner && (
+      {/* 2. Coursera Access Banner (Members only - Rendered when user is NOT found in DB & NOT active on Coursera, and callouts are enabled) */}
+      {isMember && courseraShowCallouts && courseraData && courseraData.show_contact_banner && (
         <CustContainer
           title="Get Free Access to Coursera Enterprise"
           description="Learn 7,000+ courses & earn professional certificates"
@@ -396,9 +396,9 @@ export function LearningCenterDashboardClient({
         </CustContainer>
       )}
 
-      {/* Half & Half Layout: Upcoming Sessions (Left) & Recent Activity (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column: Upcoming Sessions (3 items max) */}
+      {/* Upcoming Sessions (Full width for non-members, side-by-side with Recent Activity for members) */}
+      <div className={isMember ? "grid grid-cols-1 lg:grid-cols-2 gap-6" : "w-full"}>
+        {/* Left Column / Full Width: Upcoming Sessions (3 items max) */}
         <CustContainer
           title="Upcoming Sessions"
           description="Scheduled sessions in the next 30 days"
@@ -429,35 +429,37 @@ export function LearningCenterDashboardClient({
           )}
         </CustContainer>
 
-        {/* Right Column: Dynamic Recent Activity (3 items max) */}
-        <CustContainer
-          title="Recent Activity"
-          description="Dynamic updates on new recordings, media uploads, and session updates"
-          icon={<Activity className="w-4 h-4 text-indigo-500" />}
-        >
-          {recentActivities.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground text-xs border border-dashed rounded-lg">
-              No recent activity logged yet.
-            </div>
-          ) : (
-            <div className="space-y-2.5">
-              {recentActivities.slice(0, 3).map((act) => {
-                const Icon = act.icon
-                return (
-                  <div key={act.id} className="flex items-start gap-3 p-3 rounded-lg border border-slate-200/60 dark:border-zinc-800 bg-card/50 hover:bg-card transition-colors">
-                    <div className={`p-1.5 rounded-lg ${act.bg} shrink-0 mt-0.5`}>
-                      <Icon className={`w-3.5 h-3.5 ${act.color}`} />
+        {/* Right Column: Dynamic Recent Activity (Members only) */}
+        {isMember && (
+          <CustContainer
+            title="Recent Activity"
+            description="Dynamic updates on new recordings, media uploads, and session updates"
+            icon={<Activity className="w-4 h-4 text-indigo-500" />}
+          >
+            {recentActivities.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground text-xs border border-dashed rounded-lg">
+                No recent activity logged yet.
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {recentActivities.slice(0, 3).map((act) => {
+                  const Icon = act.icon
+                  return (
+                    <div key={act.id} className="flex items-start gap-3 p-3 rounded-lg border border-slate-200/60 dark:border-zinc-800 bg-card/50 hover:bg-card transition-colors">
+                      <div className={`p-1.5 rounded-lg ${act.bg} shrink-0 mt-0.5`}>
+                        <Icon className={`w-3.5 h-3.5 ${act.color}`} />
+                      </div>
+                      <div className="space-y-0.5 flex-1 min-w-0">
+                        <p className="text-slate-800 dark:text-slate-200 font-medium text-xs line-clamp-2">{act.text}</p>
+                        <p className="text-[10px] text-muted-foreground">{act.time}</p>
+                      </div>
                     </div>
-                    <div className="space-y-0.5 flex-1 min-w-0">
-                      <p className="text-slate-800 dark:text-slate-200 font-medium text-xs line-clamp-2">{act.text}</p>
-                      <p className="text-[10px] text-muted-foreground">{act.time}</p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </CustContainer>
+                  )
+                })}
+              </div>
+            )}
+          </CustContainer>
+        )}
       </div>
 
       {/* Playback Modal for Resuming Session */}
