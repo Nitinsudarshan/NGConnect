@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { Search, Plus, Filter, Video, Edit, Settings, Play, FileText, MessageSquare } from "lucide-react"
+import { Search, Plus, Filter, Video, Edit, Play, FileText, MessageSquare } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -59,20 +59,12 @@ export function SessionsClient({
         description="Manage upcoming and past mentorship sessions."
         icon={<Video className="w-6 h-6" />}
         actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" asChild>
-              <Link href="/learning-center/settings">
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link href="/learning-center/sessions/create">
-                <Plus className="w-4 h-4 mr-2" />
-                New Session
-              </Link>
-            </Button>
-          </div>
+          <Button asChild>
+            <Link href="/learning-center/sessions/create">
+              <Plus className="w-4 h-4 mr-2" />
+              New Session
+            </Link>
+          </Button>
         }
       />
 
