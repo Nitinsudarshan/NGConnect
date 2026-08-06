@@ -71,6 +71,7 @@ export function LearningCenterDashboardClient({
     completedCount: watchStats?.completed_sessions_count || 0,
     inProgressCount: continueWatching ? continueWatching.filter(i => (i.percent_watched ?? 0) < 95).length : 0,
     availableRecordings: allSessions.filter(s => !!s.recording_url).length,
+    activeMembers: watchStats?.active_members_count || 0
   }
 
   // Dynamically compute Recent Activity from real session recordings, media uploads, and audit logs
@@ -238,15 +239,15 @@ export function LearningCenterDashboardClient({
               </div>
             </div>
 
-            {/* Admin Card 3: Upcoming (30d) */}
+            {/* Admin Card 3: Active Members */}
             <div className="bg-card/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Upcoming (30d)</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{metrics.upcoming}</p>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Active Members</p>
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{metrics.activeMembers}</p>
                 </div>
                 <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
             </div>

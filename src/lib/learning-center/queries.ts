@@ -343,6 +343,7 @@ export interface UserWatchStats {
   total_watched_seconds: number;
   total_hours_formatted: string;
   completed_sessions_count: number;
+  active_members_count?: number;
 }
 
 export interface ContinueWatchingItem {
@@ -396,17 +397,33 @@ export async function getAllUsersWatchStats(): Promise<UserWatchStats> {
   const supabase = await createClient()
   let { data, error } = await supabase
     .from('watch_progress')
-    .select('watched_seconds, completed_at')
+    .select('user_id, watched_seconds, completed_at')
 
   if (error || !data || data.length === 0) {
     try {
       const admin = createAdminClient()
       const { data: adminData } = await admin
         .from('watch_progress')
-        .select('watched_seconds, completed_at')
+        .select('user_id, watched_seconds, completed_at')
       if (adminData) data = adminData
     } catch (e) {
       console.error("Admin fallback error in getAllUsersWatchStats:", e)
+    }
+  }
+
+  let activeMembersCount = 0
+  if (data && data.length > 0) {
+    const uniqueUsers = new Set(data.map(d => d.user_id).filter(Boolean))
+    activeMembersCount = uniqueUsers.size
+  }
+
+  if (activeMembersCount === 0) {
+    try {
+      const admin = createAdminClient()
+      const { count } = await admin.from('coursera_snapshots').select('email', { count: 'exact', head: true })
+      if (count && count > 0) activeMembersCount = count
+    } catch (e) {
+      // Ignore
     }
   }
 
@@ -414,7 +431,8 @@ export async function getAllUsersWatchStats(): Promise<UserWatchStats> {
     return {
       total_watched_seconds: 0,
       total_hours_formatted: "0 mins",
-      completed_sessions_count: 0
+      completed_sessions_count: 0,
+      active_members_count: activeMembersCount
     }
   }
 
@@ -435,7 +453,8 @@ export async function getAllUsersWatchStats(): Promise<UserWatchStats> {
   return {
     total_watched_seconds: totalSeconds,
     total_hours_formatted,
-    completed_sessions_count: completedCount
+    completed_sessions_count: completedCount,
+    active_members_count: activeMembersCount
   }
 }
 
