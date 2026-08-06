@@ -22,6 +22,7 @@ import {
 
 import { NavMain, NavItem } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
+import { CourseraSidebarBanner } from "@/components/learning-center/coursera-sidebar-banner"
 import {
   Sidebar,
   SidebarContent,
@@ -67,6 +68,44 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       url: "/",
       icon: LayoutDashboard,
       isActive: pathname === "/",
+    },
+    {
+      title: "Learning Center",
+      url: "/learning-center",
+      icon: GraduationCap,
+      isActive: pathname.startsWith("/learning-center"),
+      items: [
+        {
+          title: "Dashboard",
+          url: "/learning-center",
+          isActive: pathname === "/learning-center",
+        },
+        ...(!isExcludedRole ? [
+          {
+            title: "Sessions",
+            url: "/learning-center/sessions",
+            isActive: pathname.startsWith("/learning-center/sessions"),
+          },
+        ] : [
+          {
+            title: "Past Sessions",
+            url: "/learning-center/recordings",
+            isActive: pathname.startsWith("/learning-center/recordings"),
+          },
+        ]),
+        {
+          title: isExcludedRole ? "Learning Hub" : "Content Hub",
+          url: "/learning-center/content-hub",
+          isActive: pathname.startsWith("/learning-center/content-hub"),
+        },
+        ...(!isExcludedRole ? [
+          {
+            title: "Settings",
+            url: "/learning-center/settings",
+            isActive: pathname.startsWith("/learning-center/settings"),
+          }
+        ] : []),
+      ],
     },
     ...(isExcludedRole ? [] : [
       {
@@ -197,6 +236,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           ...(!isExcludedRole ? navAlumniGrowth : []),
           ...(!isExcludedRole ? navManage : []),
         ]} />
+        <CourseraSidebarBanner />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
     </Sidebar>
