@@ -1,0 +1,10 @@
+import { redirect } from 'next/navigation';
+
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function EngagementAlumniPage({ params }: PageProps) {
+  const { id } = await params;
+  redirect(`/alumni-growth/alumni/${id}`);
+}

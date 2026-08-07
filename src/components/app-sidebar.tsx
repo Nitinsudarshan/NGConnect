@@ -174,16 +174,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           isActive: pathname === "/alumni-growth/workspace",
         },
         {
-          title: "Followups",
+          title: "Pay-Forward Board",
+          url: "/alumni-growth/pipelines/pay-forward",
+          icon: HeartHandshake,
+          isActive: pathname === "/alumni-growth/pipelines/pay-forward",
+        },
+        {
+          title: "Mentoring Board",
+          url: "/alumni-growth/pipelines/mentoring",
+          icon: GraduationCap,
+          isActive: pathname === "/alumni-growth/pipelines/mentoring",
+        },
+        {
+          title: "Placement Board",
+          url: "/alumni-growth/pipelines/placement",
+          icon: Briefcase,
+          isActive: pathname === "/alumni-growth/pipelines/placement",
+        },
+        {
+          title: "Follow-ups",
           url: "/alumni-growth/follow-ups",
           icon: CalendarClock,
           isActive: pathname === "/alumni-growth/follow-ups",
-        },
-        {
-          title: "All Data",
-          url: "/alumni-growth/all-data",
-          icon: Database,
-          isActive: pathname === "/alumni-growth/all-data",
         },
         {
           title: "Reports",

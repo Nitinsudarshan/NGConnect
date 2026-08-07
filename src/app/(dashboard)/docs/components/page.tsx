@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Activity, Sun, Sparkles, Moon, Award, Smile, Flame, TrendingUp, Clock, Coffee } from "lucide-react";
+import { Activity, Sun, Sparkles, Moon, Award, Smile, Flame, TrendingUp, Clock, Coffee, User, Building2, Briefcase, DollarSign, Code2, GraduationCap, ArrowRight } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -808,6 +808,273 @@ export default function ComponentsShowcasePage() {
             </div>
           </div>
 
+        </div>
+      </section>
+
+      {/* Alumni Details Cards Section (10 Design Options) */}
+      <section className="space-y-6 pt-10 border-t border-border">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 border border-indigo-500/20">
+              <User className="w-5 h-5" />
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight">Alumni Details Cards (10 Design Options)</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Curated design layouts for displaying Alumni Profile details across CRM views.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Option 1: Minimalist Modern */}
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Option 1: Minimalist Modern</span>
+            <Card className="border border-border/80 rounded-2xl bg-card shadow-2xs hover:shadow-md transition-all">
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-base font-bold text-foreground">Aarav Sharma</CardTitle>
+                  <p className="text-xs text-muted-foreground font-mono">aarav.sharma@example.com</p>
+                </div>
+                <Badge variant="outline" className="text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                  PLACED
+                </Badge>
+              </CardHeader>
+              <CardContent className="space-y-2.5 text-xs">
+                <div className="flex justify-between items-center py-1 border-b border-border/40">
+                  <span className="text-muted-foreground flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5" /> Campus</span>
+                  <span className="font-semibold text-foreground">Pune Campus</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-border/40">
+                  <span className="text-muted-foreground flex items-center gap-1.5"><Briefcase className="w-3.5 h-3.5" /> Company</span>
+                  <span className="font-bold text-foreground">Thoughtworks</span>
+                </div>
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-muted-foreground flex items-center gap-1.5"><DollarSign className="w-3.5 h-3.5" /> Monthly Salary</span>
+                  <span className="font-bold text-emerald-600">₹45,000/mo</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Option 2: Gradient Glassmorphism */}
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Option 2: Gradient Glassmorphism</span>
+            <div className="relative rounded-2xl border border-white/20 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-md p-5 shadow-lg space-y-4 overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+              <div className="flex justify-between items-start pt-1">
+                <div>
+                  <h3 className="text-base font-extrabold text-foreground">Priya Patel</h3>
+                  <p className="text-xs text-muted-foreground font-mono">priya.patel@example.com</p>
+                </div>
+                <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-[10px]">
+                  PUNE • SOFTWARE DEV
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-2.5 rounded-xl bg-background/60 backdrop-blur-sm border border-border/40">
+                  <span className="text-[10px] text-muted-foreground block">Company</span>
+                  <span className="font-bold text-foreground">Zomato</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-background/60 backdrop-blur-sm border border-border/40">
+                  <span className="text-[10px] text-muted-foreground block">Monthly CTC</span>
+                  <span className="font-extrabold text-emerald-600">₹52,000/mo</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Option 3: Two-Column Split Metric Card */}
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Option 3: Two-Column Split Metric Card</span>
+            <Card className="border border-border/80 rounded-2xl bg-card p-4">
+              <div className="grid grid-cols-3 gap-4 items-center">
+                <div className="col-span-1 p-3 rounded-xl bg-muted/40 text-center space-y-1.5 border border-border/60">
+                  <div className="w-10 h-10 rounded-full bg-indigo-500/20 text-indigo-600 font-bold flex items-center justify-center mx-auto text-sm">
+                    RK
+                  </div>
+                  <div className="font-bold text-xs">Rahul Kumar</div>
+                  <Badge variant="secondary" className="text-[9px]">Active Alumnus</Badge>
+                </div>
+                <div className="col-span-2 space-y-2 text-xs">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block">Campus & Course</span>
+                    <span className="font-semibold text-foreground">Dharamshala • Python Web Dev</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block">Current Employer</span>
+                    <span className="font-bold text-foreground">Tech Mahindra</span>
+                  </div>
+                  <div className="pt-1 flex justify-between items-center">
+                    <span className="font-extrabold text-emerald-600 text-xs">₹38,000/mo</span>
+                    <Button size="sm" variant="outline" className="h-6 text-[10px] rounded-lg">View Details</Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Option 4: Neomorphic Soft Card */}
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Option 4: Neomorphic Soft Card</span>
+            <div className="rounded-3xl border border-border/60 bg-card p-5 shadow-lg space-y-3">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white font-bold flex items-center justify-center shadow-md text-xs">
+                    SS
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-foreground">Sneha Singh</h3>
+                    <p className="text-[10px] text-muted-foreground">Admitted 2022 • Bangalore</p>
+                  </div>
+                </div>
+                <Badge className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-full text-[10px]">
+                  ● Active
+                </Badge>
+              </div>
+              <div className="p-3 rounded-2xl bg-muted/30 text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Company:</span>
+                  <span className="font-bold text-foreground">Infosys</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Starting CTC:</span>
+                  <span className="font-semibold text-foreground">₹4.2 LPA</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Option 5: Tech Stack & Terminal Focused Card */}
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Option 5: Tech Stack & Terminal Focused Card</span>
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-950 text-zinc-100 p-4 space-y-3 font-mono shadow-md">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                  <Code2 className="w-3.5 h-3.5" /> vikram_aditya.dev
+                </span>
+                <span className="text-[10px] text-zinc-400">STATUS: PLACED</span>
+              </div>
+              <div className="text-xs space-y-1.5">
+                <div className="text-zinc-300">Company: <span className="text-amber-300 font-bold">Paytm</span></div>
+                <div className="text-zinc-300">Monthly CTC: <span className="text-emerald-400 font-bold">₹60,000/mo</span></div>
+                <div className="flex items-center gap-1 pt-1">
+                  <Badge variant="outline" className="text-[9px] border-zinc-700 text-zinc-300 bg-zinc-900">React.js</Badge>
+                  <Badge variant="outline" className="text-[9px] border-zinc-700 text-zinc-300 bg-zinc-900">Node.js</Badge>
+                  <Badge variant="outline" className="text-[9px] border-zinc-700 text-zinc-300 bg-zinc-900">PostgreSQL</Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Option 6: Executive Compact Card */}
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Option 6: Executive Compact Card</span>
+            <Card className="border border-border/80 rounded-2xl bg-card p-3 shadow-2xs">
+              <div className="flex items-center justify-between text-xs gap-3">
+                <div>
+                  <div className="font-bold text-foreground">Ananya Verma</div>
+                  <div className="text-[10px] text-muted-foreground font-mono">ananya@example.com</div>
+                </div>
+                <Badge variant="secondary" className="text-[10px]">Sarvinga Campus</Badge>
+                <div className="text-right">
+                  <div className="font-bold text-emerald-600">₹40,000/mo</div>
+                  <div className="text-[10px] text-muted-foreground">Accenture</div>
+                </div>
+                <Button size="sm" variant="outline" className="h-7 text-[10px] rounded-lg">View</Button>
+              </div>
+            </Card>
+          </div>
+
+          {/* Option 7: Color-Coded Category Card */}
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Option 7: Color-Coded Category Card</span>
+            <Card className="border border-border/80 rounded-2xl bg-card shadow-2xs">
+              <CardHeader className="pb-3 flex flex-row items-center gap-3 border-b border-border/40">
+                <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-600 border border-purple-500/20">
+                  <GraduationCap className="w-4 h-4" />
+                </div>
+                <div>
+                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Alumni Snapshot</CardTitle>
+                  <div className="text-sm font-bold text-foreground">Karan Mehta</div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 space-y-2 text-xs">
+                <div className="flex justify-between py-1 border-b border-border/30">
+                  <span className="text-muted-foreground">Campus</span>
+                  <span className="font-bold text-foreground">Himachal Campus</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-border/30">
+                  <span className="text-muted-foreground">Placed Company</span>
+                  <span className="font-bold text-foreground">Wipro</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span className="text-muted-foreground">Pay-Forward Eligible</span>
+                  <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">Eligible</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Option 8: Timeline & Journey Card */}
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Option 8: Timeline & Journey Card</span>
+            <Card className="border border-border/80 rounded-2xl bg-card p-4 shadow-2xs space-y-3">
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold text-sm text-foreground">Divya Reddy</h3>
+                <Badge variant="outline" className="text-[10px]">Class of 2021</Badge>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <div className="px-2.5 py-1 rounded-lg bg-muted text-center font-mono text-[10px]">2021 Admitted</div>
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+                <div className="px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-600 font-semibold text-[10px]">Pune Campus</div>
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+                <div className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 font-bold text-[10px]">Deloitte (₹48k/mo)</div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Option 9: High-Contrast Bold Bento Card */}
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Option 9: High-Contrast Bold Bento Card</span>
+            <div className="rounded-2xl border-2 border-primary/40 bg-card p-4 shadow-md space-y-3">
+              <div className="flex justify-between items-center border-b border-border pb-2">
+                <span className="font-black text-base text-foreground">Tanya Roy</span>
+                <Badge className="bg-primary text-primary-foreground font-extrabold text-[10px]">PREMIUM DONOR</Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2 rounded-xl bg-muted font-bold">Campus: Jashpur</div>
+                <div className="p-2 rounded-xl bg-muted font-bold text-emerald-600">CTC: ₹65,000/mo</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Option 10: Multi-Metric Comprehensive Card */}
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Option 10: Multi-Metric Comprehensive Card</span>
+            <Card className="border border-border/80 rounded-2xl bg-card p-4 shadow-2xs space-y-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-bold text-sm text-foreground">Siddharth Joshi</h3>
+                  <p className="text-[10px] text-muted-foreground font-mono">siddharth@example.com</p>
+                </div>
+                <Badge className="bg-emerald-500 text-white text-[10px]">ACTIVE MEMBER</Badge>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="p-2 rounded-xl bg-muted/40">
+                  <span className="text-[9px] text-muted-foreground block">Salary</span>
+                  <span className="font-bold text-emerald-600">₹45k/mo</span>
+                </div>
+                <div className="p-2 rounded-xl bg-muted/40">
+                  <span className="text-[9px] text-muted-foreground block">Cap Progress</span>
+                  <span className="font-bold text-primary">65%</span>
+                </div>
+                <div className="p-2 rounded-xl bg-muted/40">
+                  <span className="text-[9px] text-muted-foreground block">Coursera</span>
+                  <span className="font-bold text-foreground">34 hrs</span>
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
       </section>
 
