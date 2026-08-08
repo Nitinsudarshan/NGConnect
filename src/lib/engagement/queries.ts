@@ -1,8 +1,24 @@
 import { createClient } from '@/lib/supabase/server';
-import { ContributionType, InteractionOutcome, Mentor, OrgSettings, PayForwardProgress, Pipeline, PipelineStage, ProfileCompleteness } from '@/types/engagement';
+import { ContributionType, DEFAULT_OUTCOME_MAPPINGS, InteractionOutcome, Mentor, OrgSettings, OutcomeMappingRow, PayForwardProgress, Pipeline, PipelineStage, ProfileCompleteness } from '@/types/engagement';
 import { calculateProfileScore } from './utils';
 import { slugify } from '@/lib/utils';
 import { getUserCourseraData } from '@/lib/learning-center/queries';
+
+export async function getOutcomeMapping(): Promise<OutcomeMappingRow[]> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.from('org_settings').select('value').eq('key', 'outcome_mapping_rows').maybeSingle();
+    if (data && data.value) {
+      const parsed = JSON.parse(data.value);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+    return DEFAULT_OUTCOME_MAPPINGS;
+  } catch {
+    return DEFAULT_OUTCOME_MAPPINGS;
+  }
+}
 
 const DEFAULT_PIPELINE_STAGES: Record<string, Omit<PipelineStage, 'id' | 'pipeline_id'>[]> = {
   pay_forward: [

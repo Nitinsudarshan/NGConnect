@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { History, Search, Filter, RefreshCw, User, Calendar, Tag, Activity } from "lucide-react"
+import { History, Search, Activity, Calendar, User } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,20 +23,39 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { LearningCenterAuditLog } from "@/lib/learning-center/queries"
 
+/** LC-native entity types */
+const LC_ENTITY_TYPES = ["mentor", "audience", "session_type", "integration", "category", "subcategory"]
+/** Alumni-growth entity types prefix */
+const ALUMNI_PREFIX = "alumni_"
+
 interface EditLogTabProps {
   logs: LearningCenterAuditLog[]
+  /**
+   * "learning_hub" → show only LC-native entity types
+   * "alumni_growth" → show only alumni_ prefixed entity types
+   * undefined → show all
+   */
+  sourceFilter?: "learning_hub" | "alumni_growth"
 }
 
-export function EditLogTab({ logs }: EditLogTabProps) {
+export function EditLogTab({ logs, sourceFilter }: EditLogTabProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [entityFilter, setEntityFilter] = useState<string>("all")
   const [actionFilter, setActionFilter] = useState<string>("all")
 
-  const filteredLogs = logs.filter((log) => {
+  // Pre-filter by source
+  const sourceLogs = logs.filter((log) => {
+    if (!sourceFilter) return true
+    if (sourceFilter === "learning_hub") return LC_ENTITY_TYPES.includes(log.entity_type)
+    if (sourceFilter === "alumni_growth") return log.entity_type.startsWith(ALUMNI_PREFIX)
+    return true
+  })
+
+  const filteredLogs = sourceLogs.filter((log) => {
     const matchesSearch =
       log.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (log.user_email && log.user_email.toLowerCase().includes(searchTerm.toLowerCase()))
-    
+
     const matchesEntity = entityFilter === "all" || log.entity_type === entityFilter
     const matchesAction = actionFilter === "all" || log.action === actionFilter
 
@@ -45,6 +64,7 @@ export function EditLogTab({ logs }: EditLogTabProps) {
 
   const getEntityBadge = (entityType: string) => {
     switch (entityType) {
+      // LC types
       case "mentor":
         return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800">Mentor</Badge>
       case "audience":
@@ -53,8 +73,23 @@ export function EditLogTab({ logs }: EditLogTabProps) {
         return <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200 dark:border-blue-800">Session Type</Badge>
       case "integration":
         return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">Integration</Badge>
+      case "category":
+        return <Badge variant="outline" className="bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300 border-violet-200 dark:border-violet-800">Category</Badge>
+      case "subcategory":
+        return <Badge variant="outline" className="bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-950/40 dark:text-fuchsia-300 border-fuchsia-200 dark:border-fuchsia-800">Subcategory</Badge>
+      // Alumni-growth types
+      case "alumni_org_settings":
+        return <Badge variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 border-orange-200 dark:border-orange-800">Org Settings</Badge>
+      case "alumni_outcome":
+        return <Badge variant="outline" className="bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300 border-teal-200 dark:border-teal-800">Outcome</Badge>
+      case "alumni_pipeline_stage":
+        return <Badge variant="outline" className="bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border-sky-200 dark:border-sky-800">Pipeline Stage</Badge>
+      case "alumni_contribution_type":
+        return <Badge variant="outline" className="bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200 dark:border-rose-800">Contribution Type</Badge>
+      case "alumni_mentor":
+        return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800">Mentor</Badge>
       default:
-        return <Badge variant="outline">{entityType}</Badge>
+        return <Badge variant="outline" className="capitalize">{entityType.replace("alumni_", "")}</Badge>
     }
   }
 
@@ -80,18 +115,39 @@ export function EditLogTab({ logs }: EditLogTabProps) {
   const formatDate = (dateStr: string) => {
     try {
       const date = new Date(dateStr)
-      return new Intl.DateTimeFormat("en-US", {
+      return new Intl.DateTimeFormat("en-IN", {
         month: "short",
         day: "numeric",
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",
-        second: "2-digit",
       }).format(date)
     } catch {
       return dateStr
     }
   }
+
+  // Build entity type options based on source filter
+  const entityOptions =
+    sourceFilter === "learning_hub"
+      ? LC_ENTITY_TYPES
+      : sourceFilter === "alumni_growth"
+        ? ["alumni_org_settings", "alumni_outcome", "alumni_pipeline_stage", "alumni_contribution_type", "alumni_mentor"]
+        : [...LC_ENTITY_TYPES, "alumni_org_settings", "alumni_outcome", "alumni_pipeline_stage", "alumni_contribution_type"]
+
+  const titleText =
+    sourceFilter === "learning_hub"
+      ? "Learning Hub Edit Log"
+      : sourceFilter === "alumni_growth"
+        ? "Alumni Growth Edit Log"
+        : "Edit Log"
+
+  const descriptionText =
+    sourceFilter === "learning_hub"
+      ? "Track changes made within Learning Center settings — Mentors, Audiences, Session Types, Categories, and Integrations."
+      : sourceFilter === "alumni_growth"
+        ? "Track changes made within Alumni Growth settings — Org Rules, Outcomes, Pipeline Stages, Contribution Types, and Mentors."
+        : "Track all settings changes across the platform."
 
   return (
     <div className="space-y-6">
@@ -100,15 +156,13 @@ export function EditLogTab({ logs }: EditLogTabProps) {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <History className="w-5 h-5 text-indigo-500" /> Learning Hub Edit Log
+                <History className="w-5 h-5 text-indigo-500" /> {titleText}
               </CardTitle>
-              <CardDescription>
-                Track changes made to Mentors, Audiences, Session Types, and Integrations.
-              </CardDescription>
+              <CardDescription>{descriptionText}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="px-3 py-1 font-mono text-xs">
-                Total Logs: {logs.length}
+                {filteredLogs.length} / {sourceLogs.length} entries
               </Badge>
             </div>
           </div>
@@ -125,17 +179,18 @@ export function EditLogTab({ logs }: EditLogTabProps) {
                 className="pl-9"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Select value={entityFilter} onValueChange={setEntityFilter}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-[160px]">
                   <SelectValue placeholder="All Entities" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Entities</SelectItem>
-                  <SelectItem value="mentor">Mentors</SelectItem>
-                  <SelectItem value="audience">Audience</SelectItem>
-                  <SelectItem value="session_type">Session Types</SelectItem>
-                  <SelectItem value="integration">Integrations</SelectItem>
+                  {entityOptions.map((type) => (
+                    <SelectItem key={type} value={type} className="capitalize">
+                      {type.replace("alumni_", "").replace(/_/g, " ")}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
@@ -153,6 +208,17 @@ export function EditLogTab({ logs }: EditLogTabProps) {
                   <SelectItem value="disconnect">Disconnect</SelectItem>
                 </SelectContent>
               </Select>
+
+              {(searchTerm || entityFilter !== "all" || actionFilter !== "all") && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setSearchTerm(""); setEntityFilter("all"); setActionFilter("all") }}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Clear
+                </Button>
+              )}
             </div>
           </div>
 
@@ -161,8 +227,8 @@ export function EditLogTab({ logs }: EditLogTabProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[180px]">Timestamp</TableHead>
-                  <TableHead className="w-[120px]">Entity</TableHead>
+                  <TableHead className="w-[160px]">Timestamp</TableHead>
+                  <TableHead className="w-[150px]">Entity</TableHead>
                   <TableHead className="w-[110px]">Action</TableHead>
                   <TableHead>Details</TableHead>
                   <TableHead className="w-[200px]">Performed By</TableHead>

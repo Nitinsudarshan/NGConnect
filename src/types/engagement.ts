@@ -22,6 +22,26 @@ export interface OrgSettings {
   profile_score_green_threshold?: number;
 }
 
+/** A row in the outcome-mapping reference table (stored as JSON in org_settings). */
+export interface OutcomeMappingRow {
+  id: string;           // client-generated UUID
+  source: string;       // e.g. "Placement Dashboard"
+  old_value: string;    // e.g. "No Response"
+  new_code: string;     // e.g. "no_answer"
+  note: string;         // optional admin note
+}
+
+export const DEFAULT_OUTCOME_MAPPINGS: OutcomeMappingRow[] = [
+  { id: 'om-1', source: 'Placement Dashboard', old_value: 'No Response', new_code: 'no_answer', note: '' },
+  { id: 'om-2', source: 'Placement Dashboard', old_value: 'Call Back', new_code: 'callback_requested', note: '' },
+  { id: 'om-3', source: 'Placement Dashboard', old_value: 'Did Not Connect', new_code: 'no_answer', note: '' },
+  { id: 'om-4', source: 'Placement Dashboard', old_value: 'Discussed', new_code: 'discussed', note: '' },
+  { id: 'om-5', source: 'Placement Dashboard', old_value: 'Invalid Number', new_code: 'invalid_number', note: '' },
+  { id: 'om-6', source: 'Pay-Forward Data sheet', old_value: '(free text — not auto-mapped)', new_code: 'discussed / no_answer / callback_requested', note: 'Review manually' },
+  { id: 'om-7', source: 'Pay-Forward Data sheet', old_value: "(free text mentioning 'don't contact again')", new_code: 'do_not_contact', note: 'Human review only — not auto-classified' },
+  { id: 'om-8', source: 'N/A — new code', old_value: '(no historical source)', new_code: 'left_voicemail', note: 'Only applies going forward' },
+];
+
 export interface ContributionType {
   id: string;
   code: string;

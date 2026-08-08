@@ -81,7 +81,10 @@ export interface LearningSessionType {
 
 export interface LearningCenterAuditLog {
   id: string;
-  entity_type: "mentor" | "audience" | "session_type" | "integration" | "category" | "subcategory";
+  /** LC-native types + alumni-growth prefixed types (e.g. "alumni_outcome", "alumni_pipeline_stage") */
+  entity_type: "mentor" | "audience" | "session_type" | "integration" | "category" | "subcategory"
+    | "alumni_org_settings" | "alumni_outcome" | "alumni_pipeline_stage" | "alumni_contribution_type" | "alumni_mentor"
+    | string;
   entity_id: string | null;
   action: "create" | "update" | "delete" | "archive" | "connect" | "disconnect";
   details: string;

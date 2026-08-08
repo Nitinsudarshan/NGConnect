@@ -2,9 +2,35 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { checkAccess } from '@/lib/permissions';
-import { getUserRole } from '@/lib/roles';
-import { LogInteractionPayload, PipelineSuggestion } from '@/types/engagement';
+import { getUserRole, getSupabaseUserEmail } from '@/lib/roles';
+import { LogInteractionPayload, OutcomeMappingRow, PipelineSuggestion } from '@/types/engagement';
 import { revalidatePath } from 'next/cache';
+
+/**
+ * Writes an audit log entry to the shared learning_center_audit_logs table
+ * with an alumni_-prefixed entity_type so it can be filtered per module.
+ */
+async function logAlumniGrowthAudit(
+  entityType: string,
+  entityId: string | null,
+  action: "create" | "update" | "delete" | "archive",
+  details: string
+) {
+  try {
+    const supabase = await createClient();
+    const userEmail = await getSupabaseUserEmail();
+    await supabase.from('learning_center_audit_logs').insert({
+      entity_type: entityType,
+      entity_id: entityId,
+      action,
+      details,
+      user_email: userEmail || 'alumni-growth-admin',
+      created_at: new Date().toISOString(),
+    });
+  } catch {
+    // Non-critical — silently skip if audit log table missing
+  }
+}
 
 export async function logInteractionAction(payload: LogInteractionPayload) {
   try {
@@ -404,6 +430,13 @@ export async function managePipelineStageAction(payload: {
     revalidatePath('/alumni-growth/pipelines/mentoring');
     revalidatePath('/alumni-growth/pipelines/placement');
 
+    await logAlumniGrowthAudit(
+      'alumni_pipeline_stage',
+      null,
+      'update',
+      `Managed pipeline stage '${payload.label}' (code: ${cleanCode}) in pipeline ${payload.pipeline_id}`
+    );
+
     return { success: true, data };
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -576,6 +609,13 @@ export async function updateOrgSettingsAction(payload: {
     revalidatePath('/engagement/settings');
     revalidatePath('/engagement/pipelines/pay-forward');
 
+    await logAlumniGrowthAudit(
+      'alumni_org_settings',
+      null,
+      'update',
+      `Updated org settings by ${payload.updated_by}`
+    );
+
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -611,6 +651,13 @@ export async function manageOutcomeAction(payload: {
     if (error) return { success: false, error: error.message };
 
     revalidatePath('/engagement/settings');
+    revalidatePath('/alumni-growth/settings');
+    await logAlumniGrowthAudit(
+      'alumni_outcome',
+      null,
+      data ? 'update' : 'create',
+      `Managed interaction outcome '${payload.label}' (code: ${payload.code})`
+    );
     return { success: true, data };
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -644,6 +691,13 @@ export async function manageContributionTypeAction(payload: {
     if (error) return { success: false, error: error.message };
 
     revalidatePath('/engagement/settings');
+    revalidatePath('/alumni-growth/settings');
+    await logAlumniGrowthAudit(
+      'alumni_contribution_type',
+      null,
+      data ? 'update' : 'create',
+      `Managed contribution type '${payload.label}' (code: ${payload.code}, monetary: ${payload.is_monetary ?? false})`
+    );
     return { success: true, data };
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -691,3 +745,35 @@ export async function getKanbanColumnCardsAction(
     return { success: false, error: err.message };
   }
 }
+
+export async function saveOutcomeMappingAction(rows: OutcomeMappingRow[], actionType: 'create' | 'update' | 'delete', details: string) {
+  try {
+    const role = await getUserRole();
+    if (role !== 'Admin' && role !== 'Super Admin') {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    const supabase = await createClient();
+    const userEmail = await getSupabaseUserEmail();
+
+    const { error } = await supabase.from('org_settings').upsert({
+      key: 'outcome_mapping_rows',
+      value: JSON.stringify(rows),
+      description: 'Outcome mapping reference rows for legacy data migration',
+      updated_by: userEmail || 'admin',
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'key' });
+
+    if (error) return { success: false, error: error.message };
+
+    revalidatePath('/alumni-growth/settings');
+    revalidatePath('/engagement/settings');
+
+    await logAlumniGrowthAudit('alumni_outcome_mapping', null, actionType, details);
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
