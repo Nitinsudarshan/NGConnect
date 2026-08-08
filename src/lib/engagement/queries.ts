@@ -230,6 +230,13 @@ export async function getEngagementQueue() {
     .order('name', { ascending: true })
     .limit(300);
 
+  // Fetch suppressed alumni to filter out
+  const { data: suppressed } = await supabase
+    .from('alumni_contact_suppression')
+    .select('alumni_email');
+  
+  const suppressedSet = new Set((suppressed || []).map(s => s.alumni_email));
+
   // Fetch alumni_profile list
   const { data: profiles } = await supabase
     .from('alumni_profile')
@@ -254,11 +261,13 @@ export async function getEngagementQueue() {
     }
   }
 
-  const enrichedAlumni = (alumni || []).map((a) => ({
-    ...a,
-    profile: profileMap[a.email] || null,
-    hasSalaryRecords: salarySet.has(a.email),
-  }));
+  const enrichedAlumni = (alumni || [])
+    .filter(a => !suppressedSet.has(a.email))
+    .map((a) => ({
+      ...a,
+      profile: profileMap[a.email] || null,
+      hasSalaryRecords: salarySet.has(a.email),
+    }));
 
   // Fetch active pending followups
   const { data: followups } = await supabase
@@ -277,8 +286,8 @@ export async function getEngagementQueue() {
 
   return {
     alumniList: enrichedAlumni,
-    followups: followups || [],
-    recentInteractions: recentInteractions || [],
+    followups: (followups || []).filter(f => !suppressedSet.has(f.alumni_email)),
+    recentInteractions: (recentInteractions || []).filter(i => !suppressedSet.has(i.alumni_email)),
   };
 }
 
@@ -531,4 +540,142 @@ export async function getMentorsList(): Promise<Mentor[]> {
 
 export async function getPipelineBoardData(pipelineCode: string) {
   return getPipelineAlumniData(pipelineCode);
+}
+
+export async function getKanbanFacets() {
+  const supabase = await createClient();
+
+  const { data: campusesData } = await supabase.from('alumni_master').select('campus');
+  const { data: yearsData } = await supabase.from('alumni_master').select('entry_year');
+  const { data: supportersData } = await supabase.from('alumni_pipeline_membership').select('added_by');
+
+  const campuses = Array.from(new Set((campusesData || []).map(r => r.campus).filter(Boolean)));
+  const years = Array.from(new Set((yearsData || []).map(r => r.entry_year).filter(Boolean)));
+  const supporters = Array.from(new Set((supportersData || []).map(r => r.added_by).filter(Boolean)));
+
+  return { campuses, years, supporters };
+}
+
+export async function getKanbanColumnCards(
+  pipelineCode: string,
+  stageId: string,
+  filters: { campus?: string; year?: string; supporter?: string },
+  page: number = 1,
+  limit: number = 25
+) {
+  const supabase = await createClient();
+  
+  // 1. Get Pipeline
+  const { data: pipeline } = await supabase
+    .from('pipelines')
+    .select('id')
+    .eq('code', pipelineCode)
+    .single();
+
+  if (!pipeline) return [];
+
+  // 1.5 Get Stage Label
+  const { data: stage } = await supabase
+    .from('pipeline_stages')
+    .select('label')
+    .eq('id', stageId)
+    .single();
+
+  const stageLabel = stage?.label || '';
+
+  // 2. Base query for memberships in this stage
+  let query = supabase
+    .from('alumni_pipeline_membership')
+    .select('*, alumni_master!inner(email, name, campus, company, phone_number, entry_year)')
+    .eq('pipeline_id', pipeline.id)
+    .eq('is_active', true)
+    .or(`stage_id.eq.${stageId},and(stage_id.is.null,status.eq."${stageLabel}")`);
+
+  if (filters.supporter) {
+    query = query.eq('added_by', filters.supporter);
+  }
+  if (filters.campus) {
+    query = query.eq('alumni_master.campus', filters.campus);
+  }
+  if (filters.year) {
+    query = query.eq('alumni_master.entry_year', filters.year);
+  }
+
+  // 3. Fetch suppressed alumni to filter out
+  const { data: suppressed } = await supabase
+    .from('alumni_contact_suppression')
+    .select('alumni_email');
+  
+  const suppressedSet = new Set((suppressed || []).map(s => s.alumni_email));
+
+  const { data: memberships, error } = await query;
+  if (error || !memberships) return [];
+
+  // 4. Filter out suppressed
+  const activeMemberships = memberships.filter(m => !suppressedSet.has(m.alumni_email));
+
+  // 5. Calculate days since last contact and sort
+  const emails = activeMemberships.map(m => m.alumni_email);
+  const { data: interactions } = await supabase
+    .from('alumni_interactions')
+    .select('alumni_email, created_at')
+    .in('alumni_email', emails);
+
+  const lastContactMap: Record<string, number> = {};
+  if (interactions) {
+    for (const i of interactions) {
+      const ts = new Date(i.created_at).getTime();
+      if (!lastContactMap[i.alumni_email] || ts > lastContactMap[i.alumni_email]) {
+        lastContactMap[i.alumni_email] = ts;
+      }
+    }
+  }
+
+  const now = Date.now();
+  const sorted = activeMemberships.sort((a, b) => {
+    const aLast = lastContactMap[a.alumni_email] || 0;
+    const bLast = lastContactMap[b.alumni_email] || 0;
+    const aDays = aLast === 0 ? 9999 : (now - aLast) / (1000 * 60 * 60 * 24);
+    const bDays = bLast === 0 ? 9999 : (now - bLast) / (1000 * 60 * 60 * 24);
+    return bDays - aDays; // descending
+  });
+
+  // 6. Paginate
+  const start = (page - 1) * limit;
+  const paginated = sorted.slice(start, start + limit);
+
+  // 7. Enclose extra metadata if Pay-Forward
+  if (pipelineCode === 'pay_forward' && paginated.length > 0) {
+    const paginatedEmails = paginated.map(m => m.alumni_email);
+    const { data: pfProg } = await supabase
+      .from('v_pay_forward_progress')
+      .select('*')
+      .in('alumni_email', paginatedEmails);
+
+    const pfProgressMap: Record<string, PayForwardProgress> = {};
+    if (pfProg) {
+      for (const row of pfProg) {
+        pfProgressMap[row.alumni_email] = row;
+      }
+    }
+
+    const { data: salaries } = await supabase
+      .from('alumni_salary_records')
+      .select('alumni_email, amount_monthly_inr, recorded_at')
+      .in('alumni_email', paginatedEmails)
+      .order('recorded_at', { ascending: false });
+
+    const salaryMap: Record<string, number> = {};
+    if (salaries) {
+      for (const s of salaries) {
+        if (!salaryMap[s.alumni_email]) {
+          salaryMap[s.alumni_email] = Number(s.amount_monthly_inr);
+        }
+      }
+    }
+
+    return paginated.map(m => ({ ...m, pfProgress: pfProgressMap[m.alumni_email], salary: salaryMap[m.alumni_email] }));
+  }
+
+  return paginated;
 }

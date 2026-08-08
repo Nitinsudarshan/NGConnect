@@ -23,6 +23,7 @@ import {
   UserCheck,
   ChevronRight as ChevronRightIcon,
   Sparkles,
+  Filter,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -195,64 +196,50 @@ export default function WorkspaceClient({
         </Card>
       </div>
 
-      {/* Filters Card */}
-      <Card className="border border-border/80 rounded-2xl shadow-2xs bg-card/60">
-        <CardContent className="pt-4 pb-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="flex flex-col sm:flex-row gap-3 w-full items-center flex-1">
-            {/* Filter Column Selector */}
-            <div className="w-full sm:w-44 space-y-1">
-              <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <SlidersHorizontal className="w-2.5 h-2.5" /> Filter By Column
-              </label>
-              <Select value={filterColumn} onValueChange={(val) => { setFilterColumn(val); setCurrentPage(1); }}>
-                <SelectTrigger className="h-8 rounded-md text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-md text-xs">
-                  <SelectItem value="all">All Fields</SelectItem>
-                  <SelectItem value="name">Name</SelectItem>
-                  <SelectItem value="email">Email</SelectItem>
-                  <SelectItem value="campus">Campus</SelectItem>
-                  <SelectItem value="course">Course</SelectItem>
-                  <SelectItem value="status">Status</SelectItem>
-                  <SelectItem value="company">Company</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Filters Bar */}
+      <div className="bg-card border border-border/80 rounded-2xl p-1.5 px-3 shadow-2xs flex flex-col sm:flex-row gap-2 items-center w-full">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground pr-2 sm:border-r sm:border-border/60 shrink-0 hidden sm:flex">
+          <Filter className="w-3.5 h-3.5" />
+          <span>Filters</span>
+        </div>
 
-            {/* Sort Selector */}
-            <div className="w-full sm:w-44 space-y-1">
-              <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <ArrowUpDown className="w-2.5 h-2.5" /> Sort By
-              </label>
-              <Select value={sortOption} onValueChange={(val) => { setSortOption(val); setCurrentPage(1); }}>
-                <SelectTrigger className="h-8 rounded-md text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-md text-xs">
-                  <SelectItem value="name_asc">Name (A-Z)</SelectItem>
-                  <SelectItem value="name_desc">Name (Z-A)</SelectItem>
-                  <SelectItem value="campus_asc">Campus (A-Z)</SelectItem>
-                  <SelectItem value="status_asc">Status (A-Z)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <Select value={filterColumn} onValueChange={(val) => { setFilterColumn(val); setCurrentPage(1); }}>
+          <SelectTrigger className="h-8 w-full sm:w-[160px] text-xs  bg-muted bg-muted/60 hover:bg-muted/80 rounded-lg">
+            <SelectValue placeholder="Filter By Column" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Fields</SelectItem>
+            <SelectItem value="name">Name</SelectItem>
+            <SelectItem value="email">Email</SelectItem>
+            <SelectItem value="campus">Campus</SelectItem>
+            <SelectItem value="course">Course</SelectItem>
+            <SelectItem value="status">Status</SelectItem>
+            <SelectItem value="company">Company</SelectItem>
+          </SelectContent>
+        </Select>
 
-            {/* Search Input */}
-            <div className="w-full space-y-1 flex-1">
-              <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <Search className="w-2.5 h-2.5 text-muted-foreground" /> Search
-              </label>
-              <Input
-                placeholder="Type to filter queue..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                className="h-8 rounded-md border-border/80 text-xs"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        <Select value={sortOption} onValueChange={(val) => { setSortOption(val); setCurrentPage(1); }}>
+          <SelectTrigger className="h-8 w-full sm:w-[140px] text-xs  bg-muted bg-muted/60 hover:bg-muted/80 rounded-lg">
+            <SelectValue placeholder="Sort By" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name_asc">Name (A-Z)</SelectItem>
+            <SelectItem value="name_desc">Name (Z-A)</SelectItem>
+            <SelectItem value="campus_asc">Campus (A-Z)</SelectItem>
+            <SelectItem value="status_asc">Status (A-Z)</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <div className="relative flex-1 w-full flex items-center sm:ml-auto">
+          <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5" />
+          <Input
+            placeholder="Type to search queue..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className="h-8 pl-8  bg-muted bg-muted/60 hover:bg-muted/80 text-xs w-full focus-visible:ring-1 focus-visible:ring-primary/50 transition-all rounded-lg"
+          />
+        </div>
+      </div>
 
       {/* Main Table Card */}
       <Card className="border border-border/80 rounded-2xl overflow-hidden shadow-sm bg-card/60 backdrop-blur-xs p-3">
@@ -296,63 +283,63 @@ export default function WorkspaceClient({
                 );
 
                 return (
-                <tr key={item.email} className="border-t border-border/40 hover:bg-muted/15 transition-colors">
-                  <td className="px-3 py-2.5 space-y-1">
-                    <Link
-                      href={`/alumni-growth/alumni/${getAlumniSlug(item.email, item.name)}`}
-                      className="font-bold text-sm text-foreground hover:text-primary transition-colors flex items-center gap-1.5"
-                    >
-                      {item.name || "—"}
-                    </Link>
-                    <div className="font-mono text-[10px] text-muted-foreground">{item.email}</div>
-                  </td>
-                  <td className="px-3 py-2.5 space-y-1">
-                    <div className="flex items-center gap-1 text-foreground font-semibold">
-                      <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
-                      <span>{item.campus || "—"}</span>
-                    </div>
-                    <div className="text-[10px] text-muted-foreground">{item.course || "—"}</div>
-                  </td>
-                  <td className="px-3 py-2.5 space-y-1">
-                    <Badge variant="outline" className="text-[10px] rounded-md font-medium">
-                      {item.status || "Active"}
-                    </Badge>
-                    <div className="text-[10px] text-muted-foreground">{item.company || "—"}</div>
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <Badge className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${scoreResult.badgeColor}`}>
-                      {scoreResult.score}% Score
-                    </Badge>
-                  </td>
-                  <td className="px-3 py-2.5 font-mono text-[11px] text-muted-foreground">
-                    {item.phone_number || "—"}
-                  </td>
-                  <td className="px-3 py-2.5 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="default"
-                        onClick={() => setSelectedAlumniForCall({ email: item.email, name: item.name })}
-                        className="h-7 rounded-md text-xs font-semibold gap-1 px-2.5"
+                  <tr key={item.email} className="border-t border-border/40 hover:bg-muted/15 transition-colors">
+                    <td className="px-3 py-2.5 space-y-1">
+                      <Link
+                        href={`/alumni-growth/alumni/${getAlumniSlug(item.email, item.name)}`}
+                        className="font-bold text-sm text-foreground hover:text-primary transition-colors flex items-center gap-1.5"
                       >
-                        <PhoneCall className="w-3 h-3" /> Log Call
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        asChild
-                        className="h-7 rounded-md text-xs font-semibold px-2"
-                      >
-                        <Link href={`/alumni-growth/alumni/${getAlumniSlug(item.email, item.name)}`}>
-                          Details
-                        </Link>
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
+                        {item.name || "—"}
+                      </Link>
+                      <div className="font-mono text-[10px] text-muted-foreground">{item.email}</div>
+                    </td>
+                    <td className="px-3 py-2.5 space-y-1">
+                      <div className="flex items-center gap-1 text-foreground font-semibold">
+                        <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span>{item.campus || "—"}</span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">{item.course || "—"}</div>
+                    </td>
+                    <td className="px-3 py-2.5 space-y-1">
+                      <Badge variant="outline" className="text-[10px] rounded-md font-medium">
+                        {item.status || "Active"}
+                      </Badge>
+                      <div className="text-[10px] text-muted-foreground">{item.company || "—"}</div>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <Badge className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${scoreResult.badgeColor}`}>
+                        {scoreResult.score}% Score
+                      </Badge>
+                    </td>
+                    <td className="px-3 py-2.5 font-mono text-[11px] text-muted-foreground">
+                      {item.phone_number || "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => setSelectedAlumniForCall({ email: item.email, name: item.name })}
+                          className="h-7 rounded-md text-xs font-semibold gap-1 px-2.5"
+                        >
+                          <PhoneCall className="w-3 h-3" /> Log Call
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          asChild
+                          className="h-7 rounded-md text-xs font-semibold px-2"
+                        >
+                          <Link href={`/alumni-growth/alumni/${getAlumniSlug(item.email, item.name)}`}>
+                            Details
+                          </Link>
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
 
-              );
-            })}
+                );
+              })}
 
               {paginatedAlumni.length === 0 && (
                 <tr>

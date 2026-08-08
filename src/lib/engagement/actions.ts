@@ -669,3 +669,25 @@ export async function completeFollowupAction(interactionId: string) {
     return { success: false, error: err.message };
   }
 }
+
+import { getKanbanColumnCards } from './queries';
+
+export async function getKanbanColumnCardsAction(
+  pipelineCode: string,
+  stageId: string,
+  filters: { campus?: string; year?: string; supporter?: string },
+  page: number = 1
+) {
+  try {
+    const role = await getUserRole();
+    const hasAccess = await checkAccess(role, 'crm');
+    if (!hasAccess && role !== 'Admin' && role !== 'Super Admin') {
+      return { success: false, error: 'Unauthorized: insufficient permissions' };
+    }
+    
+    const cards = await getKanbanColumnCards(pipelineCode, stageId, filters, page);
+    return { success: true, data: cards };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}

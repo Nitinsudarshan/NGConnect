@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import styles from "./scrollbars.module.css";
 import { Activity, Sun, Sparkles, Moon, Award, Smile, Flame, TrendingUp, Clock, Coffee, User, Building2, Briefcase, DollarSign, Code2, GraduationCap, ArrowRight } from "lucide-react";
 import {
   Accordion,
@@ -89,6 +90,29 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+const MOCK_TEXT = Array.from({ length: 20 }).map((_, i) => (
+  <p key={i} className="mb-4 text-sm text-muted-foreground">
+    This is some placeholder text to demonstrate the scrollbar behavior. 
+    It is long enough to cause scrolling in a constrained container.
+    Notice how the scrollbar looks and feels as you move down the content.
+  </p>
+));
+
+const SCROLLBAR_OPTIONS = [
+  { id: "opt1", name: "1. Minimal Transparent", desc: "Subtle, semi-transparent thumb, no track background." },
+  { id: "opt2", name: "2. Thin & Rounded", desc: "Thin colored thumb with a muted track." },
+  { id: "opt3", name: "3. Blocky / Brutalist", desc: "Thick blocky thumb, solid track with border." },
+  { id: "opt4", name: "4. Gradient Accent", desc: "Gradient colored thumb for a modern look." },
+  { id: "opt5", name: "5. Hover Only", desc: "Scrollbar thumb only appears when hovering the container." },
+  { id: "opt6", name: "6. Inset Border", desc: "Thick thumb with a border matching the track." },
+  { id: "opt7", name: "7. Glowing Neon", desc: "Thin colored thumb with a glowing box-shadow." },
+  { id: "opt8", name: "8. Dotted Track", desc: "Custom radial gradient track to look like dots." },
+  { id: "opt9", name: "9. Cyberpunk", desc: "Bright accent colors with sharp borders." },
+  { id: "opt10", name: "10. Floating Pill", desc: "Padded background clip to make the thumb 'float' inside the track." },
+  { id: "opt11", name: "11. Thin & Brutalist (Combined)", desc: "Combines the thin rounded thumb of option 2 with the blocky bordered track of option 3." },
+  { id: "opt12", name: "12. Hover Only (Thin & Rounded)", desc: "Scrollbar appears only when hovering, showing a thin colored thumb and a muted track." },
+];
 
 export default function ComponentsShowcasePage() {
   const [progress, setProgress] = useState(60);
@@ -1075,6 +1099,31 @@ export default function ComponentsShowcasePage() {
               </div>
             </Card>
           </div>
+        </div>
+      </section>
+
+      {/* 8. Scrollbar Options */}
+      <section className="space-y-6 mt-10">
+        <h2 className="text-2xl font-semibold tracking-tight border-b pb-2">Custom Scrollbar Options</h2>
+        <p className="text-muted-foreground">Browse through these 10 scrollbar styles.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          {SCROLLBAR_OPTIONS.map((opt) => (
+            <div key={opt.id} className="flex flex-col border border-border rounded-xl bg-card overflow-hidden shadow-sm">
+              <div className="p-4 border-b border-border bg-muted/30">
+                <h2 className="font-semibold text-lg text-card-foreground">{opt.name}</h2>
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2" title={opt.desc}>
+                  {opt.desc}
+                </p>
+              </div>
+              <div className="p-4 bg-background h-64">
+                <div 
+                  className={`h-full w-full overflow-y-auto pr-3 ${styles[opt.id]}`}
+                >
+                  {MOCK_TEXT}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
