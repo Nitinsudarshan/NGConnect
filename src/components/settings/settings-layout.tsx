@@ -76,7 +76,7 @@ export function SettingsLayout({ navItems, activeValue, onValueChange, children 
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors w-full text-left
                         ${isActive
                           ? "bg-primary! text-primary-foreground! shadow-sm font-semibold hover:bg-primary! hover:text-primary-foreground!"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground"
                         }`}
                     >
                       {item.icon && (
@@ -106,7 +106,7 @@ export function SettingsLayout({ navItems, activeValue, onValueChange, children 
                     className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider w-full text-left transition-colors select-none group/trigger
                       ${hasActiveItem
                         ? "text-foreground font-bold"
-                        : "text-muted-foreground/80 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"
+                        : "text-muted-foreground/80 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/70"
                       }`}
                   >
                     <span>{group}</span>
@@ -128,7 +128,7 @@ export function SettingsLayout({ navItems, activeValue, onValueChange, children 
                         className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition-colors w-full text-left
                           ${isActive
                             ? "bg-primary! text-primary-foreground! font-semibold shadow-xs hover:bg-primary! hover:text-primary-foreground!"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground"
                           }`}
                       >
                         {item.icon && (
