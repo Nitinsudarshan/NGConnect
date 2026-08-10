@@ -94,8 +94,8 @@ export interface LearningCenterAuditLog {
 }
 
 export async function getMentors() {
-  const supabase = await createClient()
-  const { data, error } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data, error } = await adminSupabase
     .from('mentors')
     .select('*')
     .order('name', { ascending: true })
@@ -332,8 +332,8 @@ export async function getSessionTypes() {
 }
 
 export async function getLearningCenterAuditLogs() {
-  const supabase = await createClient()
-  const { data, error } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data, error } = await adminSupabase
     .from('learning_center_audit_logs')
     .select('*')
     .order('created_at', { ascending: false })

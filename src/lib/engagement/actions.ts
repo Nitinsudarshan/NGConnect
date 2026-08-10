@@ -5,6 +5,7 @@ import { checkAccess } from '@/lib/permissions';
 import { getUserRole, getSupabaseUserEmail } from '@/lib/roles';
 import { LogInteractionPayload, OutcomeMappingRow, PipelineSuggestion } from '@/types/engagement';
 import { revalidatePath } from 'next/cache';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 /**
  * Writes an audit log entry to the shared learning_center_audit_logs table
@@ -399,6 +400,7 @@ export async function managePipelineStageAction(payload: {
   sort_order?: number;
   is_terminal?: boolean;
   is_active?: boolean;
+  archive?: boolean;
 }) {
   try {
     const role = await getUserRole();
@@ -408,6 +410,9 @@ export async function managePipelineStageAction(payload: {
 
     const supabase = await createClient();
     const cleanCode = payload.code.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+
+    const { data: existing } = await supabase.from('pipeline_stages').select('id').match({ pipeline_id: payload.pipeline_id, code: cleanCode }).maybeSingle();
+    const isUpdate = !!existing;
 
     const { data, error } = await supabase.from('pipeline_stages').upsert(
       {
@@ -430,11 +435,16 @@ export async function managePipelineStageAction(payload: {
     revalidatePath('/alumni-growth/pipelines/mentoring');
     revalidatePath('/alumni-growth/pipelines/placement');
 
+    const action = payload.archive ? 'archive' : (isUpdate ? 'update' : 'create');
+    const msg = payload.archive 
+      ? `Archived pipeline stage '${payload.label}' (code: ${cleanCode}) in pipeline ${payload.pipeline_id}`
+      : `${isUpdate ? 'Updated' : 'Created'} pipeline stage '${payload.label}' (code: ${cleanCode}) in pipeline ${payload.pipeline_id}`;
+
     await logAlumniGrowthAudit(
       'alumni_pipeline_stage',
       null,
-      'update',
-      `Managed pipeline stage '${payload.label}' (code: ${cleanCode}) in pipeline ${payload.pipeline_id}`
+      action as any,
+      msg
     );
 
     return { success: true, data };
@@ -512,96 +522,66 @@ export async function updateOrgSettingsAction(payload: {
       return { success: false, error: 'Admin access required to change org settings' };
     }
 
-    const supabase = await createClient();
-
-    if (payload.pay_forward_cap_inr !== undefined) {
-      await supabase.from('org_settings').upsert({
-        key: 'pay_forward_cap_inr',
-        value: JSON.stringify(payload.pay_forward_cap_inr),
-        description: 'Lifetime pay-forward contribution considered complete (INR)',
-        updated_by: payload.updated_by,
-        updated_at: new Date().toISOString(),
+    const adminSupabase = createAdminClient();
+    const { data: currentData } = await adminSupabase.from('org_settings').select('key, value');
+    const currentSettings: Record<string, any> = {};
+    if (currentData) {
+      currentData.forEach(row => {
+        try { 
+          currentSettings[row.key] = typeof row.value === 'string' ? JSON.parse(row.value) : row.value; 
+        } catch {
+          currentSettings[row.key] = row.value;
+        }
       });
     }
 
-    if (payload.pay_forward_min_salary_monthly_inr !== undefined) {
-      await supabase.from('org_settings').upsert({
-        key: 'pay_forward_min_salary_monthly_inr',
-        value: JSON.stringify(payload.pay_forward_min_salary_monthly_inr),
-        description: 'Minimum normalized monthly salary to pitch pay-forward (INR)',
-        updated_by: payload.updated_by,
-        updated_at: new Date().toISOString(),
-      });
-    }
+    const changes: string[] = [];
 
-    if (payload.followup_cooldown_days !== undefined) {
-      await supabase.from('org_settings').upsert({
-        key: 'followup_cooldown_days',
-        value: JSON.stringify(payload.followup_cooldown_days),
-        description: 'Default days before suggesting a re-attempt after no answer',
-        updated_by: payload.updated_by,
-        updated_at: new Date().toISOString(),
-      });
-    }
-
-    if (payload.active_criteria_coursera !== undefined) {
-      await supabase.from('org_settings').upsert({
-        key: 'active_criteria_coursera',
-        value: JSON.stringify(payload.active_criteria_coursera),
-        description: 'Active member rule: Has active Coursera subscription',
-        updated_by: payload.updated_by,
-        updated_at: new Date().toISOString(),
-      });
-    }
-
-    if (payload.active_criteria_mentoring !== undefined) {
-      await supabase.from('org_settings').upsert({
-        key: 'active_criteria_mentoring',
-        value: JSON.stringify(payload.active_criteria_mentoring),
-        description: 'Active member rule: Attended live mentoring sessions or workshops',
-        updated_by: payload.updated_by,
-        updated_at: new Date().toISOString(),
-      });
-    }
-
-    if (payload.active_criteria_watch_time !== undefined) {
-      await supabase.from('org_settings').upsert({
-        key: 'active_criteria_watch_time',
-        value: JSON.stringify(payload.active_criteria_watch_time),
-        description: 'Active member rule: Logged watch hours from recorded video sessions',
-        updated_by: payload.updated_by,
-        updated_at: new Date().toISOString(),
-      });
-    }
-
-    const weightsToUpsert: [string, number | undefined, string][] = [
-      ['weight_name', payload.weight_name, 'Profile score weight: Full Name'],
-      ['weight_email', payload.weight_email, 'Profile score weight: Email Address'],
-      ['weight_phone', payload.weight_phone, 'Profile score weight: Phone Number'],
-      ['weight_gender', payload.weight_gender, 'Profile score weight: Gender'],
-      ['weight_campus', payload.weight_campus, 'Profile score weight: Campus'],
-      ['weight_course', payload.weight_course, 'Profile score weight: Course'],
-      ['weight_entry_year', payload.weight_entry_year, 'Profile score weight: Entry Cohort'],
-      ['weight_location', payload.weight_location, 'Profile score weight: Location'],
-      ['weight_company', payload.weight_company, 'Profile score weight: Company'],
-      ['weight_salary', payload.weight_salary, 'Profile score weight: Salary'],
-      ['weight_linkedin', payload.weight_linkedin, 'Profile score weight: LinkedIn'],
-      ['weight_tech_stack', payload.weight_tech_stack, 'Profile score weight: Tech Stack'],
-      ['profile_score_red_threshold', payload.profile_score_red_threshold, 'Profile score threshold for RED stage'],
-      ['profile_score_amber_threshold', payload.profile_score_amber_threshold, 'Profile score threshold for AMBER stage'],
-      ['profile_score_green_threshold', payload.profile_score_green_threshold, 'Profile score threshold for GREEN stage (100%)'],
-    ];
-
-    for (const [key, val, desc] of weightsToUpsert) {
-      if (val !== undefined) {
-        await supabase.from('org_settings').upsert({
+    const tryUpdate = async (key: string, newVal: any, label: string, desc: string) => {
+      if (newVal !== undefined && newVal !== currentSettings[key]) {
+        const { error } = await adminSupabase.from('org_settings').upsert({
           key,
-          value: JSON.stringify(val),
+          value: JSON.stringify(newVal),
           description: desc,
-          updated_by: payload.updated_by,
+          // Omitting updated_by to avoid foreign key violation if the admin is not an alumni
           updated_at: new Date().toISOString(),
         });
+        
+        if (error) {
+          throw new Error(`Failed to update ${key}: ${error.message}`);
+        }
+        
+        changes.push(`Updated ${label} from ${currentSettings[key] ?? 'none'} to ${newVal}`);
       }
+    };
+
+    await tryUpdate('pay_forward_cap_inr', payload.pay_forward_cap_inr, 'Pay-Forward cap', 'Lifetime pay-forward contribution considered complete (INR)');
+    await tryUpdate('pay_forward_min_salary_monthly_inr', payload.pay_forward_min_salary_monthly_inr, 'minimum pitch salary floor', 'Minimum normalized monthly salary to pitch pay-forward (INR)');
+    await tryUpdate('followup_cooldown_days', payload.followup_cooldown_days, 'follow-up cooldown', 'Default days before suggesting a re-attempt after no answer');
+    await tryUpdate('active_criteria_coursera', payload.active_criteria_coursera, 'active criteria (Coursera)', 'Active member rule: Has active Coursera subscription');
+    await tryUpdate('active_criteria_mentoring', payload.active_criteria_mentoring, 'active criteria (Mentoring)', 'Active member rule: Attended live mentoring sessions or workshops');
+    await tryUpdate('active_criteria_watch_time', payload.active_criteria_watch_time, 'active criteria (Watch Time)', 'Active member rule: Logged watch hours from recorded video sessions');
+
+    const weightsToUpsert: [string, any, string, string][] = [
+      ['weight_name', payload.weight_name, 'Profile weight: Name', 'Profile score weight: Full Name'],
+      ['weight_email', payload.weight_email, 'Profile weight: Email', 'Profile score weight: Email Address'],
+      ['weight_phone', payload.weight_phone, 'Profile weight: Phone', 'Profile score weight: Phone Number'],
+      ['weight_gender', payload.weight_gender, 'Profile weight: Gender', 'Profile score weight: Gender'],
+      ['weight_campus', payload.weight_campus, 'Profile weight: Campus', 'Profile score weight: Campus'],
+      ['weight_course', payload.weight_course, 'Profile weight: Course', 'Profile score weight: Course'],
+      ['weight_entry_year', payload.weight_entry_year, 'Profile weight: Entry Cohort', 'Profile score weight: Entry Cohort'],
+      ['weight_location', payload.weight_location, 'Profile weight: Location', 'Profile score weight: Location'],
+      ['weight_company', payload.weight_company, 'Profile weight: Company', 'Profile score weight: Company'],
+      ['weight_salary', payload.weight_salary, 'Profile weight: Salary', 'Profile score weight: Salary'],
+      ['weight_linkedin', payload.weight_linkedin, 'Profile weight: LinkedIn', 'Profile score weight: LinkedIn'],
+      ['weight_tech_stack', payload.weight_tech_stack, 'Profile weight: Tech Stack', 'Profile score weight: Tech Stack'],
+      ['profile_score_red_threshold', payload.profile_score_red_threshold, 'Profile RED threshold', 'Profile score threshold for RED stage'],
+      ['profile_score_amber_threshold', payload.profile_score_amber_threshold, 'Profile AMBER threshold', 'Profile score threshold for AMBER stage'],
+      ['profile_score_green_threshold', payload.profile_score_green_threshold, 'Profile GREEN threshold', 'Profile score threshold for GREEN stage (100%)'],
+    ];
+
+    for (const [key, val, label, desc] of weightsToUpsert) {
+      await tryUpdate(key, val, label, desc);
     }
 
     revalidatePath('/alumni-growth/settings');
@@ -609,12 +589,15 @@ export async function updateOrgSettingsAction(payload: {
     revalidatePath('/engagement/settings');
     revalidatePath('/engagement/pipelines/pay-forward');
 
-    await logAlumniGrowthAudit(
-      'alumni_org_settings',
-      null,
-      'update',
-      `Updated org settings by ${payload.updated_by}`
-    );
+    if (changes.length > 0) {
+      const summary = changes.join('; ');
+      await logAlumniGrowthAudit(
+        'alumni_org_settings',
+        null,
+        'update',
+        summary
+      );
+    }
 
     return { success: true };
   } catch (err: any) {
@@ -628,6 +611,7 @@ export async function manageOutcomeAction(payload: {
   requires_followup_datetime?: boolean;
   is_terminal?: boolean;
   is_active?: boolean;
+  archive?: boolean;
 }) {
   try {
     const role = await getUserRole();
@@ -636,6 +620,9 @@ export async function manageOutcomeAction(payload: {
     }
 
     const supabase = await createClient();
+    const { data: existing } = await supabase.from('interaction_outcomes').select('id').eq('code', payload.code).maybeSingle();
+    const isUpdate = !!existing;
+
     const { data, error } = await supabase.from('interaction_outcomes').upsert(
       {
         code: payload.code,
@@ -644,6 +631,7 @@ export async function manageOutcomeAction(payload: {
         is_terminal: payload.is_terminal ?? false,
         is_custom: true,
         is_active: payload.is_active ?? true,
+        archived_at: payload.archive ? new Date().toISOString() : null,
       },
       { onConflict: 'code' }
     );
@@ -652,11 +640,17 @@ export async function manageOutcomeAction(payload: {
 
     revalidatePath('/engagement/settings');
     revalidatePath('/alumni-growth/settings');
+    
+    const action = payload.archive ? 'archive' : (isUpdate ? 'update' : 'create');
+    const msg = payload.archive 
+      ? `Archived interaction outcome '${payload.label}' (code: ${payload.code})` 
+      : `${isUpdate ? 'Updated' : 'Created'} interaction outcome '${payload.label}' (code: ${payload.code})`;
+
     await logAlumniGrowthAudit(
       'alumni_outcome',
       null,
-      data ? 'update' : 'create',
-      `Managed interaction outcome '${payload.label}' (code: ${payload.code})`
+      action as any,
+      msg
     );
     return { success: true, data };
   } catch (err: any) {
@@ -669,6 +663,7 @@ export async function manageContributionTypeAction(payload: {
   label: string;
   is_monetary?: boolean;
   is_active?: boolean;
+  archive?: boolean;
 }) {
   try {
     const role = await getUserRole();
@@ -677,6 +672,9 @@ export async function manageContributionTypeAction(payload: {
     }
 
     const supabase = await createClient();
+    const { data: existing } = await supabase.from('contribution_types').select('id').eq('code', payload.code).maybeSingle();
+    const isUpdate = !!existing;
+
     const { data, error } = await supabase.from('contribution_types').upsert(
       {
         code: payload.code,
@@ -684,6 +682,7 @@ export async function manageContributionTypeAction(payload: {
         is_monetary: payload.is_monetary ?? false,
         is_custom: true,
         is_active: payload.is_active ?? true,
+        archived_at: payload.archive ? new Date().toISOString() : null,
       },
       { onConflict: 'code' }
     );
@@ -692,11 +691,17 @@ export async function manageContributionTypeAction(payload: {
 
     revalidatePath('/engagement/settings');
     revalidatePath('/alumni-growth/settings');
+    
+    const action = payload.archive ? 'archive' : (isUpdate ? 'update' : 'create');
+    const msg = payload.archive 
+      ? `Archived contribution type '${payload.label}' (code: ${payload.code})` 
+      : `${isUpdate ? 'Updated' : 'Created'} contribution type '${payload.label}' (code: ${payload.code}, monetary: ${payload.is_monetary ?? false})`;
+
     await logAlumniGrowthAudit(
       'alumni_contribution_type',
       null,
-      data ? 'update' : 'create',
-      `Managed contribution type '${payload.label}' (code: ${payload.code}, monetary: ${payload.is_monetary ?? false})`
+      action as any,
+      msg
     );
     return { success: true, data };
   } catch (err: any) {

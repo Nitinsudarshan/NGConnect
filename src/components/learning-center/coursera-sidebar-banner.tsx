@@ -40,7 +40,7 @@ export function CourseraSidebarBanner() {
   const mailtoHref = `mailto:${contactEmail}?subject=Request%20Coursera%20Enterprise%20Access`
 
   return (
-    <div className="mx-2 mb-3 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/30 p-3 shadow-sm relative overflow-hidden">
+    <div className="mx-2 mb-3 shrink-0 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/30 p-3 shadow-sm relative overflow-hidden">
       {/* Dismiss button */}
       <button
         onClick={handleDismiss}

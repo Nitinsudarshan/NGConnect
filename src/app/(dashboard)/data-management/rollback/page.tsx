@@ -29,43 +29,9 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
-const DUMMY_ELIGIBLE_BATCHES: ImportBatch[] = [
-  {
-    id: 'b11d87e0-4351-419b-a3d2-d81b212f84cb',
-    file_name: 'ghar_export_2026_06_20.xlsx',
-    file_type: 'xlsx',
-    file_size: 45200,
-    uploaded_by: '1',
-    uploaded_by_name: 'System Admin',
-    uploaded_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    records_processed: 124,
-    records_created: 118,
-    records_updated: 4,
-    records_failed: 2,
-    status: 'completed',
-    notes: 'Standard monthly GHAR alumni refresh.'
-  },
-  {
-    id: 'e44f10f3-7684-44dd-d6f5-e14e545fa7ee',
-    file_name: 'placement_stats_q1_temp.csv',
-    file_type: 'csv',
-    file_size: 9800,
-    uploaded_by: '2',
-    uploaded_by_name: 'Operations Manager',
-    uploaded_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-    records_processed: 28,
-    records_created: 12,
-    records_updated: 16,
-    records_failed: 0,
-    status: 'completed',
-    notes: 'Temporary placement status import for testing.'
-  }
-];
-
 export default function RollbackCenterPage() {
   const [batches, setBatches] = useState<ImportBatch[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isUsingDummy, setIsUsingDummy] = useState(false);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
 
   // Single Record Rollback Form State
@@ -88,17 +54,11 @@ export default function RollbackCenterPage() {
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
+      if (data) {
         setBatches(data as ImportBatch[]);
-        setIsUsingDummy(false);
-      } else {
-        setBatches(DUMMY_ELIGIBLE_BATCHES);
-        setIsUsingDummy(true);
       }
     } catch (err: any) {
       console.error(err);
-      setBatches(DUMMY_ELIGIBLE_BATCHES);
-      setIsUsingDummy(true);
     } finally {
       setLoading(false);
     }
@@ -113,15 +73,6 @@ export default function RollbackCenterPage() {
     if (!window.confirm(confirmMsg)) return;
 
     setActionInProgress(batchId);
-
-    if (isUsingDummy) {
-      setTimeout(() => {
-        setBatches(prev => prev.map(b => b.id === batchId ? { ...b, status: 'rolled_back' } : b));
-        toast.success(`Mock Rollback completed for batch "${fileName}"!`);
-        setActionInProgress(null);
-      }, 1500);
-      return;
-    }
 
     try {
       const res = await fetch('/api/alumni/admin/import-rollback', {
@@ -157,17 +108,6 @@ export default function RollbackCenterPage() {
     if (!window.confirm(confirmMsg)) return;
 
     setIsRecordRollingBack(true);
-
-    if (isUsingDummy || email === 'demo@domain.com') {
-      setTimeout(() => {
-        toast.success(`Mock Rollback Success: Record "${email}" reverted to pre-${targetDate} state.`);
-        setIsRecordRollingBack(false);
-        setEmail('');
-        setTargetDate('');
-        setTargetTime('');
-      }, 1500);
-      return;
-    }
 
     try {
       const res = await fetch('/api/alumni/admin/rollback', {
@@ -216,19 +156,7 @@ export default function RollbackCenterPage() {
         </div>
       </div>
 
-      {isUsingDummy && (
-        <Card className="border-amber-500/25 bg-amber-500/5 shadow-inner">
-          <CardContent className="pt-5 pb-5 text-xs flex gap-3 text-amber-700 dark:text-amber-400">
-            <AlertTriangle className="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-400" />
-            <div>
-              <p className="font-semibold text-sm">Demonstration Mode Enabled</p>
-              <p className="mt-1 leading-relaxed">
-                No active rollback-eligible batches found in the database. Showing mock imports so you can test batch rollbacks and single record reverts.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
 
       {/* Batch Rollback Section */}
       <Card className="border border-border/85 rounded-md overflow-hidden shadow-md bg-card/50">

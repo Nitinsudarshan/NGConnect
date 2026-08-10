@@ -50,6 +50,7 @@ export interface ContributionType {
   is_active: boolean;
   is_custom: boolean;
   created_at?: string;
+  archived_at?: string | null;
 }
 
 export interface InteractionOutcome {
@@ -61,6 +62,7 @@ export interface InteractionOutcome {
   is_custom: boolean;
   is_active: boolean;
   created_at?: string;
+  archived_at?: string | null;
 }
 
 export interface PipelineStage {
@@ -73,6 +75,7 @@ export interface PipelineStage {
   is_custom: boolean;
   is_active: boolean;
   created_at?: string;
+  archived_at?: string | null;
 }
 
 export interface Pipeline {

@@ -25,83 +25,9 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import LoadingView from '@/components/loading-view';
 
-const DUMMY_AUDIT_LOGS: AuditLog[] = [
-  {
-    id: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
-    table_name: 'alumni_master',
-    record_id: 'aarav.sharma@nirma.edu',
-    field_name: 'status',
-    old_value: 'Active',
-    new_value: 'Placed',
-    action_type: 'UPDATE',
-    changed_by_user_id: 'user-1',
-    changed_by_name: 'System Admin',
-    changed_by_role: 'Super Admin',
-    changed_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-    ip_address: '192.168.1.1'
-  },
-  {
-    id: 'b2c3d4e5-f67a-8b9c-0d1e-2f3a4b5c6d7e',
-    table_name: 'alumni_profile',
-    record_id: 'ananya.iyer@pes.edu',
-    field_name: 'city',
-    old_value: 'Chennai',
-    new_value: 'Bangalore',
-    action_type: 'UPDATE',
-    changed_by_user_id: 'user-2',
-    changed_by_name: 'Ananya Iyer',
-    changed_by_role: 'Member',
-    changed_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-    ip_address: '103.45.2.14'
-  },
-  {
-    id: 'c3d4e5f6-7a8b-9c0d-1e2f-3a4b5c6d7e8f',
-    table_name: 'alumni_master',
-    record_id: 'priya.patel@nirma.edu',
-    field_name: 'email',
-    old_value: null,
-    new_value: 'priya.patel@nirma.edu',
-    action_type: 'INSERT',
-    changed_by_user_id: 'user-1',
-    changed_by_name: 'System Admin',
-    changed_by_role: 'Super Admin',
-    changed_at: new Date(Date.now() - 1 * 24 * 3600 * 1000).toISOString(),
-    ip_address: '192.168.1.1'
-  },
-  {
-    id: 'd4e5f67a-8b9c-0d1e-2f3a-4b5c6d7e8f9a',
-    table_name: 'alumni_master',
-    record_id: 'karan.singh@gmail.com',
-    field_name: 'status',
-    old_value: 'DropOut',
-    new_value: 'Completed',
-    action_type: 'RESTORE',
-    changed_by_user_id: 'user-1',
-    changed_by_name: 'System Admin',
-    changed_by_role: 'Super Admin',
-    changed_at: new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString(),
-    ip_address: '192.168.1.1'
-  },
-  {
-    id: 'e5f67a8b-9c0d-1e2f-3a4b-5c6d7e8f9a0b',
-    table_name: 'alumni_master',
-    record_id: 'rahul.verma@nirma.edu',
-    field_name: '*',
-    old_value: '{"email":"rahul.verma@nirma.edu","name":"Rahul Verma","status":"Completed"}',
-    new_value: null,
-    action_type: 'DELETE',
-    changed_by_user_id: 'user-1',
-    changed_by_name: 'System Admin',
-    changed_by_role: 'Super Admin',
-    changed_at: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString(),
-    ip_address: '192.168.1.1'
-  }
-];
-
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isUsingDummy, setIsUsingDummy] = useState(false);
 
   // Filter States
   const [searchEmail, setSearchEmail] = useState('');
@@ -122,17 +48,11 @@ export default function AuditLogsPage() {
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
+      if (data) {
         setLogs(data as AuditLog[]);
-        setIsUsingDummy(false);
-      } else {
-        setLogs(DUMMY_AUDIT_LOGS);
-        setIsUsingDummy(true);
       }
     } catch (err: any) {
       console.error('Failed to load audit logs:', err.message);
-      setLogs(DUMMY_AUDIT_LOGS);
-      setIsUsingDummy(true);
     } finally {
       setLoading(false);
     }
@@ -182,19 +102,7 @@ export default function AuditLogsPage() {
         </Button>
       </div>
 
-      {isUsingDummy && !loading && (
-        <Card className="border-amber-500/25 bg-amber-500/5 shadow-inner">
-          <CardContent className="pt-5 pb-5 text-xs flex gap-3 text-amber-700 dark:text-amber-400">
-            <HelpCircle className="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-400" />
-            <div>
-              <p className="font-semibold text-sm">Viewing Demo Audit Logs</p>
-              <p className="mt-1 leading-relaxed">
-                The database audit log table is currently empty. Showing interactive mock logs so you can explore search filters, action badges, and old/new value snapshots.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
 
       {/* Filters panel */}
       <Card className="border border-border/80 rounded-md shadow-sm bg-card/50">

@@ -52,104 +52,6 @@ const MAP_FIELDS = [
   { key: 'reason', label: 'Status Reason/Note', required: false },
 ];
 
-const DUMMY_PREVIEW: ImportPreviewResult = {
-  total_rows: 5,
-  valid_rows: 3,
-  invalid_rows: 2,
-  preview: [
-    {
-      email: 'aarav.sharma@nirma.edu',
-      name: 'Aarav Sharma',
-      phone_number: '9876543210',
-      gender: 'Male',
-      city: 'Ahmedabad',
-      state: 'Gujarat',
-      campus: 'Nirma University',
-      course: 'School of Programming',
-      entry_year: 2022,
-      technology_stack: 'MERN Stack',
-      donor: 'Yes',
-      cycle: '2025-A',
-      company: 'Google',
-      starting_position: 'Software Engineer',
-      starting_salary: 1800000,
-      month_of_placement: 'June',
-      year_of_placement: 2025,
-      linkedin_profile: 'https://linkedin.com/in/aarav-sharma-dummy',
-      status: 'Placed',
-      _valid: true,
-      _errors: []
-    },
-    {
-      email: 'ananya.iyer@pes.edu',
-      name: 'Ananya Iyer',
-      phone_number: '9123456789',
-      gender: 'Female',
-      city: 'Bangalore',
-      state: 'Karnataka',
-      campus: 'PES University',
-      course: 'School of Business',
-      entry_year: 2023,
-      technology_stack: 'Product Analytics',
-      donor: 'No',
-      cycle: '2026-A',
-      company: 'McKinsey',
-      starting_position: 'Business Analyst',
-      starting_salary: 1400000,
-      status: 'Active',
-      _valid: true,
-      _errors: []
-    },
-    {
-      email: '',
-      name: 'Rahul Verma',
-      phone_number: '9998887776',
-      gender: 'Male',
-      city: 'Delhi',
-      state: 'Delhi',
-      campus: 'Nirma University',
-      course: 'School of Programming',
-      entry_year: 2021,
-      status: 'Completed',
-      _valid: false,
-      _errors: ['Email is a required field and cannot be empty.']
-    },
-    {
-      email: 'priya.patel@nirma.edu',
-      name: 'Priya Patel',
-      phone_number: '8887776665',
-      gender: 'Female',
-      city: 'Pune',
-      state: 'Maharashtra',
-      campus: 'Nirma University',
-      course: 'School of Finance',
-      entry_year: 2022,
-      status: 'Studying',
-      _valid: false,
-      _errors: ['Status must be one of: Active, Placed, DropOut, Intern (Out Campus), Intern (In Campus), Completed, Completed-Opted out for placement, InActive']
-    },
-    {
-      email: 'karan.singh@gmail.com',
-      name: 'Karan Singh',
-      phone_number: '7776665554',
-      gender: 'Male',
-      city: 'Chandigarh',
-      state: 'Punjab',
-      campus: 'PES University',
-      course: 'School of Programming',
-      entry_year: 2023,
-      status: 'Intern (In Campus)',
-      company: 'Infosys',
-      _valid: true,
-      _errors: []
-    }
-  ],
-  errors: [
-    { row: 3, email: '(missing)', errors: ['Email is a required field and cannot be empty.'] },
-    { row: 4, email: 'priya.patel@nirma.edu', errors: ['Status must be one of: Active, Placed, DropOut, Intern (Out Campus), Intern (In Campus), Completed, Completed-Opted out for placement, InActive'] }
-  ]
-};
-
 export default function ImportAlumniDataPage() {
   const router = useRouter();
 
@@ -162,7 +64,6 @@ export default function ImportAlumniDataPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [previewResult, setPreviewResult] = useState<ImportPreviewResult | null>(null);
-  const [isDummyMode, setIsDummyMode] = useState(false);
 
   // Import processing state
   const [isImporting, setIsImporting] = useState(false);
@@ -218,15 +119,7 @@ export default function ImportAlumniDataPage() {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
       setPreviewResult(null);
-      setIsDummyMode(false);
     }
-  };
-
-  const handleLoadDummy = () => {
-    setIsDummyMode(true);
-    setFile(null);
-    setPreviewResult(DUMMY_PREVIEW);
-    toast.success('Loaded dummy data for visual preview!');
   };
 
   const handleGeneratePreview = async () => {
@@ -258,40 +151,6 @@ export default function ImportAlumniDataPage() {
   };
 
   const handleProceedImport = async () => {
-    if (isDummyMode) {
-      setIsImporting(true);
-      setImportStep('Uploading file to storage...');
-      setImportProgress(30);
-
-      setTimeout(() => {
-        setImportStep('Parsing rows & validating mappings...');
-        setImportProgress(60);
-
-        setTimeout(() => {
-          setImportStep('Processing records & triggers...');
-          setImportProgress(90);
-
-          setTimeout(() => {
-            setImportProgress(100);
-            setIsImporting(false);
-            setImportResult({
-              records_processed: DUMMY_PREVIEW.total_rows,
-              records_created: DUMMY_PREVIEW.valid_rows - 1,
-              records_updated: 1,
-              records_failed: DUMMY_PREVIEW.invalid_rows,
-              status: 'completed',
-              errors: DUMMY_PREVIEW.errors.map(e => ({
-                email: e.email,
-                error: e.errors.join(', ')
-              }))
-            });
-            toast.success('Dummy import mock completed!');
-          }, 1200);
-        }, 1200);
-      }, 1000);
-      return;
-    }
-
     if (!file) return;
 
     setIsImporting(true);
@@ -345,7 +204,6 @@ export default function ImportAlumniDataPage() {
   const resetImportFlow = () => {
     setFile(null);
     setPreviewResult(null);
-    setIsDummyMode(false);
     setIsImporting(false);
     setImportProgress(0);
     setImportResult(null);
@@ -381,17 +239,6 @@ export default function ImportAlumniDataPage() {
             <Settings2 className="w-4 h-4" />
             {showMapping ? 'Hide Mapping Config' : 'Configure Column Map'}
           </Button>
-          {!previewResult && (
-            <Button
-              variant="secondary"
-              size="sm"
-              className="gap-2 rounded-md bg-gradient-to-r from-violet-500/10 via-indigo-500/10 to-blue-500/10 hover:from-violet-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition-all hover:scale-105"
-              onClick={handleLoadDummy}
-            >
-              <Sparkles className="w-4 h-4" />
-              Load Dummy Preview
-            </Button>
-          )}
         </div>
       </div>
 
@@ -608,11 +455,6 @@ export default function ImportAlumniDataPage() {
             <div>
               <div className="flex items-center gap-2">
                 <CardTitle className="text-lg font-bold tracking-tight">Import Preview & Verification</CardTitle>
-                {isDummyMode && (
-                  <Badge variant="secondary" className="bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900 rounded-md font-bold">
-                    MOCK DUMMY PREVIEW
-                  </Badge>
-                )}
               </div>
               <CardDescription className="text-xs">
                 Parsed columns and mapped outputs. Verify error highlights before committing batches.

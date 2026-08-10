@@ -158,42 +158,58 @@ export default function WorkspaceClient({
       />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border border-destructive/30 bg-destructive/5 rounded-2xl shadow-2xs">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase text-destructive tracking-wider">Overdue Callbacks</p>
-              <h3 className="text-2xl font-extrabold text-destructive mt-0.5">{overdueFollowups.length}</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+        {/* Overdue Callbacks */}
+        <div className="bg-card/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Overdue Callbacks</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{overdueFollowups.length}</p>
             </div>
-            <div className="p-2.5 rounded-xl bg-destructive/10 text-destructive">
-              <AlertTriangle className="w-5 h-5" />
+            <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg group-hover:bg-red-100 dark:group-hover:bg-red-900/40 transition-colors">
+              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="mt-4 flex items-center text-sm">
+            <span className="text-red-600 dark:text-red-400 font-medium flex items-center bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-md text-xs">
+               Action Required
+            </span>
+          </div>
+        </div>
 
-        <Card className="border border-amber-500/30 bg-amber-500/5 rounded-2xl shadow-2xs">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase text-amber-600 dark:text-amber-400 tracking-wider">Due Today</p>
-              <h3 className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-0.5">{dueTodayFollowups.length}</h3>
+        {/* Due Today */}
+        <div className="bg-card/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Due Today</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{dueTodayFollowups.length}</p>
             </div>
-            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              <Clock className="w-5 h-5" />
+            <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg group-hover:bg-amber-100 dark:group-hover:bg-amber-900/40 transition-colors">
+              <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="mt-4 flex items-center text-sm">
+            <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-md text-xs">
+               Scheduled for today
+            </span>
+          </div>
+        </div>
 
-        <Card className="border border-indigo-500/30 bg-indigo-500/5 rounded-2xl shadow-2xs">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase text-indigo-600 dark:text-indigo-400 tracking-wider">Total Active Pool</p>
-              <h3 className="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-0.5">{alumniList.length}</h3>
+        {/* Total Active Pool */}
+        <div className="bg-card/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Active Pool</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{alumniList.length}</p>
             </div>
-            <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-              <UserCheck className="w-5 h-5" />
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 transition-colors">
+              <UserCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="mt-4 flex items-center text-sm text-slate-500 font-medium">
+            Alumni assigned to workspace
+          </div>
+        </div>
       </div>
 
       {/* Filters Bar */}

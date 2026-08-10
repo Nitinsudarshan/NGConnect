@@ -23,6 +23,7 @@ import {
 import { NavMain, NavItem } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { CourseraSidebarBanner } from "@/components/learning-center/coursera-sidebar-banner"
+import { PayForwardSidebarBanner } from "@/components/pay-forward-sidebar-banner"
 import {
   Sidebar,
   SidebarContent,
@@ -248,8 +249,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           ...(!isExcludedRole ? navAlumniGrowth : []),
           ...(!isExcludedRole ? navManage : []),
         ]} />
-        <CourseraSidebarBanner />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <div className="mt-auto flex flex-col">
+          <NavSecondary items={data.navSecondary} />
+          {user?.role === "Member" && <CourseraSidebarBanner />}
+          {user?.role === "Member" && <PayForwardSidebarBanner />}
+        </div>
       </SidebarContent>
     </Sidebar>
   )

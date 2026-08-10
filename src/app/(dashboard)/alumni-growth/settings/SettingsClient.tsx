@@ -23,6 +23,7 @@ import {
   MoreVertical,
   Edit2,
   Trash2,
+  Archive,
   UserPlus,
   Linkedin,
   MapPin,
@@ -171,6 +172,8 @@ export default function SettingsClient({
 
   /* ── Outcome state ── */
   const [outcomes, setOutcomes] = useState<InteractionOutcome[]>(initialOutcomes);
+  const [editingOutcome, setEditingOutcome] = useState<InteractionOutcome | null>(null);
+  const [archivingOutcome, setArchivingOutcome] = useState<InteractionOutcome | null>(null);
   const [newOutcomeCode,        setNewOutcomeCode]        = useState("");
   const [newOutcomeLabel,       setNewOutcomeLabel]       = useState("");
   const [newOutcomeReqFollowup, setNewOutcomeReqFollowup] = useState(false);
@@ -179,6 +182,8 @@ export default function SettingsClient({
 
   /* ── Contribution type state ── */
   const [contribTypes, setContribTypes] = useState<ContributionType[]>(initialContribTypes);
+  const [editingContrib, setEditingContrib] = useState<ContributionType | null>(null);
+  const [archivingContrib, setArchivingContrib] = useState<ContributionType | null>(null);
   const [newContribCode,        setNewContribCode]        = useState("");
   const [newContribLabel,       setNewContribLabel]       = useState("");
   const [newContribIsMonetary,  setNewContribIsMonetary]  = useState(false);
@@ -186,6 +191,8 @@ export default function SettingsClient({
 
   /* ── Pipeline stage state ── */
   const [selectedPipelineId, setSelectedPipelineId] = useState(pipelines?.[0]?.id || "");
+  const [editingPipelineStage, setEditingPipelineStage] = useState<PipelineStage | null>(null);
+  const [archivingPipelineStage, setArchivingPipelineStage] = useState<PipelineStage | null>(null);
   const [newStageCode,       setNewStageCode]       = useState("");
   const [newStageLabel,      setNewStageLabel]      = useState("");
   const [newStageSortOrder,  setNewStageSortOrder]  = useState("1");
@@ -239,7 +246,7 @@ export default function SettingsClient({
         weight_linkedin:  parseFloat(weightLinkedin)  ||  5,
         weight_tech_stack: parseFloat(weightTechStack)||  5,
         profile_score_red_threshold:   parseFloat(redThreshold)   || 50,
-        profile_score_amber_threshold: parseFloat(amberThreshold) || 80,
+        profile_score_amber_threshold: parseFloat(redThreshold)   || 50,
         profile_score_green_threshold: parseFloat(greenThreshold) || 100,
         updated_by: userEmail,
       });
@@ -264,11 +271,12 @@ export default function SettingsClient({
     });
     setIsAddingOutcome(false);
     if (res.success) {
-      toast.success("Outcome added");
+      toast.success("Outcome saved");
       setNewOutcomeCode(""); setNewOutcomeLabel("");
       setNewOutcomeReqFollowup(false); setNewOutcomeIsTerminal(false);
+      setEditingOutcome(null);
     } else {
-      toast.error(res.error || "Failed to add outcome");
+      toast.error(res.error || "Failed to save outcome");
     }
   };
 
@@ -283,10 +291,11 @@ export default function SettingsClient({
     });
     setIsAddingContrib(false);
     if (res.success) {
-      toast.success("Contribution type added");
+      toast.success("Contribution type saved");
       setNewContribCode(""); setNewContribLabel(""); setNewContribIsMonetary(false);
+      setEditingContrib(null);
     } else {
-      toast.error(res.error || "Failed to add contribution type");
+      toast.error(res.error || "Failed to save contribution type");
     }
   };
 
@@ -306,9 +315,47 @@ export default function SettingsClient({
     if (res.success) {
       toast.success(`Stage '${newStageLabel}' saved!`);
       setNewStageCode(""); setNewStageLabel(""); setNewStageSortOrder("1"); setNewStageIsTerminal(false);
+      setEditingPipelineStage(null);
     } else {
       toast.error(res.error || "Failed to save stage");
     }
+  };
+
+  const handleConfirmArchiveOutcome = async () => {
+    if (!archivingOutcome) return;
+    const res = await manageOutcomeAction({ ...archivingOutcome, archive: true });
+    if (res.success) {
+      setOutcomes(prev => prev.map(o => o.id === archivingOutcome.id ? { ...o, archived_at: new Date().toISOString() } : o));
+      toast.success("Outcome archived");
+    } else {
+      toast.error(res.error);
+    }
+    setArchivingOutcome(null);
+  };
+
+  const handleConfirmArchiveContrib = async () => {
+    if (!archivingContrib) return;
+    const res = await manageContributionTypeAction({ ...archivingContrib, archive: true });
+    if (res.success) {
+      setContribTypes(prev => prev.map(c => c.id === archivingContrib.id ? { ...c, archived_at: new Date().toISOString() } : c));
+      toast.success("Contribution type archived");
+    } else {
+      toast.error(res.error);
+    }
+    setArchivingContrib(null);
+  };
+
+  const handleConfirmArchivePipelineStage = async () => {
+    if (!archivingPipelineStage) return;
+    const res = await managePipelineStageAction({ ...archivingPipelineStage, archive: true });
+    if (res.success) {
+      toast.success("Pipeline stage archived");
+      // Page reload to reflect changes since stages are not in local state
+      window.location.reload();
+    } else {
+      toast.error(res.error);
+    }
+    setArchivingPipelineStage(null);
   };
 
   const handleConfirmArchiveMentor = async () => {
@@ -530,7 +577,9 @@ export default function SettingsClient({
                     <div className="flex items-center justify-between font-bold text-amber-800 dark:text-amber-300">
                       <span>AMBER (Warning)</span><span>{redThreshold}–{parseInt(greenThreshold) - 1}%</span>
                     </div>
-                    <Input type="number" value={amberThreshold} onChange={(e) => setAmberThreshold(e.target.value)} disabled={!isAdmin} className="h-9 bg-background rounded-xl text-xs" />
+                    <div className="h-9 bg-background/40 rounded-xl text-xs flex items-center px-3 text-amber-800/60 dark:text-amber-300/60 border border-amber-500/10 italic">
+                      Auto-calculated range
+                    </div>
                   </div>
                   <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-1.5">
                     <div className="flex items-center justify-between font-bold text-emerald-700 dark:text-emerald-300">
@@ -624,10 +673,11 @@ export default function SettingsClient({
                               <TableHead className="text-xs font-mono">Code</TableHead>
                               <TableHead className="text-xs text-center">Terminal</TableHead>
                               <TableHead className="text-xs text-center">Custom</TableHead>
+                              {isAdmin && <TableHead className="text-xs text-right">Actions</TableHead>}
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {pipeStages.map((stg) => (
+                            {pipeStages.filter(s => !s.archived_at).map((stg) => (
                               <TableRow key={stg.id}>
                                 <TableCell className="text-xs text-muted-foreground">{stg.sort_order}</TableCell>
                                 <TableCell className="text-xs font-medium">{stg.label}</TableCell>
@@ -642,6 +692,25 @@ export default function SettingsClient({
                                     ? <Badge variant="outline" className="text-[9px]">Custom</Badge>
                                     : <span className="text-[10px] text-muted-foreground">—</span>}
                                 </TableCell>
+                                {isAdmin && (
+                                  <TableCell className="text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
+                                        setSelectedPipelineId(p.id);
+                                        setNewStageCode(stg.code);
+                                        setNewStageLabel(stg.label);
+                                        setNewStageSortOrder(stg.sort_order.toString());
+                                        setNewStageIsTerminal(stg.is_terminal);
+                                        setEditingPipelineStage(stg);
+                                      }}>
+                                        <Edit2 className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/50" onClick={() => setArchivingPipelineStage(stg)}>
+                                        <Archive className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                )}
                               </TableRow>
                             ))}
                           </TableBody>
@@ -741,10 +810,11 @@ export default function SettingsClient({
                     <TableHead className="text-xs text-center">Terminal</TableHead>
                     <TableHead className="text-xs text-center">Custom</TableHead>
                     <TableHead className="text-xs text-center">Active</TableHead>
+                    {isAdmin && <TableHead className="text-xs text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {outcomes.map((o) => (
+                  {outcomes.filter(o => !o.archived_at).map((o) => (
                     <TableRow key={o.id}>
                       <TableCell className="font-mono text-[11px] text-muted-foreground">{o.code}</TableCell>
                       <TableCell className="text-xs font-medium">{o.label}</TableCell>
@@ -768,6 +838,24 @@ export default function SettingsClient({
                           {o.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
+                      {isAdmin && (
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
+                              setNewOutcomeCode(o.code);
+                              setNewOutcomeLabel(o.label);
+                              setNewOutcomeReqFollowup(o.requires_followup_datetime);
+                              setNewOutcomeIsTerminal(o.is_terminal);
+                              setEditingOutcome(o);
+                            }}>
+                              <Edit2 className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/50" onClick={() => setArchivingOutcome(o)}>
+                              <Archive className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -842,10 +930,11 @@ export default function SettingsClient({
                     <TableHead className="text-xs text-center">Monetary</TableHead>
                     <TableHead className="text-xs text-center">Custom</TableHead>
                     <TableHead className="text-xs text-center">Active</TableHead>
+                    {isAdmin && <TableHead className="text-xs text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {contribTypes.map((c) => (
+                  {contribTypes.filter(c => !c.archived_at).map((c) => (
                     <TableRow key={c.id}>
                       <TableCell className="font-mono text-[11px] text-muted-foreground">{c.code}</TableCell>
                       <TableCell className="text-xs font-medium">{c.label}</TableCell>
@@ -864,6 +953,23 @@ export default function SettingsClient({
                           {c.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
+                      {isAdmin && (
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
+                              setNewContribCode(c.code);
+                              setNewContribLabel(c.label);
+                              setNewContribIsMonetary(c.is_monetary);
+                              setEditingContrib(c);
+                            }}>
+                              <Edit2 className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/50" onClick={() => setArchivingContrib(c)}>
+                              <Archive className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -1219,6 +1325,35 @@ export default function SettingsClient({
         description="This mentor will be marked as Inactive. They will no longer be available for new session assignments, but all historical session data will be preserved."
         confirmLabel="Archive Mentor"
         onConfirm={handleConfirmArchiveMentor}
+      />
+      <ConfirmDeleteDialog
+        open={!!archivingOutcome}
+        onOpenChange={(open) => !open && setArchivingOutcome(null)}
+        title="Archive Outcome"
+        itemName={archivingOutcome?.label}
+        description="Are you sure you want to archive this outcome? It will no longer be available for new interactions, but historical data will be preserved."
+        confirmLabel="Archive Outcome"
+        onConfirm={handleConfirmArchiveOutcome}
+      />
+
+      <ConfirmDeleteDialog
+        open={!!archivingContrib}
+        onOpenChange={(open) => !open && setArchivingContrib(null)}
+        title="Archive Contribution Type"
+        itemName={archivingContrib?.label}
+        description="Are you sure you want to archive this contribution type? It will no longer be available for new records, but historical data will be preserved."
+        confirmLabel="Archive Contribution"
+        onConfirm={handleConfirmArchiveContrib}
+      />
+
+      <ConfirmDeleteDialog
+        open={!!archivingPipelineStage}
+        onOpenChange={(open) => !open && setArchivingPipelineStage(null)}
+        title="Archive Pipeline Stage"
+        itemName={archivingPipelineStage?.label}
+        description="Are you sure you want to archive this stage? It will be removed from the pipeline options, but historical placements remain."
+        confirmLabel="Archive Stage"
+        onConfirm={handleConfirmArchivePipelineStage}
       />
     </div>
   );

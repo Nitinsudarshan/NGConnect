@@ -8,6 +8,8 @@ export default async function WorkspacePage() {
   const outcomes = await getInteractionOutcomes();
   const settings = await getOrgSettings();
   const userEmail = (await getSupabaseUserEmail()) || 'staff@navgurukul.org';
+  console.log('--- WORKSPACE PAGE ---');
+  console.log('alumniList length:', alumniList?.length);
 
   return (
     <WorkspaceClient

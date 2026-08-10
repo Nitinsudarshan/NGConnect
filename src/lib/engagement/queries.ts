@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { ContributionType, DEFAULT_OUTCOME_MAPPINGS, InteractionOutcome, Mentor, OrgSettings, OutcomeMappingRow, PayForwardProgress, Pipeline, PipelineStage, ProfileCompleteness } from '@/types/engagement';
 import { calculateProfileScore } from './utils';
 import { slugify } from '@/lib/utils';
@@ -6,8 +7,8 @@ import { getUserCourseraData } from '@/lib/learning-center/queries';
 
 export async function getOutcomeMapping(): Promise<OutcomeMappingRow[]> {
   try {
-    const supabase = await createClient();
-    const { data } = await supabase.from('org_settings').select('value').eq('key', 'outcome_mapping_rows').maybeSingle();
+    const adminSupabase = createAdminClient();
+    const { data } = await adminSupabase.from('org_settings').select('value').eq('key', 'outcome_mapping_rows').maybeSingle();
     if (data && data.value) {
       const parsed = JSON.parse(data.value);
       if (Array.isArray(parsed) && parsed.length > 0) {
@@ -95,8 +96,8 @@ export async function getPipelineStages(pipelineIdOrCode?: string): Promise<Pipe
 
 export async function getOrgSettings(): Promise<OrgSettings> {
   try {
-    const supabase = await createClient();
-    const { data } = await supabase.from('org_settings').select('key, value');
+    const adminSupabase = createAdminClient();
+    const { data } = await adminSupabase.from('org_settings').select('key, value');
     const settings: OrgSettings = {
       pay_forward_cap_inr: 120000,
       pay_forward_min_salary_monthly_inr: 15000,
@@ -129,11 +130,11 @@ export async function getOrgSettings(): Promise<OrgSettings> {
         } else if (row.key === 'followup_cooldown_days') {
           settings.followup_cooldown_days = Number(row.value) || 3;
         } else if (row.key === 'active_criteria_coursera') {
-          settings.active_criteria_coursera = JSON.parse(row.value);
+          settings.active_criteria_coursera = typeof row.value === 'string' ? JSON.parse(row.value) : Boolean(row.value);
         } else if (row.key === 'active_criteria_mentoring') {
-          settings.active_criteria_mentoring = JSON.parse(row.value);
+          settings.active_criteria_mentoring = typeof row.value === 'string' ? JSON.parse(row.value) : Boolean(row.value);
         } else if (row.key === 'active_criteria_watch_time') {
-          settings.active_criteria_watch_time = JSON.parse(row.value);
+          settings.active_criteria_watch_time = typeof row.value === 'string' ? JSON.parse(row.value) : Boolean(row.value);
         } else if (row.key === 'weight_name') {
           settings.weight_name = Number(row.value);
         } else if (row.key === 'weight_email') {
