@@ -40,7 +40,7 @@ const chartConfig = {
   alumni: { label: "Alumni" },
   color1: { color: "var(--color-chart-primary)" },
   color2: { color: "var(--color-chart-accent-1)" },
-  color3: { color: "var(--color-chart-accent-2)" },
+  color3: { color: "var(--color-chart-neutral)" },
 }
 
 const getColorVar = (index: number) => {
@@ -51,7 +51,7 @@ const getColorVar = (index: number) => {
     ? "var(--color-chart-primary)"
     : baseIndex === 1
       ? "var(--color-chart-accent-1)"
-      : "var(--color-chart-accent-2)";
+      : "var(--color-chart-neutral)";
   return opacity === 100 ? baseColor : `color-mix(in srgb, ${baseColor} ${opacity}%, transparent)`;
 }
 
@@ -261,6 +261,11 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
                   dataKey="label"
                   className="fill-foreground capitalize"
                   fontSize={11}
+                  style={{
+                    paintOrder: "stroke",
+                    stroke: "var(--card)",
+                    strokeWidth: 3,
+                  }}
                 />
               </RadialBar>
             </RadialBarChart>
@@ -290,6 +295,11 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
                   dataKey="label"
                   className="fill-foreground capitalize"
                   fontSize={11}
+                  style={{
+                    paintOrder: "stroke",
+                    stroke: "var(--card)",
+                    strokeWidth: 3,
+                  }}
                 />
               </RadialBar>
             </RadialBarChart>
