@@ -34,7 +34,8 @@ import { SettingsLayout } from "@/components/settings/settings-layout"
 import { MentorStatsModalContent } from "@/components/settings/mentor-stats-modal"
 import { MentorForm } from "@/components/settings/mentor-form"
 import { EditLogTab } from "@/components/settings/edit-log-tab"
-import { 
+import { ConfirmDeleteDialog } from "@/components/settings/confirm-delete-dialog"
+import type { 
   Mentor, 
   LearningAudience, 
   LearningSessionType, 
@@ -42,9 +43,6 @@ import {
   LearningSubcategory, 
   LearningCenterAuditLog,
   CourseraConfig,
-  getCategorySessionCount,
-  getSubcategorySessionCount,
-  saveCourseraConfig
 } from "@/lib/learning-center/queries"
 import { 
   archiveMentorAction, 
@@ -57,7 +55,10 @@ import {
   saveSubcategoryAction,
   deleteSubcategoryAction,
   logIntegrationAction,
-  disconnectGoogleMeetAction
+  disconnectGoogleMeetAction,
+  getCategorySessionCountAction,
+  getSubcategorySessionCountAction,
+  saveCourseraConfigAction,
 } from "@/lib/learning-center/actions"
 import { Switch } from "@/components/ui/switch"
 
@@ -118,7 +119,7 @@ export function SettingsClient({
 
   const handleSaveCourseraConfig = async () => {
     setSavingCourseraConfig(true)
-    const result = await saveCourseraConfig({ contact_email: contactEmail, show_callouts: showCallouts })
+    const result = await saveCourseraConfigAction({ contact_email: contactEmail, show_callouts: showCallouts })
     setSavingCourseraConfig(false)
     if (result.success) {
       toast.success("Coursera settings saved successfully")
@@ -194,6 +195,9 @@ export function SettingsClient({
   const [audienceModalOpen, setAudienceModalOpen] = useState(false)
   const [editingAudience, setEditingAudience] = useState<LearningAudience | null>(null)
   const [audienceForm, setAudienceForm] = useState({ name: "", audience_type: "general", campus_id: "", course_id: "", batch_year: "" })
+  const [deletingAudience, setDeletingAudience] = useState<LearningAudience | null>(null)
+  const [deletingSessionType, setDeletingSessionType] = useState<LearningSessionType | null>(null)
+  const [archivingMentor, setArchivingMentor] = useState<Mentor | null>(null)
 
   const toggleCategoryExpand = (catId: string) => {
     setExpandedCategories(prev => ({ ...prev, [catId]: !prev[catId] }))
@@ -261,7 +265,7 @@ export function SettingsClient({
     setDeletingCategory(category)
     setDeleteCategoryModalOpen(true)
     setLoadingCategorySessionCount(true)
-    const count = await getCategorySessionCount(category.id)
+    const count = await getCategorySessionCountAction(category.id)
     setDeletingCategorySessionCount(count)
     setLoadingCategorySessionCount(false)
   }
@@ -350,7 +354,7 @@ export function SettingsClient({
     setDeletingSubcategory(subcategory)
     setDeleteSubcategoryModalOpen(true)
     setLoadingSubcategorySessionCount(true)
-    const count = await getSubcategorySessionCount(subcategory.id)
+    const count = await getSubcategorySessionCountAction(subcategory.id)
     setDeletingSubcategorySessionCount(count)
     setLoadingSubcategorySessionCount(false)
   }
@@ -470,8 +474,11 @@ export function SettingsClient({
     setAudienceModalOpen(false)
   }
 
-  const handleDeleteAudience = async (aud: LearningAudience) => {
+  const handleConfirmDeleteAudience = async () => {
+    if (!deletingAudience) return
+    const aud = deletingAudience
     setAudiences(audiences.filter(a => a.id !== aud.id))
+    setDeletingAudience(null)
     toast.success("Audience deleted")
     await deleteAudienceAction(aud.id, aud.name)
     addLocalAuditLog("audience", aud.id, "delete", `Deleted audience target '${aud.name}'`)
@@ -493,20 +500,33 @@ export function SettingsClient({
     setSessionTypeModalOpen(false)
   }
 
-  const handleDeleteSessionType = async (type: LearningSessionType) => {
+  const handleConfirmDeleteSessionType = async () => {
+    if (!deletingSessionType) return
+    const type = deletingSessionType
     setSessionTypes(sessionTypes.filter(t => t.id !== type.id))
+    setDeletingSessionType(null)
     toast.success("Session type deleted")
     await deleteSessionTypeAction(type.id, type.name)
     addLocalAuditLog("session_type", type.id, "delete", `Deleted session type '${type.name}'`)
   }
 
+  const handleConfirmArchiveMentor = async () => {
+    if (!archivingMentor) return
+    const mentor = archivingMentor
+    setMentorsState((prev) => prev.map((m) => m.id === mentor.id ? { ...m, status: "Inactive" } : m))
+    setArchivingMentor(null)
+    toast.success(`Mentor '${mentor.name}' archived`)
+    await archiveMentorAction(mentor.id, mentor.name)
+    addLocalAuditLog("mentor", mentor.id, "archive", `Archived mentor '${mentor.name}'`)
+  }
+
   const navItems = [
-    { label: "Manage Mentors", value: "mentors", icon: Users },
-    { label: "Audience", value: "audience", icon: Target },
-    { label: "Session Types", value: "session-types", icon: ListVideo },
-    { label: "Session Categories", value: "categories", icon: FolderTree },
-    { label: "Integrations", value: "integrations", icon: Network },
-    { label: "Edit Log", value: "edit-log", icon: History },
+    { label: "Manage Mentors",     value: "mentors",       icon: Users,      group: "Master Data" },
+    { label: "Audience",           value: "audience",      icon: Target,     group: "Master Data" },
+    { label: "Session Types",      value: "session-types", icon: ListVideo,  group: "Session Config" },
+    { label: "Session Categories", value: "categories",   icon: FolderTree, group: "Session Config" },
+    { label: "Integrations",       value: "integrations",  icon: Network,    group: "Integrations" },
+    { label: "Edit Log",           value: "edit-log",      icon: History,    group: "Audit" },
   ]
 
   return (
@@ -595,7 +615,7 @@ export function SettingsClient({
                                 <DropdownMenuItem className="cursor-pointer" onClick={() => setEditingMentorData(mentor)}>
                                   <Edit2 className="w-4 h-4 mr-2" /> Edit Mentor
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={() => handleArchiveMentor(mentor)}>
+                                <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={() => setArchivingMentor(mentor)}>
                                   <Trash2 className="w-4 h-4 mr-2" /> Archive Mentor
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
@@ -769,7 +789,7 @@ export function SettingsClient({
                             checked={showCallouts}
                             onCheckedChange={async (val) => {
                               setShowCallouts(val)
-                              const result = await saveCourseraConfig({ contact_email: contactEmail, show_callouts: val })
+                              const result = await saveCourseraConfigAction({ contact_email: contactEmail, show_callouts: val })
                               if (result.success) {
                                 toast.success(val ? "Coursera callouts enabled" : "Coursera callouts hidden")
                                 addLocalAuditLog("integration", null, "update", `Coursera callouts ${val ? "enabled" : "disabled"}`)
@@ -857,7 +877,7 @@ export function SettingsClient({
                             }}>
                               <Edit2 className="w-4 h-4 text-muted-foreground" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50" onClick={() => handleDeleteAudience(aud)}>
+                            <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50" onClick={() => setDeletingAudience(aud)}>
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
@@ -906,7 +926,7 @@ export function SettingsClient({
                             }}>
                               <Edit2 className="w-4 h-4 text-muted-foreground" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50" onClick={() => handleDeleteSessionType(type)}>
+                            <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50" onClick={() => setDeletingSessionType(type)}>
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
@@ -1093,7 +1113,7 @@ export function SettingsClient({
           )}
 
           {activeTab === "edit-log" && (
-            <EditLogTab logs={auditLogs} />
+            <EditLogTab logs={auditLogs} sourceFilter="learning_hub" />
           )}
 
         </SettingsLayout>
@@ -1403,6 +1423,39 @@ export function SettingsClient({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ── Double Confirm Dialog for Audience Deletion ── */}
+      <ConfirmDeleteDialog
+        open={!!deletingAudience}
+        onOpenChange={(open) => !open && setDeletingAudience(null)}
+        title="Delete Audience Segment"
+        itemName={deletingAudience?.name}
+        description="Are you sure you want to delete this audience segment? Sessions targeted to this segment will no longer have this target assigned."
+        confirmLabel="Delete Audience"
+        onConfirm={handleConfirmDeleteAudience}
+      />
+
+      {/* ── Double Confirm Dialog for Session Type Deletion ── */}
+      <ConfirmDeleteDialog
+        open={!!deletingSessionType}
+        onOpenChange={(open) => !open && setDeletingSessionType(null)}
+        title="Delete Session Type"
+        itemName={deletingSessionType?.name}
+        description="Are you sure you want to delete this session type?"
+        confirmLabel="Delete Session Type"
+        onConfirm={handleConfirmDeleteSessionType}
+      />
+
+      {/* ── Double Confirm Dialog for Mentor Archiving ── */}
+      <ConfirmDeleteDialog
+        open={!!archivingMentor}
+        onOpenChange={(open) => !open && setArchivingMentor(null)}
+        title="Archive Mentor"
+        itemName={archivingMentor?.name}
+        description="This mentor will be marked as Inactive. Historical session data will be preserved."
+        confirmLabel="Archive Mentor"
+        onConfirm={handleConfirmArchiveMentor}
+      />
     </div>
   )
 }

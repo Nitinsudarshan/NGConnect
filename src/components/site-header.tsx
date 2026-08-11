@@ -16,6 +16,7 @@ import { useSidebar } from "@/components/ui/sidebar"
 import { ModeToggle } from "@/components/mode-toggle"
 import { DevRoleToggle } from "@/components/dev-role-toggle"
 import dynamic from "next/dynamic"
+import { useBreadcrumb } from "@/contexts/breadcrumb-context"
 
 const HeaderUserMenu = dynamic(
   () => import("@/components/header-user-menu").then((m) => ({ default: m.HeaderUserMenu })),
@@ -27,9 +28,17 @@ export function SiteHeader({
 }: any) {
   const { toggleSidebar } = useSidebar()
   const pathname = usePathname()
+  const { customTitle } = useBreadcrumb()
 
-  const activePage = pathname === "/" ? "Dashboard" :
-    pathname.split('/').pop()?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || "Dashboard"
+  const rawLastSegment = pathname.split('/').pop() || ""
+  const decodedLastSegment = decodeURIComponent(rawLastSegment)
+  const defaultPageTitle = pathname === "/" ? "Dashboard" :
+    decodedLastSegment
+      .replace(/-/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase()) || "Dashboard"
+
+  const activePage = customTitle || defaultPageTitle
+
 
   return (
     <header className="bg-sidebar sticky top-0 z-50 flex w-full items-center border-b">

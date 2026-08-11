@@ -8,6 +8,7 @@ import {
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { UserProvider } from "@/contexts/user-context"
+import { BreadcrumbProvider } from "@/contexts/breadcrumb-context"
 import { getUserRole } from "@/lib/roles"
 
 export default async function DashboardLayout({
@@ -37,17 +38,20 @@ export default async function DashboardLayout({
             role: activeRole,
             isAlumni,
         }}>
-            <div className="[--header-height:calc(--spacing(14))] h-svh w-full flex flex-col overflow-hidden bg-background">
-                <SidebarProvider className="flex flex-col flex-1 h-full w-full overflow-hidden">
-                    <SiteHeader />
-                    <div className="flex flex-1 min-h-0 w-full overflow-hidden">
-                        <AppSidebar />
-                        <SidebarInset className="flex-1 min-w-0 w-full overflow-y-auto bg-background">
-                            {children}
-                        </SidebarInset>
-                    </div>
-                </SidebarProvider>
-            </div>
+            <BreadcrumbProvider>
+                <div className="[--header-height:calc(--spacing(14))] h-svh w-full flex flex-col overflow-hidden bg-background">
+                    <SidebarProvider className="flex flex-col flex-1 h-full w-full overflow-hidden">
+                        <SiteHeader />
+                        <div className="flex flex-1 min-h-0 w-full overflow-hidden">
+                            <AppSidebar />
+                            <SidebarInset className="flex-1 min-w-0 w-full overflow-y-auto bg-background">
+                                {children}
+                            </SidebarInset>
+                        </div>
+                    </SidebarProvider>
+                </div>
+            </BreadcrumbProvider>
         </UserProvider>
     )
 }
+

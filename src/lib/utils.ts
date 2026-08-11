@@ -13,3 +13,14 @@ export function slugify(text: string) {
     .replace(/[^\w-]+/g, '')  // Remove all non-word chars
     .replace(/--+/g, '-');    // Replace multiple - with single -
 }
+
+export function getAlumniSlug(email: string, name?: string | null): string {
+  if (name && name.trim()) {
+    const cleanName = name.trim().replace(/\s+/g, '-').replace(/[^a-zA-Z0-9_-]/g, '');
+    if (cleanName.length > 0) {
+      return cleanName;
+    }
+  }
+  return (email || '').replace('@', '').replace(/[^a-zA-Z0-9_.-]/g, '');
+}
+

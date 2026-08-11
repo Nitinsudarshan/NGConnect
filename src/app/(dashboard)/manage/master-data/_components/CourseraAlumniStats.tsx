@@ -46,7 +46,7 @@ export default function CourseraAlumniStats({ email }: { email: string }) {
       <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2 border-b border-border/40 pb-2">
         <BookOpen className="w-4 h-4" /> Coursera Learning Stats
       </h4>
-      <div className="max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+      <div>
         <LearnerDetailClient monthlyHistory={data.monthlyHistory} courses={data.courses} />
       </div>
     </div>

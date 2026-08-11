@@ -81,7 +81,10 @@ export interface LearningSessionType {
 
 export interface LearningCenterAuditLog {
   id: string;
-  entity_type: "mentor" | "audience" | "session_type" | "integration" | "category" | "subcategory";
+  /** LC-native types + alumni-growth prefixed types (e.g. "alumni_outcome", "alumni_pipeline_stage") */
+  entity_type: "mentor" | "audience" | "session_type" | "integration" | "category" | "subcategory"
+    | "alumni_org_settings" | "alumni_outcome" | "alumni_pipeline_stage" | "alumni_contribution_type" | "alumni_mentor"
+    | string;
   entity_id: string | null;
   action: "create" | "update" | "delete" | "archive" | "connect" | "disconnect";
   details: string;
@@ -91,8 +94,8 @@ export interface LearningCenterAuditLog {
 }
 
 export async function getMentors() {
-  const supabase = await createClient()
-  const { data, error } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data, error } = await adminSupabase
     .from('mentors')
     .select('*')
     .order('name', { ascending: true })
@@ -329,8 +332,8 @@ export async function getSessionTypes() {
 }
 
 export async function getLearningCenterAuditLogs() {
-  const supabase = await createClient()
-  const { data, error } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data, error } = await adminSupabase
     .from('learning_center_audit_logs')
     .select('*')
     .order('created_at', { ascending: false })
