@@ -503,3 +503,44 @@ export async function saveWatchProgressAction(
     return { success: false, error: err.message }
   }
 }
+
+export async function getCategorySessionCountAction(categoryId: string): Promise<number> {
+  const supabase = await createClient()
+  const { count, error } = await supabase
+    .from('learning_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('category_id', categoryId)
+
+  if (error) {
+    console.error("Error fetching category session count:", error)
+    return 0
+  }
+  return count || 0
+}
+
+export async function getSubcategorySessionCountAction(subcategoryId: string): Promise<number> {
+  const supabase = await createClient()
+  const { count, error } = await supabase
+    .from('learning_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('subcategory_id', subcategoryId)
+
+  if (error) {
+    console.error("Error fetching subcategory session count:", error)
+    return 0
+  }
+  return count || 0
+}
+
+export async function saveCourseraConfigAction(config: any): Promise<{ success: boolean; error?: string }> {
+  try {
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('coursera_config')
+      .upsert({ id: 1, ...config, updated_at: new Date().toISOString() }, { onConflict: 'id' })
+    if (error) return { success: false, error: error.message }
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e?.message ?? "Unknown error" }
+  }
+}

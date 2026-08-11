@@ -24,6 +24,17 @@ This is a **Next.js + TypeScript + Supabase + shadcn/ui** project (NGConnect). Y
 - [performance.md](rules/performance.md): Bundle size, lazy loading, and memoization basics.
 - [rbac-settings.md](rules/rbac-settings.md): RBAC system architecture and SQL configuration.
 
+## Knowledge Graph
+
+This project has a graphify knowledge graph at `graphify-out/`.
+
+- Use `graphify query "<question>"` (CLI) for codebase/architecture questions when `graphify-out/graph.json` exists.
+- Use `graphify path "<A>" "<B>"` to trace relationships between files/symbols.
+- Use `graphify explain "<concept>"` for focused concept lookups.
+- Read `graphify-out/GRAPH_REPORT.md` for a broad architecture overview.
+- After modifying source files, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- The `/graphify` slash command re-runs the full graph pipeline.
+
 ## Precedence
 
 If two rules conflict, resolve in this order (most specific wins):

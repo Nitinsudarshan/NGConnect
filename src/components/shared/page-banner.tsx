@@ -22,7 +22,7 @@ export function PageBanner({ title, description, icon, actions }: PageBannerProp
         style={{ backgroundColor: "currentColor", opacity: 0.25 }}
       />
 
-      <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 bg-white/60 dark:bg-zinc-950/60 backdrop-blur-md p-6 rounded-xl border border-white/40 dark:border-zinc-800/50 shadow-sm transition-all duration-700">
+      <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 bg-white/60 dark:bg-zinc-950/60 backdrop-blur-md p-5 rounded-xl border border-white/40 dark:border-zinc-800/50 shadow-sm transition-all duration-700">
         <div className="flex items-center gap-6">
           {icon && (
             <div className="bg-slate-50 dark:bg-zinc-900/80 p-4 rounded-full shrink-0 shadow-inner border border-indigo-200/50 dark:border-indigo-900/50 group-hover:rotate-12 transition-transform duration-500">

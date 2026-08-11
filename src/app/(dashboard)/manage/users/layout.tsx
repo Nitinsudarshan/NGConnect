@@ -1,10 +1,11 @@
 import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth';
 import { getUserRole } from '@/lib/roles';
 import { checkAccess } from '@/lib/permissions';
 
 export default async function ManageUsersLayout({ children }: { children: React.ReactNode }) {
-  const role = await getUserRole();
-  const hasAccess = await checkAccess(role, 'manage_users');
+  const { userId } = await auth();
+  const hasAccess = await checkAccess(userId, 'manage.users', 'view');
   
   if (!hasAccess) {
     redirect('/');

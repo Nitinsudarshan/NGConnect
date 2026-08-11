@@ -1,10 +1,11 @@
 import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth';
 import { getUserRole } from '@/lib/roles';
 import { checkAccess } from '@/lib/permissions';
 
 export default async function ManageMasterDataLayout({ children }: { children: React.ReactNode }) {
-  const role = await getUserRole();
-  const hasAccess = await checkAccess(role, 'master_data');
+  const { userId } = await auth();
+  const hasAccess = await checkAccess(userId, 'manage.master_data', 'view');
   
   if (!hasAccess) {
     redirect('/');

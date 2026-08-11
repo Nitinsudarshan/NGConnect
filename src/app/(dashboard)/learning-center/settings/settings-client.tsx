@@ -34,7 +34,8 @@ import { SettingsLayout } from "@/components/settings/settings-layout"
 import { MentorStatsModalContent } from "@/components/settings/mentor-stats-modal"
 import { MentorForm } from "@/components/settings/mentor-form"
 import { EditLogTab } from "@/components/settings/edit-log-tab"
-import { 
+import { ConfirmDeleteDialog } from "@/components/settings/confirm-delete-dialog"
+import type { 
   Mentor, 
   LearningAudience, 
   LearningSessionType, 
@@ -42,9 +43,6 @@ import {
   LearningSubcategory, 
   LearningCenterAuditLog,
   CourseraConfig,
-  getCategorySessionCount,
-  getSubcategorySessionCount,
-  saveCourseraConfig
 } from "@/lib/learning-center/queries"
 import { 
   archiveMentorAction, 
@@ -57,7 +55,10 @@ import {
   saveSubcategoryAction,
   deleteSubcategoryAction,
   logIntegrationAction,
-  disconnectGoogleMeetAction
+  disconnectGoogleMeetAction,
+  getCategorySessionCountAction,
+  getSubcategorySessionCountAction,
+  saveCourseraConfigAction,
 } from "@/lib/learning-center/actions"
 import { Switch } from "@/components/ui/switch"
 
@@ -69,7 +70,8 @@ export function SettingsClient({
   initialAuditLogs = [],
   initialCourseraConfig,
   initialGmeetConnected = false,
-  initialGmeetEmail = ""
+  initialGmeetEmail = "",
+  permissions
 }: { 
   initialMentors: Mentor[]
   initialAudiences: LearningAudience[]
@@ -79,6 +81,7 @@ export function SettingsClient({
   initialCourseraConfig?: CourseraConfig
   initialGmeetConnected?: boolean
   initialGmeetEmail?: string
+  permissions: Record<string, Record<string, boolean>>
 }) {
   const [testingZoom, setTestingZoom] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -118,7 +121,7 @@ export function SettingsClient({
 
   const handleSaveCourseraConfig = async () => {
     setSavingCourseraConfig(true)
-    const result = await saveCourseraConfig({ contact_email: contactEmail, show_callouts: showCallouts })
+    const result = await saveCourseraConfigAction({ contact_email: contactEmail, show_callouts: showCallouts })
     setSavingCourseraConfig(false)
     if (result.success) {
       toast.success("Coursera settings saved successfully")
@@ -194,6 +197,9 @@ export function SettingsClient({
   const [audienceModalOpen, setAudienceModalOpen] = useState(false)
   const [editingAudience, setEditingAudience] = useState<LearningAudience | null>(null)
   const [audienceForm, setAudienceForm] = useState({ name: "", audience_type: "general", campus_id: "", course_id: "", batch_year: "" })
+  const [deletingAudience, setDeletingAudience] = useState<LearningAudience | null>(null)
+  const [deletingSessionType, setDeletingSessionType] = useState<LearningSessionType | null>(null)
+  const [archivingMentor, setArchivingMentor] = useState<Mentor | null>(null)
 
   const toggleCategoryExpand = (catId: string) => {
     setExpandedCategories(prev => ({ ...prev, [catId]: !prev[catId] }))
@@ -261,7 +267,7 @@ export function SettingsClient({
     setDeletingCategory(category)
     setDeleteCategoryModalOpen(true)
     setLoadingCategorySessionCount(true)
-    const count = await getCategorySessionCount(category.id)
+    const count = await getCategorySessionCountAction(category.id)
     setDeletingCategorySessionCount(count)
     setLoadingCategorySessionCount(false)
   }
@@ -350,7 +356,7 @@ export function SettingsClient({
     setDeletingSubcategory(subcategory)
     setDeleteSubcategoryModalOpen(true)
     setLoadingSubcategorySessionCount(true)
-    const count = await getSubcategorySessionCount(subcategory.id)
+    const count = await getSubcategorySessionCountAction(subcategory.id)
     setDeletingSubcategorySessionCount(count)
     setLoadingSubcategorySessionCount(false)
   }
@@ -470,8 +476,11 @@ export function SettingsClient({
     setAudienceModalOpen(false)
   }
 
-  const handleDeleteAudience = async (aud: LearningAudience) => {
+  const handleConfirmDeleteAudience = async () => {
+    if (!deletingAudience) return
+    const aud = deletingAudience
     setAudiences(audiences.filter(a => a.id !== aud.id))
+    setDeletingAudience(null)
     toast.success("Audience deleted")
     await deleteAudienceAction(aud.id, aud.name)
     addLocalAuditLog("audience", aud.id, "delete", `Deleted audience target '${aud.name}'`)
@@ -493,21 +502,53 @@ export function SettingsClient({
     setSessionTypeModalOpen(false)
   }
 
-  const handleDeleteSessionType = async (type: LearningSessionType) => {
+  const handleConfirmDeleteSessionType = async () => {
+    if (!deletingSessionType) return
+    const type = deletingSessionType
     setSessionTypes(sessionTypes.filter(t => t.id !== type.id))
+    setDeletingSessionType(null)
     toast.success("Session type deleted")
     await deleteSessionTypeAction(type.id, type.name)
     addLocalAuditLog("session_type", type.id, "delete", `Deleted session type '${type.name}'`)
   }
 
+  const handleConfirmArchiveMentor = async () => {
+    if (!archivingMentor) return
+    const mentor = archivingMentor
+    setMentorsState((prev) => prev.map((m) => m.id === mentor.id ? { ...m, status: "Inactive" } : m))
+    setArchivingMentor(null)
+    toast.success(`Mentor '${mentor.name}' archived`)
+    await archiveMentorAction(mentor.id, mentor.name)
+    addLocalAuditLog("mentor", mentor.id, "archive", `Archived mentor '${mentor.name}'`)
+  }
+
+  const valueToResource: Record<string, string> = {
+    "mentors": "learning_center.settings.manage_mentors",
+    "audience": "learning_center.settings.audience",
+    "session-types": "learning_center.settings.session_types",
+    "categories": "learning_center.settings.session_categories",
+    "integrations": "learning_center.settings.integrations",
+    "edit-log": "learning_center.settings.edit_log",
+  }
+
   const navItems = [
-    { label: "Manage Mentors", value: "mentors", icon: Users },
-    { label: "Audience", value: "audience", icon: Target },
-    { label: "Session Types", value: "session-types", icon: ListVideo },
-    { label: "Session Categories", value: "categories", icon: FolderTree },
-    { label: "Integrations", value: "integrations", icon: Network },
-    { label: "Edit Log", value: "edit-log", icon: History },
+    { label: "Manage Mentors",     value: "mentors",       icon: Users,      group: "Master Data" },
+    { label: "Audience",           value: "audience",      icon: Target,     group: "Master Data" },
+    { label: "Session Types",      value: "session-types", icon: ListVideo,  group: "Session Config" },
+    { label: "Session Categories", value: "categories",   icon: FolderTree, group: "Session Config" },
+    { label: "Integrations",       value: "integrations",  icon: Network,    group: "Integrations" },
+    { label: "Edit Log",           value: "edit-log",      icon: History,    group: "Audit" },
   ]
+
+  const allowedNavItems = navItems.filter(item => permissions[valueToResource[item.value]]?.view);
+  // Default to first allowed tab, or empty if none (which should be handled by fail-close anyway, but safe to do here)
+  React.useEffect(() => {
+    if (!permissions[valueToResource[activeTab]]?.view && allowedNavItems.length > 0) {
+      setActiveTab(allowedNavItems[0].value);
+    }
+  }, [permissions, allowedNavItems, activeTab]);
+
+  const canEdit = permissions[valueToResource[activeTab]]?.edit || false;
 
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto w-full">
@@ -517,15 +558,24 @@ export function SettingsClient({
         icon={<Settings2 className="w-8 h-8 text-indigo-500" />}
       />
 
-      <SettingsLayout navItems={navItems} activeValue={activeTab} onValueChange={setActiveTab}>
+      {!canEdit && (
+        <div className="p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive flex items-center gap-3 text-xs font-semibold">
+          <AlertTriangle className="w-5 h-5 shrink-0" />
+          <span>Restricted Access: You do not have edit permissions for this tab.</span>
+        </div>
+      )}
+
+      <SettingsLayout navItems={allowedNavItems} activeValue={activeTab} onValueChange={setActiveTab}>
           
           {activeTab === "mentors" && (
             <div className="space-y-4">
               <div className="flex justify-between items-center mb-2">
                 <h2 className="text-lg font-semibold">Mentor Master Database</h2>
-                <Button onClick={() => setIsAddMentorOpen(true)}>
-                  <UserPlus className="w-4 h-4 mr-2" /> Add Mentor
-                </Button>
+                {canEdit && (
+                  <Button onClick={() => setIsAddMentorOpen(true)}>
+                    <UserPlus className="w-4 h-4 mr-2" /> Add Mentor
+                  </Button>
+                )}
               </div>
               <div className="border rounded-md bg-card overflow-x-auto">
                 <Table className="min-w-[600px]">
@@ -537,7 +587,7 @@ export function SettingsClient({
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Sessions</TableHead>
                       <TableHead className="text-right">Avg Rating</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      {canEdit && <TableHead className="text-right">Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -568,40 +618,42 @@ export function SettingsClient({
                         <TableCell className="text-right font-medium text-emerald-600 dark:text-emerald-400">
                           {mentor.rating > 0 ? `★ ${mentor.rating}` : '-'}
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" onClick={() => setSelectedMentorId(mentor.id)}>
-                                    <Eye className="w-4 h-4 text-muted-foreground hover:text-primary" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>View Stats & Details</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                        {canEdit && (
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" onClick={() => setSelectedMentorId(mentor.id)}>
+                                      <Eye className="w-4 h-4 text-muted-foreground hover:text-primary" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>View Stats & Details</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
 
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreVertical className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="cursor-pointer" onClick={() => setEditingMentorData(mentor)}>
-                                  <Edit2 className="w-4 h-4 mr-2" /> Edit Mentor
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={() => handleArchiveMentor(mentor)}>
-                                  <Trash2 className="w-4 h-4 mr-2" /> Archive Mentor
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreVertical className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem className="cursor-pointer" onClick={() => setEditingMentorData(mentor)}>
+                                    <Edit2 className="w-4 h-4 mr-2" /> Edit Mentor
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={() => setArchivingMentor(mentor)}>
+                                    <Trash2 className="w-4 h-4 mr-2" /> Archive Mentor
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -639,24 +691,26 @@ export function SettingsClient({
                     <CardContent className="space-y-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Account ID</label>
-                        <Input placeholder="Zoom Account ID" defaultValue="acc_8f921901" />
+                        <Input placeholder="Zoom Account ID" defaultValue="acc_8f921901" disabled={!canEdit} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Client ID</label>
-                        <Input placeholder="Server-to-Server OAuth Client ID" defaultValue="wX9z_L81T..." />
+                        <Input placeholder="Server-to-Server OAuth Client ID" defaultValue="wX9z_L81T..." disabled={!canEdit} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Client Secret</label>
                         <Input type="password" value="••••••••••••••••••••••••" readOnly />
                       </div>
                     </CardContent>
-                    <CardFooter className="flex justify-between border-t bg-muted/20 p-4">
-                      <Button variant="outline" onClick={handleTestZoom} disabled={testingZoom}>
-                        {testingZoom && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        Test OAuth Connection
-                      </Button>
-                      <Button variant="secondary" onClick={() => setZoomConnected(false)}>Disconnect Account</Button>
-                    </CardFooter>
+                    {canEdit && (
+                      <CardFooter className="flex justify-between border-t bg-muted/20 p-4">
+                        <Button variant="outline" onClick={handleTestZoom} disabled={testingZoom}>
+                          {testingZoom && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                          Test OAuth Connection
+                        </Button>
+                        <Button variant="secondary" onClick={() => setZoomConnected(false)}>Disconnect Account</Button>
+                      </CardFooter>
+                    )}
                   </Card>
                 </TabsContent>
 
@@ -685,17 +739,19 @@ export function SettingsClient({
                             {gmeetConnected && gmeetEmail ? `Connected as ${gmeetEmail}` : "Google Calendar & Meet access"}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {gmeetConnected && (
-                            <Button variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50" onClick={handleDisconnectGmeet} disabled={connectingGmeet}>
-                              Disconnect
+                        {canEdit && (
+                          <div className="flex items-center gap-2">
+                            {gmeetConnected && (
+                              <Button variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50" onClick={handleDisconnectGmeet} disabled={connectingGmeet}>
+                                Disconnect
+                              </Button>
+                            )}
+                            <Button variant="outline" className="shrink-0" onClick={handleConnectGmeet} disabled={connectingGmeet}>
+                              {connectingGmeet ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Link2 className="w-4 h-4 mr-2" />}
+                              {gmeetConnected ? "Reconnect Account" : "Connect Google Account"}
                             </Button>
-                          )}
-                          <Button variant="outline" className="shrink-0" onClick={handleConnectGmeet} disabled={connectingGmeet}>
-                            {connectingGmeet ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Link2 className="w-4 h-4 mr-2" />}
-                            {gmeetConnected ? "Reconnect Account" : "Connect Google Account"}
-                          </Button>
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -723,19 +779,19 @@ export function SettingsClient({
                     <CardContent className="space-y-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Organization ID</label>
-                        <Input placeholder="Coursera Org ID" defaultValue="org_navgurukul_enterprise_2026" />
+                        <Input placeholder="Coursera Org ID" defaultValue="org_navgurukul_enterprise_2026" disabled={!canEdit} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Client ID</label>
-                        <Input placeholder="OAuth Client ID" defaultValue="coursera_api_client_89f21" />
+                        <Input placeholder="OAuth Client ID" defaultValue="coursera_api_client_89f21" disabled={!canEdit} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Client Secret</label>
-                        <Input type="password" value="••••••••••••••••••••••••••••••••" readOnly />
+                        <Input type="password" value="••••••••••••••••••••••••••••••••" readOnly disabled={!canEdit} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Program SSO Slug</label>
-                        <Input placeholder="Program Slug" defaultValue="navgurukul-enterprise.coursera.org" />
+                        <Input placeholder="Program Slug" defaultValue="navgurukul-enterprise.coursera.org" disabled={!canEdit} />
                       </div>
 
                       {/* Divider */}
@@ -753,6 +809,7 @@ export function SettingsClient({
                             placeholder="e.g. learn@navgurukul.org"
                             value={contactEmail}
                             onChange={(e) => setContactEmail(e.target.value)}
+                            disabled={!canEdit}
                           />
                           <p className="text-xs text-muted-foreground">
                             This email is used in the sidebar banner and dashboard callout &apos;Contact Us&apos; button.
@@ -767,9 +824,10 @@ export function SettingsClient({
                           </div>
                           <Switch
                             checked={showCallouts}
+                            disabled={!canEdit}
                             onCheckedChange={async (val) => {
                               setShowCallouts(val)
-                              const result = await saveCourseraConfig({ contact_email: contactEmail, show_callouts: val })
+                              const result = await saveCourseraConfigAction({ contact_email: contactEmail, show_callouts: val })
                               if (result.success) {
                                 toast.success(val ? "Coursera callouts enabled" : "Coursera callouts hidden")
                                 addLocalAuditLog("integration", null, "update", `Coursera callouts ${val ? "enabled" : "disabled"}`)
@@ -782,31 +840,35 @@ export function SettingsClient({
                         </div>
                       </div>
                     </CardContent>
-                    <CardFooter className="flex justify-between flex-wrap gap-2 border-t bg-muted/20 p-4">
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" onClick={handleTestCoursera} disabled={testingCoursera}>
-                          {testingCoursera && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                          Test API Connection
+                    {canEdit && (
+                      <CardFooter className="flex justify-between flex-wrap gap-2 border-t bg-muted/20 p-4">
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" onClick={handleTestCoursera} disabled={testingCoursera}>
+                            {testingCoursera && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                            Test API Connection
+                          </Button>
+                          <Button variant="secondary" onClick={handleSyncCoursera} disabled={syncingCoursera}>
+                            {syncingCoursera ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                            Sync Learner Data
+                          </Button>
+                        </div>
+                        <Button variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50" onClick={() => setCourseraConnected(false)}>
+                          Disconnect
                         </Button>
-                        <Button variant="secondary" onClick={handleSyncCoursera} disabled={syncingCoursera}>
-                          {syncingCoursera ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                          Sync Learner Data
-                        </Button>
-                      </div>
-                      <Button variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50" onClick={() => setCourseraConnected(false)}>
-                        Disconnect
-                      </Button>
-                    </CardFooter>
+                      </CardFooter>
+                    )}
                   </Card>
                 </TabsContent>
               </Tabs>
 
-              <div className="flex justify-end border-t border-slate-200 dark:border-zinc-800 pt-6">
-                <Button onClick={handleSaveSettings} disabled={saving}>
-                  {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                  Save Settings
-                </Button>
-              </div>
+              {canEdit && (
+                <div className="flex justify-end border-t border-slate-200 dark:border-zinc-800 pt-6">
+                  <Button onClick={handleSaveSettings} disabled={saving}>
+                    {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                    Save Settings
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
@@ -817,13 +879,15 @@ export function SettingsClient({
                   <h2 className="text-lg font-semibold">Audience Management</h2>
                   <p className="text-sm text-muted-foreground">Manage audience segments for sessions.</p>
                 </div>
-                <Button onClick={() => {
-                  setEditingAudience(null)
-                  setAudienceForm({ name: "", audience_type: "general", campus_id: "", course_id: "", batch_year: "" })
-                  setAudienceModalOpen(true)
-                }}>
-                  <Plus className="w-4 h-4 mr-2" /> Add Audience
-                </Button>
+                {canEdit && (
+                  <Button onClick={() => {
+                    setEditingAudience(null)
+                    setAudienceForm({ name: "", audience_type: "general", campus_id: "", course_id: "", batch_year: "" })
+                    setAudienceModalOpen(true)
+                  }}>
+                    <Plus className="w-4 h-4 mr-2" /> Add Audience
+                  </Button>
+                )}
               </div>
               <div className="border rounded-md bg-card overflow-x-auto">
                 <Table className="min-w-[500px]">
@@ -832,7 +896,7 @@ export function SettingsClient({
                       <TableHead>Audience Name</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Campuses / Target</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      {canEdit && <TableHead className="text-right">Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -848,20 +912,22 @@ export function SettingsClient({
                           {aud.audience_type === "batch" && (aud.batch_year ? `Batch ${aud.batch_year}` : "Any Batch")}
                           {aud.audience_type === "general" && "General Segment"}
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button variant="ghost" size="icon" onClick={() => {
-                              setEditingAudience(aud)
-                              setAudienceForm({ name: aud.name, audience_type: aud.audience_type, campus_id: aud.campus_id || "", course_id: aud.course_id || "", batch_year: aud.batch_year ? String(aud.batch_year) : "" })
-                              setAudienceModalOpen(true)
-                            }}>
-                              <Edit2 className="w-4 h-4 text-muted-foreground" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50" onClick={() => handleDeleteAudience(aud)}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                        {canEdit && (
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button variant="ghost" size="icon" onClick={() => {
+                                setEditingAudience(aud)
+                                setAudienceForm({ name: aud.name, audience_type: aud.audience_type, campus_id: aud.campus_id || "", course_id: aud.course_id || "", batch_year: aud.batch_year ? String(aud.batch_year) : "" })
+                                setAudienceModalOpen(true)
+                              }}>
+                                <Edit2 className="w-4 h-4 text-muted-foreground" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50" onClick={() => setDeletingAudience(aud)}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -877,40 +943,44 @@ export function SettingsClient({
                   <h2 className="text-lg font-semibold">Session Types</h2>
                   <p className="text-sm text-muted-foreground">Manage the categories assigned to sessions.</p>
                 </div>
-                <Button onClick={() => {
-                  setEditingSessionType(null)
-                  setSessionTypeForm({ name: "" })
-                  setSessionTypeModalOpen(true)
-                }}>
-                  <Plus className="w-4 h-4 mr-2" /> Add Type
-                </Button>
+                {canEdit && (
+                  <Button onClick={() => {
+                    setEditingSessionType(null)
+                    setSessionTypeForm({ name: "" })
+                    setSessionTypeModalOpen(true)
+                  }}>
+                    <Plus className="w-4 h-4 mr-2" /> Add Type
+                  </Button>
+                )}
               </div>
               <div className="border rounded-md bg-card overflow-x-auto">
                 <Table className="min-w-[400px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Type Name</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      {canEdit && <TableHead className="text-right">Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {sessionTypes.map((type) => (
                       <TableRow key={type.id}>
                         <TableCell className="font-medium">{type.name}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button variant="ghost" size="icon" onClick={() => {
-                              setEditingSessionType(type)
-                              setSessionTypeForm({ name: type.name })
-                              setSessionTypeModalOpen(true)
-                            }}>
-                              <Edit2 className="w-4 h-4 text-muted-foreground" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50" onClick={() => handleDeleteSessionType(type)}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                        {canEdit && (
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button variant="ghost" size="icon" onClick={() => {
+                                setEditingSessionType(type)
+                                setSessionTypeForm({ name: type.name })
+                                setSessionTypeModalOpen(true)
+                              }}>
+                                <Edit2 className="w-4 h-4 text-muted-foreground" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50" onClick={() => setDeletingSessionType(type)}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -931,9 +1001,11 @@ export function SettingsClient({
                     Organize mentorship sessions into structured categories and nested subcategories.
                   </p>
                 </div>
-                <Button onClick={() => handleOpenCategoryModal()}>
-                  <Plus className="w-4 h-4 mr-2" /> Add Category
-                </Button>
+                {canEdit && (
+                  <Button onClick={() => handleOpenCategoryModal()}>
+                    <Plus className="w-4 h-4 mr-2" /> Add Category
+                  </Button>
+                )}
               </div>
 
               {categories.length === 0 ? (
@@ -970,58 +1042,60 @@ export function SettingsClient({
                           </div>
 
                           {/* Category Actions */}
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-8 text-xs gap-1"
-                              onClick={() => handleOpenSubcategoryModal(cat)}
-                            >
-                              <Plus className="w-3.5 h-3.5 text-indigo-500" /> Add Subcategory
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                              onClick={() => handleOpenCategoryModal(cat)}
-                              title="Edit Category"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-
-                            {/* Delete Category Button with UI safety rules */}
-                            {subCount > 0 ? (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="inline-block">
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        disabled 
-                                        className="h-8 w-8 text-slate-300 dark:text-zinc-700 cursor-not-allowed opacity-50"
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </Button>
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="text-xs max-w-xs">Cannot delete category with subcategories. Delete or reassign all subcategories first.</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            ) : (
+                          {canEdit && (
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 text-xs gap-1"
+                                onClick={() => handleOpenSubcategoryModal(cat)}
+                              >
+                                <Plus className="w-3.5 h-3.5 text-indigo-500" /> Add Subcategory
+                              </Button>
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50"
-                                onClick={() => handleOpenDeleteCategory(cat)}
-                                title="Delete Category"
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                onClick={() => handleOpenCategoryModal(cat)}
+                                title="Edit Category"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Edit2 className="w-4 h-4" />
                               </Button>
-                            )}
-                          </div>
+
+                              {/* Delete Category Button with UI safety rules */}
+                              {subCount > 0 ? (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="inline-block">
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon" 
+                                          disabled 
+                                          className="h-8 w-8 text-slate-300 dark:text-zinc-700 cursor-not-allowed opacity-50"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="text-xs max-w-xs">Cannot delete category with subcategories. Delete or reassign all subcategories first.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              ) : (
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50"
+                                  onClick={() => handleOpenDeleteCategory(cat)}
+                                  title="Delete Category"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         {/* Nested Subcategories List */}
@@ -1044,7 +1118,7 @@ export function SettingsClient({
                                     <TableRow className="hover:bg-transparent">
                                       <TableHead className="text-xs">Subcategory Name</TableHead>
                                       <TableHead className="text-xs">Description</TableHead>
-                                      <TableHead className="text-xs text-right">Actions</TableHead>
+                                      {canEdit && <TableHead className="text-xs text-right">Actions</TableHead>}
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
@@ -1054,28 +1128,30 @@ export function SettingsClient({
                                         <TableCell className="text-xs text-muted-foreground py-2.5">
                                           {sub.description || "-"}
                                         </TableCell>
-                                        <TableCell className="text-right py-2.5">
-                                          <div className="flex items-center justify-end gap-1">
-                                            <Button 
-                                              variant="ghost" 
-                                              size="icon" 
-                                              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                                              onClick={() => handleOpenSubcategoryModal(cat, sub)}
-                                              title="Edit Subcategory"
-                                            >
-                                              <Edit2 className="w-3.5 h-3.5" />
-                                            </Button>
-                                            <Button 
-                                              variant="ghost" 
-                                              size="icon" 
-                                              className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50"
-                                              onClick={() => handleOpenDeleteSubcategory(sub)}
-                                              title="Delete Subcategory"
-                                            >
-                                              <Trash2 className="w-3.5 h-3.5" />
-                                            </Button>
-                                          </div>
-                                        </TableCell>
+                                        {canEdit && (
+                                          <TableCell className="text-right py-2.5">
+                                            <div className="flex items-center justify-end gap-1">
+                                              <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                                onClick={() => handleOpenSubcategoryModal(cat, sub)}
+                                                title="Edit Subcategory"
+                                              >
+                                                <Edit2 className="w-3.5 h-3.5" />
+                                              </Button>
+                                              <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50"
+                                                onClick={() => handleOpenDeleteSubcategory(sub)}
+                                                title="Delete Subcategory"
+                                              >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                              </Button>
+                                            </div>
+                                          </TableCell>
+                                        )}
                                       </TableRow>
                                     ))}
                                   </TableBody>
@@ -1093,7 +1169,7 @@ export function SettingsClient({
           )}
 
           {activeTab === "edit-log" && (
-            <EditLogTab logs={auditLogs} />
+            <EditLogTab logs={auditLogs} sourceFilter="learning_hub" />
           )}
 
         </SettingsLayout>
@@ -1403,6 +1479,39 @@ export function SettingsClient({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ── Double Confirm Dialog for Audience Deletion ── */}
+      <ConfirmDeleteDialog
+        open={!!deletingAudience}
+        onOpenChange={(open) => !open && setDeletingAudience(null)}
+        title="Delete Audience Segment"
+        itemName={deletingAudience?.name}
+        description="Are you sure you want to delete this audience segment? Sessions targeted to this segment will no longer have this target assigned."
+        confirmLabel="Delete Audience"
+        onConfirm={handleConfirmDeleteAudience}
+      />
+
+      {/* ── Double Confirm Dialog for Session Type Deletion ── */}
+      <ConfirmDeleteDialog
+        open={!!deletingSessionType}
+        onOpenChange={(open) => !open && setDeletingSessionType(null)}
+        title="Delete Session Type"
+        itemName={deletingSessionType?.name}
+        description="Are you sure you want to delete this session type?"
+        confirmLabel="Delete Session Type"
+        onConfirm={handleConfirmDeleteSessionType}
+      />
+
+      {/* ── Double Confirm Dialog for Mentor Archiving ── */}
+      <ConfirmDeleteDialog
+        open={!!archivingMentor}
+        onOpenChange={(open) => !open && setArchivingMentor(null)}
+        title="Archive Mentor"
+        itemName={archivingMentor?.name}
+        description="This mentor will be marked as Inactive. Historical session data will be preserved."
+        confirmLabel="Archive Mentor"
+        onConfirm={handleConfirmArchiveMentor}
+      />
     </div>
   )
 }

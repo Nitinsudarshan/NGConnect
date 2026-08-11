@@ -19,54 +19,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
-const DUMMY_BATCHES: ImportBatch[] = [
-  {
-    id: 'b11d87e0-4351-419b-a3d2-d81b212f84cb',
-    file_name: 'ghar_export_2026_06_20.xlsx',
-    file_type: 'xlsx',
-    file_size: 45200,
-    uploaded_by: '1',
-    uploaded_by_name: 'System Admin',
-    uploaded_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    records_processed: 124,
-    records_created: 118,
-    records_updated: 4,
-    records_failed: 2,
-    status: 'completed',
-    notes: 'Standard monthly GHAR alumni refresh.'
-  },
-  {
-    id: 'c22e98f1-5462-42ab-b4e3-e92c323f95dc',
-    file_name: 'final_placements_cohort_2.csv',
-    file_type: 'csv',
-    file_size: 15400,
-    uploaded_by: '2',
-    uploaded_by_name: 'System Admin',
-    uploaded_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    records_processed: 45,
-    records_created: 0,
-    records_updated: 43,
-    records_failed: 2,
-    status: 'rolled_back',
-    notes: 'Rolled back due to alignment mismatch in entry_year.'
-  },
-  {
-    id: 'd33f09f2-6573-43bc-c5f4-f03d434fa6ed',
-    file_name: 'error_test_ghar.csv',
-    file_type: 'csv',
-    file_size: 2300,
-    uploaded_by: '1',
-    uploaded_by_name: 'System Admin',
-    uploaded_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-    records_processed: 12,
-    records_created: 0,
-    records_updated: 0,
-    records_failed: 12,
-    status: 'failed',
-    notes: 'Failed to process. Mapping headers did not match required Email ID column.'
-  }
-];
-
 export default async function ImportHistoryPage() {
   const role = await getUserRole();
   if (role !== 'Super Admin' && role !== 'Admin' && role !== 'Manager') { // TODO(roles-refactor): confirm access level
@@ -80,8 +32,7 @@ export default async function ImportHistoryPage() {
     .order('uploaded_at', { ascending: false })
     .limit(100);
 
-  const displayBatches = batches && batches.length > 0 ? (batches as ImportBatch[]) : DUMMY_BATCHES;
-  const isUsingDummy = !batches || batches.length === 0;
+  const displayBatches = batches ? (batches as ImportBatch[]) : [];
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-20 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -104,19 +55,7 @@ export default async function ImportHistoryPage() {
         </div>
       </div>
 
-      {isUsingDummy && (
-        <Card className="border-amber-500/25 bg-amber-500/5 shadow-inner">
-          <CardContent className="pt-5 pb-5 text-xs flex gap-3 text-amber-700 dark:text-amber-400">
-            <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-400" />
-            <div>
-              <p className="font-semibold text-sm">No actual import logs found in database</p>
-              <p className="mt-1 leading-relaxed">
-                Displaying realistic mock logs for visualization. Once you upload and commit spreadsheet batches on the Import page, they will show up here.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
 
       {/* Main Table */}
       <Card className="border border-border/80 rounded-md overflow-hidden shadow-md bg-card/45 backdrop-blur-sm">

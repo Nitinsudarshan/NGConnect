@@ -29,154 +29,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
-const DUMMY_TIMELINE_MAP: Record<string, AuditLog[]> = {
-  'aarav.sharma@nirma.edu': [
-    {
-      id: 'log-1',
-      table_name: 'alumni_profile',
-      record_id: 'aarav-uuid-12345',
-      field_name: 'city',
-      old_value: 'Chennai',
-      new_value: 'Bangalore',
-      action_type: 'UPDATE',
-      changed_by_user_id: 'user-2',
-      changed_by_name: 'Aarav Sharma',
-      changed_by_role: 'Member',
-      changed_at: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-      ip_address: '103.22.41.98'
-    },
-    {
-      id: 'log-2',
-      table_name: 'alumni_master',
-      record_id: 'aarav.sharma@nirma.edu',
-      field_name: 'status',
-      old_value: 'Active',
-      new_value: 'Placed',
-      action_type: 'UPDATE',
-      changed_by_user_id: 'admin-1',
-      changed_by_name: 'System Admin',
-      changed_by_role: 'Super Admin',
-      changed_at: new Date(Date.now() - 1 * 24 * 3600 * 1000).toISOString(),
-      ip_address: '192.168.1.1'
-    },
-    {
-      id: 'log-3',
-      table_name: 'alumni_master',
-      record_id: 'aarav.sharma@nirma.edu',
-      field_name: 'starting_salary',
-      old_value: null,
-      new_value: '1800000',
-      action_type: 'UPDATE',
-      changed_by_user_id: 'admin-1',
-      changed_by_name: 'System Admin',
-      changed_by_role: 'Super Admin',
-      changed_at: new Date(Date.now() - 1 * 24 * 3600 * 1000).toISOString(),
-      ip_address: '192.168.1.1'
-    },
-    {
-      id: 'log-4',
-      table_name: 'alumni_master',
-      record_id: 'aarav.sharma@nirma.edu',
-      field_name: 'company',
-      old_value: null,
-      new_value: 'Google',
-      action_type: 'UPDATE',
-      changed_by_user_id: 'admin-1',
-      changed_by_name: 'System Admin',
-      changed_by_role: 'Super Admin',
-      changed_at: new Date(Date.now() - 1 * 24 * 3600 * 1000).toISOString(),
-      ip_address: '192.168.1.1'
-    },
-    {
-      id: 'log-5',
-      table_name: 'alumni_master',
-      record_id: 'aarav.sharma@nirma.edu',
-      field_name: 'email',
-      old_value: null,
-      new_value: 'aarav.sharma@nirma.edu',
-      action_type: 'INSERT',
-      changed_by_user_id: 'admin-1',
-      changed_by_name: 'System Admin',
-      changed_by_role: 'Super Admin',
-      changed_at: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString(),
-      ip_address: '192.168.1.1'
-    }
-  ]
-};
-
-const DUMMY_EMAILS = [
-  'aarav.sharma@nirma.edu',
-  'ananya.iyer@pes.edu',
-  'rahul.verma@nirma.edu',
-  'priya.patel@nirma.edu',
-  'karan.singh@gmail.com',
-  'sneha.reddy@pes.edu',
-  'vikram.malhotra@nirma.edu',
-  'diya.sen@gmail.com',
-  'rohan.gupta@nirma.edu',
-  'pooja.shah@gmail.com',
-  'kabir.mehta@pes.edu',
-  'neha.kapoor@gmail.com',
-  'arjun.nair@nirma.edu',
-  'tanvi.rao@pes.edu',
-  'devendra.patil@gmail.com'
-];
-
-const getDummyTimelineForEmail = (email: string): AuditLog[] => {
-  const emailLower = email.toLowerCase().trim();
-  const namePart = emailLower.split('@')[0];
-  const name = namePart.split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
-
-  if (emailLower === 'aarav.sharma@nirma.edu' && DUMMY_TIMELINE_MAP[emailLower]) {
-    return DUMMY_TIMELINE_MAP[emailLower];
-  }
-
-  return [
-    {
-      id: `log-mock-1-${emailLower}`,
-      table_name: 'alumni_profile',
-      record_id: `${namePart}-uuid`,
-      field_name: 'city',
-      old_value: 'Pune',
-      new_value: 'Mumbai',
-      action_type: 'UPDATE',
-      changed_by_user_id: 'user-member-1',
-      changed_by_name: name,
-      changed_by_role: 'Member',
-      changed_at: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-      ip_address: '103.45.21.99'
-    },
-    {
-      id: `log-mock-2-${emailLower}`,
-      table_name: 'alumni_master',
-      record_id: emailLower,
-      field_name: 'status',
-      old_value: 'Active',
-      new_value: 'Placed',
-      action_type: 'UPDATE',
-      changed_by_user_id: 'admin-1',
-      changed_by_name: 'System Admin',
-      changed_by_role: 'Super Admin',
-      changed_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
-      ip_address: '192.168.1.1'
-    },
-    {
-      id: `log-mock-3-${emailLower}`,
-      table_name: 'alumni_master',
-      record_id: emailLower,
-      field_name: 'email',
-      old_value: null,
-      new_value: emailLower,
-      action_type: 'INSERT',
-      changed_by_user_id: 'admin-1',
-      changed_by_name: 'System Admin',
-      changed_by_role: 'Super Admin',
-      changed_at: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString(),
-      ip_address: '192.168.1.1'
-    }
-  ];
-};
-
 function RecordHistoryContent() {
   const searchParams = useSearchParams();
   const emailParam = searchParams.get('email');
@@ -185,7 +37,6 @@ function RecordHistoryContent() {
   const [timeline, setTimeline] = useState<AuditLog[] | null>(null);
   const [searchedEmail, setSearchedEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isDummy, setIsDummy] = useState(false);
   const [isRollingBack, setIsRollingBack] = useState<string | null>(null);
 
   const supabase = createClient();
@@ -198,17 +49,6 @@ function RecordHistoryContent() {
     setLoading(true);
     setTimeline(null);
     setSearchedEmail(searchVal);
-
-    const searchValLower = searchVal.toLowerCase().trim();
-    if (DUMMY_EMAILS.includes(searchValLower) || searchValLower === 'demo') {
-      setTimeout(() => {
-        setTimeline(getDummyTimelineForEmail(searchValLower));
-        setIsDummy(true);
-        setLoading(false);
-        toast.success(`Loaded mock history timeline for ${searchValLower}`);
-      }, 500);
-      return;
-    }
 
     try {
       const { data: profile } = await supabase
@@ -232,7 +72,6 @@ function RecordHistoryContent() {
 
       if (logs && logs.length > 0) {
         setTimeline(logs as AuditLog[]);
-        setIsDummy(false);
       } else {
         // Fallback: Check if record exists in alumni_master to synthesize initial insert log
         const { data: masterRec } = await supabase
@@ -257,10 +96,8 @@ function RecordHistoryContent() {
             ip_address: '127.0.0.1'
           };
           setTimeline([defaultLog]);
-          setIsDummy(false);
         } else {
           setTimeline([]);
-          setIsDummy(false);
           toast.error('No audit records found for this email address.');
         }
       }
@@ -280,17 +117,6 @@ function RecordHistoryContent() {
   }, [emailParam]);
 
   const handleRollback = async (log: AuditLog) => {
-    if (isDummy) {
-      setIsRollingBack(log.id);
-      toast.loading('Processing mock restore...');
-      setTimeout(() => {
-        toast.dismiss();
-        toast.success(`Mock Restore completed: ${log.field_name} reverted to "${log.old_value !== null ? log.old_value : 'NULL'}"`);
-        setIsRollingBack(null);
-      }, 1000);
-      return;
-    }
-
     setIsRollingBack(log.id);
     try {
       const res = await fetch('/api/alumni/admin/rollback', {
@@ -361,18 +187,7 @@ function RecordHistoryContent() {
                     'Search Timeline'
                   )}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setEmail('aarav.sharma@nirma.edu');
-                    setTimeout(() => handleSearch(undefined, 'aarav.sharma@nirma.edu'), 100);
-                  }}
-                  className="gap-1 rounded-md h-10 bg-violet-500/10 text-violet-700 dark:bg-violet-950/20 dark:text-violet-300 border-violet-500/20 dark:border-violet-850 hover:bg-violet-500/15"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Demo Email
-                </Button>
+
               </div>
             </form>
           </CardContent>
@@ -397,11 +212,7 @@ function RecordHistoryContent() {
                 Chronological list of all schema field adjustments.
               </CardDescription>
             </div>
-            {isDummy && (
-              <Badge variant="outline" className="bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-900 rounded-md font-bold">
-                MOCK DEMO TIMELINE
-              </Badge>
-            )}
+
           </CardHeader>
           <CardContent className="pt-10 pb-8 px-6 sm:px-8">
             {timeline.length > 0 ? (
