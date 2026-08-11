@@ -91,6 +91,7 @@ interface SettingsClientProps {
   userRole: string;
   auditLogs: LearningCenterAuditLog[];
   initialOutcomeMappings?: OutcomeMappingRow[];
+  permissions: Record<string, Record<string, boolean>>;
 }
 
 /* ──────────────────────────────────── Nav Items ─────────────────────────────────────── */
@@ -138,9 +139,24 @@ export default function SettingsClient({
   userRole,
   auditLogs,
   initialOutcomeMappings,
+  permissions,
 }: SettingsClientProps) {
-  const isAdmin = userRole === "Admin" || userRole === "Super Admin";
-  const [activeTab, setActiveTab] = useState("pay_forward");
+  const valueToResource: Record<string, string> = {
+    pay_forward: 'crm.settings.pay_forward_rules',
+    active_member: 'crm.settings.active_member_criteria',
+    profile_gaps: 'crm.settings.profile_scoring',
+    pipelines: 'crm.settings.pipelines_config',
+    pipeline_stages: 'crm.settings.pipeline_stages',
+    outcomes: 'crm.settings.interaction_outcomes',
+    contributions: 'crm.settings.contribution_types',
+    outcome_mapping: 'crm.settings.outcome_mapping',
+    mentors: 'crm.settings.mentors_directory',
+    edit_log: 'crm.settings.edit_log',
+  };
+
+  const allowedNavItems = NAV_ITEMS.filter(item => permissions[valueToResource[item.value]]?.view);
+  const [activeTab, setActiveTab] = useState(allowedNavItems[0]?.value || "pay_forward");
+  const canEdit = permissions[valueToResource[activeTab]]?.edit || false;
 
   /* ── Org settings state ── */
   const [capInr, setCapInr]         = useState(settings.pay_forward_cap_inr.toString());
@@ -223,7 +239,7 @@ export default function SettingsClient({
 
   const handleSaveThresholds = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAdmin) { toast.error("Admin access required"); return; }
+    if (!canEdit) { toast.error("Edit access required"); return; }
     setIsSaving(true);
     try {
       const res = await updateOrgSettingsAction({
@@ -443,14 +459,14 @@ export default function SettingsClient({
         icon={<Settings className="h-8 w-8 text-primary" />}
       />
 
-      {!isAdmin && (
+      {!canEdit && (
         <div className="p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive flex items-center gap-3 text-xs font-semibold">
           <ShieldAlert className="w-5 h-5 shrink-0" />
-          <span>Restricted Access: You are in read-only mode. Only Admins can modify settings.</span>
+          <span>Restricted Access: You do not have edit permissions for this tab.</span>
         </div>
       )}
 
-      <SettingsLayout navItems={NAV_ITEMS} activeValue={activeTab} onValueChange={setActiveTab}>
+      <SettingsLayout navItems={allowedNavItems} activeValue={activeTab} onValueChange={setActiveTab}>
 
         {/* ════════════════ PAY-FORWARD RULES ════════════════ */}
         {activeTab === "pay_forward" && (
@@ -465,21 +481,21 @@ export default function SettingsClient({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">Lifetime Completion Cap (₹)</label>
-                  <Input type="number" value={capInr} onChange={(e) => setCapInr(e.target.value)} disabled={!isAdmin} className="h-10 rounded-xl" required />
+                  <Input type="number" value={capInr} onChange={(e) => setCapInr(e.target.value)} disabled={!canEdit} className="h-10 rounded-xl" required />
                   <p className="text-[10px] text-muted-foreground">Default ₹1,20,000 completion cap</p>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">Minimum Pitch Salary Floor (₹/mo)</label>
-                  <Input type="number" value={minSalary} onChange={(e) => setMinSalary(e.target.value)} disabled={!isAdmin} className="h-10 rounded-xl" required />
+                  <Input type="number" value={minSalary} onChange={(e) => setMinSalary(e.target.value)} disabled={!canEdit} className="h-10 rounded-xl" required />
                   <p className="text-[10px] text-muted-foreground">Default ₹15,000/mo minimum normalized salary</p>
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="text-xs font-semibold text-foreground">Follow-up Cool-down Period (Days)</label>
-                  <Input type="number" value={cooldown} onChange={(e) => setCooldown(e.target.value)} disabled={!isAdmin} className="h-10 rounded-xl" required />
+                  <Input type="number" value={cooldown} onChange={(e) => setCooldown(e.target.value)} disabled={!canEdit} className="h-10 rounded-xl" required />
                   <p className="text-[10px] text-muted-foreground">Days before re-suggesting a call after no answer</p>
                 </div>
               </div>
-              {isAdmin && (
+              {canEdit && (
                 <Button type="submit" disabled={isSaving} className="rounded-xl font-semibold gap-2">
                   <Save className="w-4 h-4" /> {isSaving ? "Saving…" : "Save Pay-Forward Rules"}
                 </Button>
@@ -505,7 +521,7 @@ export default function SettingsClient({
                   { label: "Logged Watch Hours from Video Recordings", desc: "Alumnus has recorded learning watch hours on Coursera or platform video recordings.", checked: activeWatchTime, onChange: setActiveWatchTime },
                 ].map(({ label, desc, checked, onChange }) => (
                   <label key={label} className="flex items-center gap-2.5 p-3.5 rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/40 cursor-pointer text-xs transition-colors">
-                    <Checkbox checked={checked} onCheckedChange={(c) => onChange(Boolean(c))} disabled={!isAdmin} />
+                    <Checkbox checked={checked} onCheckedChange={(c) => onChange(Boolean(c))} disabled={!canEdit} />
                     <div>
                       <span className="font-bold text-foreground block" dangerouslySetInnerHTML={{ __html: label }} />
                       <span className="text-[10px] text-muted-foreground">{desc}</span>
@@ -513,7 +529,7 @@ export default function SettingsClient({
                   </label>
                 ))}
               </div>
-              {isAdmin && (
+              {canEdit && (
                 <Button type="submit" disabled={isSaving} className="rounded-xl font-semibold gap-2">
                   <Save className="w-4 h-4" /> {isSaving ? "Saving…" : "Save Active Member Rules"}
                 </Button>
@@ -558,7 +574,7 @@ export default function SettingsClient({
                   ].map(([label, val, setter]: any) => (
                     <div key={label} className="space-y-1">
                       <label className="font-semibold text-foreground text-[11px]">{label}</label>
-                      <Input type="number" value={val} onChange={(e) => setter(e.target.value)} disabled={!isAdmin} className="h-9 rounded-xl" />
+                      <Input type="number" value={val} onChange={(e) => setter(e.target.value)} disabled={!canEdit} className="h-9 rounded-xl" />
                     </div>
                   ))}
                 </div>
@@ -571,7 +587,7 @@ export default function SettingsClient({
                     <div className="flex items-center justify-between font-bold text-destructive">
                       <span>RED (Critical)</span><span>Below {redThreshold}%</span>
                     </div>
-                    <Input type="number" value={redThreshold} onChange={(e) => setRedThreshold(e.target.value)} disabled={!isAdmin} className="h-9 bg-background rounded-xl text-xs" />
+                    <Input type="number" value={redThreshold} onChange={(e) => setRedThreshold(e.target.value)} disabled={!canEdit} className="h-9 bg-background rounded-xl text-xs" />
                   </div>
                   <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-1.5">
                     <div className="flex items-center justify-between font-bold text-amber-800 dark:text-amber-300">
@@ -585,12 +601,12 @@ export default function SettingsClient({
                     <div className="flex items-center justify-between font-bold text-emerald-700 dark:text-emerald-300">
                       <span>GREEN (Verified)</span><span>{greenThreshold}%</span>
                     </div>
-                    <Input type="number" value={greenThreshold} onChange={(e) => setGreenThreshold(e.target.value)} disabled={!isAdmin} className="h-9 bg-background rounded-xl text-xs" />
+                    <Input type="number" value={greenThreshold} onChange={(e) => setGreenThreshold(e.target.value)} disabled={!canEdit} className="h-9 bg-background rounded-xl text-xs" />
                   </div>
                 </div>
               </div>
 
-              {isAdmin && (
+              {canEdit && (
                 <Button type="submit" disabled={isSaving} className="rounded-xl font-semibold gap-2">
                   <Save className="w-4 h-4" /> {isSaving ? "Saving…" : "Save Profile Scoring Rules"}
                 </Button>
@@ -673,7 +689,7 @@ export default function SettingsClient({
                               <TableHead className="text-xs font-mono">Code</TableHead>
                               <TableHead className="text-xs text-center">Terminal</TableHead>
                               <TableHead className="text-xs text-center">Custom</TableHead>
-                              {isAdmin && <TableHead className="text-xs text-right">Actions</TableHead>}
+                              {canEdit && <TableHead className="text-xs text-right">Actions</TableHead>}
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -692,7 +708,7 @@ export default function SettingsClient({
                                     ? <Badge variant="outline" className="text-[9px]">Custom</Badge>
                                     : <span className="text-[10px] text-muted-foreground">—</span>}
                                 </TableCell>
-                                {isAdmin && (
+                                {canEdit && (
                                   <TableCell className="text-right">
                                     <div className="flex items-center justify-end gap-1">
                                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
@@ -722,7 +738,7 @@ export default function SettingsClient({
               })}
             </div>
 
-            {isAdmin && (
+            {canEdit && (
               <Card className="border border-border/80 rounded-2xl bg-card shadow-2xs">
                 <CardHeader className="p-4 pb-2">
                   <CardTitle className="text-sm font-bold text-foreground">Add Custom Stage</CardTitle>
@@ -810,7 +826,7 @@ export default function SettingsClient({
                     <TableHead className="text-xs text-center">Terminal</TableHead>
                     <TableHead className="text-xs text-center">Custom</TableHead>
                     <TableHead className="text-xs text-center">Active</TableHead>
-                    {isAdmin && <TableHead className="text-xs text-right">Actions</TableHead>}
+                    {canEdit && <TableHead className="text-xs text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -838,7 +854,7 @@ export default function SettingsClient({
                           {o.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
-                      {isAdmin && (
+                      {canEdit && (
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
@@ -862,7 +878,7 @@ export default function SettingsClient({
               </Table>
             </div>
 
-            {isAdmin && (
+            {canEdit && (
               <Card className="border border-border/60 rounded-2xl bg-card shadow-2xs">
                 <CardHeader className="p-4 pb-2">
                   <CardTitle className="text-sm font-bold">Add Custom Outcome</CardTitle>
@@ -930,7 +946,7 @@ export default function SettingsClient({
                     <TableHead className="text-xs text-center">Monetary</TableHead>
                     <TableHead className="text-xs text-center">Custom</TableHead>
                     <TableHead className="text-xs text-center">Active</TableHead>
-                    {isAdmin && <TableHead className="text-xs text-right">Actions</TableHead>}
+                    {canEdit && <TableHead className="text-xs text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -953,7 +969,7 @@ export default function SettingsClient({
                           {c.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
-                      {isAdmin && (
+                      {canEdit && (
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
@@ -976,7 +992,7 @@ export default function SettingsClient({
               </Table>
             </div>
 
-            {isAdmin && (
+            {canEdit && (
               <Card className="border border-border/60 rounded-2xl bg-card shadow-2xs">
                 <CardHeader className="p-4 pb-2">
                   <CardTitle className="text-sm font-bold">Add Custom Contribution Type</CardTitle>
@@ -1029,7 +1045,7 @@ export default function SettingsClient({
                   Mapping rules from legacy source values to current <code className="bg-muted px-1 rounded text-[10px]">interaction_outcomes.code</code> values. Fully editable for system updates.
                 </p>
               </div>
-              {isAdmin && (
+              {canEdit && (
                 <Button
                   size="sm"
                   onClick={() => {
@@ -1052,7 +1068,7 @@ export default function SettingsClient({
                     <TableHead className="text-xs">Old Value</TableHead>
                     <TableHead className="text-xs font-mono">New Code</TableHead>
                     <TableHead className="text-xs">Note</TableHead>
-                    {isAdmin && <TableHead className="text-xs text-right">Actions</TableHead>}
+                    {canEdit && <TableHead className="text-xs text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1064,7 +1080,7 @@ export default function SettingsClient({
                       <TableCell className="text-xs text-muted-foreground italic">{row.old_value || "(none)"}</TableCell>
                       <TableCell className="font-mono text-[11px] text-primary">{row.new_code}</TableCell>
                       <TableCell className="text-[10px] text-amber-600 dark:text-amber-400">{row.note || "—"}</TableCell>
-                      {isAdmin && (
+                      {canEdit && (
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             <Button
@@ -1099,7 +1115,7 @@ export default function SettingsClient({
                   ))}
                   {outcomeMappings.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={isAdmin ? 5 : 4} className="text-center py-6 text-xs text-muted-foreground italic">
+                      <TableCell colSpan={canEdit ? 5 : 4} className="text-center py-6 text-xs text-muted-foreground italic">
                         No outcome mappings defined.
                       </TableCell>
                     </TableRow>

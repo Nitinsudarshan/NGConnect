@@ -4,15 +4,23 @@ import { createClient } from "@/lib/supabase/server";
 import { UsersTable } from "../users/users-table";
 import { AlumniNetworkStatsCards, AlumniNetworkStatsCharts } from "./alumni-stats";
 
+import { checkAccess } from "@/lib/permissions";
+
 export default async function AlumniNetworkPage() {
+  const clientSupabase = await createClient();
+  const { data: { user } } = await clientSupabase.auth.getUser();
+  const canView = await checkAccess(user?.id ?? null, "manage.alumni_network", "view");
+  const canEdit = await checkAccess(user?.id ?? null, "manage.alumni_network", "edit");
+  if (!canView) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center text-muted-foreground">
+        You do not have permission to view Manage Alumni Network.
+      </div>
+    );
+  }
+
   const supabase = createAdminClient();
   const { data: { users }, error } = await supabase.auth.admin.listUsers();
-
-  const clientSupabase = await createClient();
-  const { data: { user: currentUser } } = await clientSupabase.auth.getUser();
-  const email = currentUser?.email;
-  const isSuper = email && ["nitin@navgurukul.org", "nitinsudarshan@gmail.com"].includes(email.toLowerCase());
-  const isAdmin = isSuper || currentUser?.user_metadata?.role === "Admin" || currentUser?.user_metadata?.role === "Super Admin";
 
   if (error) {
     return (
@@ -54,7 +62,7 @@ export default async function AlumniNetworkPage() {
       <AlumniNetworkStatsCards users={alumniUsers} />
 
       {/* 2. User Table (paginated) */}
-      <UsersTable initialUsers={alumniUsers} isAdmin={!!isAdmin} />
+      <UsersTable initialUsers={alumniUsers} canEdit={canEdit} />
 
       {/* 3. Trend Charts */}
       <AlumniNetworkStatsCharts users={alumniUsers} />

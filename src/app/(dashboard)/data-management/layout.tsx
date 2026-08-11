@@ -1,10 +1,11 @@
 import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth';
 import { getUserRole } from '@/lib/roles';
-import { checkAccess } from '@/lib/permissions';
+import { checkClusterAccess } from '@/lib/permissions';
 
 export default async function DataManagementLayout({ children }: { children: React.ReactNode }) {
-  const role = await getUserRole();
-  const hasAccess = await checkAccess(role, 'data_management');
+  const { userId } = await auth();
+  const hasAccess = await checkClusterAccess(userId, 'data_management');
   
   if (!hasAccess) {
     redirect('/');

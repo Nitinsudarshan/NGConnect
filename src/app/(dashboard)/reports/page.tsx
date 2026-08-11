@@ -1,12 +1,13 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getUserRole } from '@/lib/roles';
+import { auth } from '@/lib/auth';
 import ReportGeneratorClient from './_components/ReportGeneratorClient';
 import { checkAccess } from '@/lib/permissions';
 
 export default async function ReportsPage() {
-  const role = await getUserRole();
-  const hasAccess = await checkAccess(role, 'reports');
+  const { userId } = await auth();
+  const hasAccess = await checkAccess(userId, 'reports', 'view');
   
   if (!hasAccess) {
     redirect('/');

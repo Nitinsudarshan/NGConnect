@@ -1,7 +1,8 @@
 "use server";
 
 import { createClient } from '@/lib/supabase/server';
-import { checkAccess } from '@/lib/permissions';
+import { checkAccess, checkClusterAccess } from '@/lib/permissions';
+import { auth } from '@/lib/auth';
 import { getUserRole, getSupabaseUserEmail } from '@/lib/roles';
 import { LogInteractionPayload, OutcomeMappingRow, PipelineSuggestion } from '@/types/engagement';
 import { revalidatePath } from 'next/cache';
@@ -36,7 +37,8 @@ async function logAlumniGrowthAudit(
 export async function logInteractionAction(payload: LogInteractionPayload) {
   try {
     const role = await getUserRole();
-    const hasAccess = await checkAccess(role, 'crm');
+    const { userId } = await auth();
+    const hasAccess = await checkAccess(userId, 'crm.workspace', 'edit');
     if (!hasAccess && role !== 'Admin' && role !== 'Super Admin') {
       return { success: false, error: 'Unauthorized: insufficient permissions' };
     }
@@ -739,7 +741,8 @@ export async function getKanbanColumnCardsAction(
 ) {
   try {
     const role = await getUserRole();
-    const hasAccess = await checkAccess(role, 'crm');
+    const { userId } = await auth();
+    const hasAccess = await checkAccess(userId, 'crm.workspace', 'view');
     if (!hasAccess && role !== 'Admin' && role !== 'Super Admin') {
       return { success: false, error: 'Unauthorized: insufficient permissions' };
     }

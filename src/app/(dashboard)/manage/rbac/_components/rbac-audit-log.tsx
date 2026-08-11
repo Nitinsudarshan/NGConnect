@@ -1,56 +1,41 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { rollbackRbac } from '@/app/actions/permissions';
+import { rollbackGranularRbac } from '@/app/actions/permissions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { History, Undo2, Loader2, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import type { RolePermissionData } from './rbac-grid';
 
 type AuditLog = {
   id: string;
   created_at: string;
   changed_by: string;
-  snapshot: RolePermissionData[];
+  snapshot: any; // Now structured as { type: 'granular_update', subjectType, count, data }
 };
 
-function getChanges(current: RolePermissionData[], previous?: RolePermissionData[]) {
-  if (!previous) return ["System baseline or unknown previous state."];
+function getChanges(currentSnapshot: any) {
+  if (!currentSnapshot) return ["System baseline or unknown state."];
+  if (currentSnapshot.type !== 'granular_update') return ["Legacy snapshot format. Cannot parse granular changes."];
   
-  const changes: string[] = [];
-  current.forEach(currRole => {
-    // Skip Super Admin since it can't be edited anyway
-    if (currRole.role === 'Super Admin') return;
-
-    const prevRole = previous.find(r => r.role === currRole.role);
-    if (!prevRole) return;
-    
-    Object.keys(currRole).forEach(k => {
-      const key = k as keyof RolePermissionData;
-      if (key !== 'role' && currRole[key] !== prevRole[key]) {
-        const action = currRole[key] ? 'Granted' : 'Revoked';
-        const label = key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        changes.push(`${action} ${label} for ${currRole.role}`);
-      }
-    });
-  });
+  if (currentSnapshot.isRollback) {
+    return [`Rolled back ${currentSnapshot.subjectType} permissions (${currentSnapshot.count} items)`];
+  }
   
-  if (changes.length === 0) return ["No changes detected (or only Rollback info)."];
-  return changes;
+  return [`Updated granular permissions for ${currentSnapshot.subjectType} (${currentSnapshot.count} permissions)`];
 }
 
 export function RbacAuditLog({ logs }: { logs: AuditLog[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [confirmLog, setConfirmLog] = useState<{id: string, snapshot: RolePermissionData[]} | null>(null);
+  const [confirmLog, setConfirmLog] = useState<{id: string, snapshot: any} | null>(null);
 
   const handleRollback = () => {
     if (!confirmLog) return;
     
     startTransition(async () => {
-      const res = await rollbackRbac(confirmLog.id, confirmLog.snapshot);
+      const res = await rollbackGranularRbac(confirmLog.id, confirmLog.snapshot);
       if (!res.success) {
         toast.error(`Failed to rollback: ${res.error}`);
       } else {
@@ -71,7 +56,7 @@ export function RbacAuditLog({ logs }: { logs: AuditLog[] }) {
               <h3 className="font-bold text-lg">Restore Version?</h3>
             </div>
             <p className="text-muted-foreground text-sm">
-              Are you sure you want to rollback to this exact state? This will instantly overwrite all current permissions with the ones from this snapshot.
+              Are you sure you want to rollback to this exact state? This will instantly overwrite all current permissions for the targeted subject with the ones from this snapshot.
             </p>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setConfirmLog(null)} disabled={isPending}>Cancel</Button>
@@ -92,7 +77,7 @@ export function RbacAuditLog({ logs }: { logs: AuditLog[] }) {
             {isPending && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </CardTitle>
           <CardDescription>
-            A history of permission changes. You can restore the grid to any previous state.
+            A history of permission changes. You can restore granular permissions to any previous state.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
@@ -109,19 +94,18 @@ export function RbacAuditLog({ logs }: { logs: AuditLog[] }) {
                   <tr>
                     <th className="px-6 py-4 whitespace-nowrap border-b border-border/50">Date & Time</th>
                     <th className="px-6 py-4 whitespace-nowrap border-b border-border/50">Changed By</th>
-                    <th className="px-6 py-4 border-b border-border/50">Changes Made</th>
+                    <th className="px-6 py-4 border-b border-border/50">Summary</th>
                     <th className="px-6 py-4 whitespace-nowrap border-b border-border/50 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
-                  {logs.map((log, index) => {
-                    const previousLog = logs[index + 1];
-                    const changes = getChanges(log.snapshot, previousLog?.snapshot);
+                  {logs.map((log) => {
+                    const changes = getChanges(log.snapshot);
 
                     return (
                       <tr key={log.id} className="hover:bg-muted/20 transition-colors group">
                         <td className="px-6 py-5 whitespace-nowrap font-medium text-foreground align-top">
-                          {new Date(log.created_at).toLocaleString()}
+                          {String(log.created_at).substring(0, 19).replace('T', ' ')} UTC
                         </td>
                         <td className="px-6 py-5 whitespace-nowrap align-top">
                           <span className="px-2.5 py-1 bg-muted rounded-full text-muted-foreground border border-border/50 text-xs">
@@ -142,7 +126,7 @@ export function RbacAuditLog({ logs }: { logs: AuditLog[] }) {
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            disabled={isPending}
+                            disabled={isPending || log.snapshot?.type !== 'granular_update'}
                             className="gap-2 border-destructive/30 text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
                             onClick={() => setConfirmLog({ id: log.id, snapshot: log.snapshot })}
                           >

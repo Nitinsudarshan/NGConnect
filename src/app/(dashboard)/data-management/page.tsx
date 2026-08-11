@@ -117,11 +117,12 @@ const COURSERA_CATEGORY = {
   ],
 };
 
-import { checkAccess } from '@/lib/permissions';
+import { auth } from '@/lib/auth';
+import { checkClusterAccess } from '@/lib/permissions';
 
 export default async function DataManagementPage() {
-  const role = await getUserRole();
-  const hasAccess = await checkAccess(role, 'data_management');
+  const { userId } = await auth();
+  const hasAccess = await checkClusterAccess(userId, 'data_management');
   if (!hasAccess) redirect('/');
 
   return (

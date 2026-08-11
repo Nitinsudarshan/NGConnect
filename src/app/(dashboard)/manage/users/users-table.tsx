@@ -36,7 +36,7 @@ import { Input } from "@/components/ui/input";
 
 interface UsersTableProps {
   initialUsers: any[];
-  isAdmin: boolean;
+  canEdit: boolean;
 }
 
 function formatRelativeTime(dateString?: string | null) {
@@ -64,7 +64,7 @@ function formatRelativeTime(dateString?: string | null) {
   }
 }
 
-export function UsersTable({ initialUsers, isAdmin }: UsersTableProps) {
+export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
   const loggedInUser = useUserContext();
   const [mounted, setMounted] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -221,7 +221,7 @@ export function UsersTable({ initialUsers, isAdmin }: UsersTableProps) {
               <TableHead>Role</TableHead>
               <TableHead>Team</TableHead>
               <TableHead>Last Login</TableHead>
-              {isAdmin && <TableHead className="w-[100px] text-right">Actions</TableHead>}
+              {canEdit && <TableHead className="w-[100px] text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -290,7 +290,7 @@ export function UsersTable({ initialUsers, isAdmin }: UsersTableProps) {
                         "Loading..."
                       )}
                     </TableCell>
-                    {isAdmin && (
+                    {canEdit && (
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
@@ -308,7 +308,7 @@ export function UsersTable({ initialUsers, isAdmin }: UsersTableProps) {
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 7 : 6} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={canEdit ? 7 : 6} className="h-24 text-center text-muted-foreground">
                   No users found.
                 </TableCell>
               </TableRow>

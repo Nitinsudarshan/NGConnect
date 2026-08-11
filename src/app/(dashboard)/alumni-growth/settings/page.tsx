@@ -2,6 +2,8 @@ import React from 'react';
 import { getContributionTypes, getInteractionOutcomes, getOrgSettings, getOutcomeMapping, getPipelines, getPipelineStages } from '@/lib/engagement/queries';
 import { getSupabaseUserEmail, getUserRole } from '@/lib/roles';
 import { getMentors, getLearningCenterAuditLogs } from '@/lib/learning-center/queries';
+import { getUserPermissions } from '@/lib/permissions';
+import { auth } from '@/lib/auth';
 import SettingsClient from './SettingsClient';
 
 export const metadata = {
@@ -33,6 +35,9 @@ export default async function SettingsPage() {
     getOutcomeMapping(),
   ]);
 
+  const { userId } = await auth();
+  const permissions = await getUserPermissions(userId, 'crm');
+
   return (
     <SettingsClient
       settings={settings}
@@ -45,6 +50,7 @@ export default async function SettingsPage() {
       mentors={mentors}
       auditLogs={auditLogs}
       initialOutcomeMappings={outcomeMappings}
+      permissions={permissions}
     />
   );
 }

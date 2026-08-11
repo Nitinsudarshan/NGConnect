@@ -8,6 +8,8 @@ import {
   getCourseraConfig,
   getGoogleMeetIntegrationStatus
 } from "@/lib/learning-center/queries"
+import { getUserPermissions } from "@/lib/permissions"
+import { auth } from "@/lib/auth"
 
 export const metadata = {
   title: "Settings | Learning Center",
@@ -24,6 +26,9 @@ export default async function SettingsPage() {
     getGoogleMeetIntegrationStatus(),
   ])
 
+  const { userId } = await auth()
+  const permissions = await getUserPermissions(userId, 'learning_center')
+
   return (
     <SettingsClient 
       initialMentors={mentors} 
@@ -34,6 +39,7 @@ export default async function SettingsPage() {
       initialCourseraConfig={courseraConfig}
       initialGmeetConnected={gmeetStatus.connected}
       initialGmeetEmail={gmeetStatus.accountEmail}
+      permissions={permissions}
     />
   )
 }

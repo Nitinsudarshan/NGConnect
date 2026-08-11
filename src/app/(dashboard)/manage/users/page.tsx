@@ -4,15 +4,23 @@ import { createClient } from "@/lib/supabase/server";
 import { UsersTable } from "./users-table";
 import { UsersStatsCards, UsersStatsCharts } from "./users-stats";
 
+import { checkAccess } from "@/lib/permissions";
+
 export default async function ManageUsersPage() {
+  const clientSupabase = await createClient();
+  const { data: { user } } = await clientSupabase.auth.getUser();
+  const canView = await checkAccess(user?.id ?? null, "manage.users", "view");
+  const canEdit = await checkAccess(user?.id ?? null, "manage.users", "edit");
+  if (!canView) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center text-muted-foreground">
+        You do not have permission to view Manage Users.
+      </div>
+    );
+  }
+
   const supabase = createAdminClient();
   const { data: { users }, error } = await supabase.auth.admin.listUsers();
-
-  const clientSupabase = await createClient();
-  const { data: { user: currentUser } } = await clientSupabase.auth.getUser();
-  const email = currentUser?.email;
-  const isSuper = email && ["nitin@navgurukul.org", "nitinsudarshan@gmail.com"].includes(email.toLowerCase());
-  const isAdmin = isSuper || currentUser?.user_metadata?.role === "Admin" || currentUser?.user_metadata?.role === "Super Admin";
 
   if (error) {
     return (
@@ -50,7 +58,7 @@ export default async function ManageUsersPage() {
       <UsersStatsCards users={filteredUsers} />
 
       {/* 2. User Table (paginated) */}
-      <UsersTable initialUsers={filteredUsers} isAdmin={!!isAdmin} />
+      <UsersTable initialUsers={filteredUsers} canEdit={canEdit} />
 
       {/* 3. Distribution Charts */}
       <UsersStatsCharts users={filteredUsers} />
