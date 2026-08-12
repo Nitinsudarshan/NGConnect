@@ -517,13 +517,13 @@ export default function SettingsClient({
               <div className="space-y-3">
                 {[
                   { label: "Active Coursera Subscription", desc: "Alumnus holds an active, unrevoked Coursera enterprise license.", checked: activeCoursera, onChange: setActiveCoursera },
-                  { label: "Attended Mentoring &amp; Live Workshops", desc: "Alumnus has attended live mentoring sessions or workshops.", checked: activeMentoring, onChange: setActiveMentoring },
+                  { label: "Attended Mentoring & Live Workshops", desc: "Alumnus has attended live mentoring sessions or workshops.", checked: activeMentoring, onChange: setActiveMentoring },
                   { label: "Logged Watch Hours from Video Recordings", desc: "Alumnus has recorded learning watch hours on Coursera or platform video recordings.", checked: activeWatchTime, onChange: setActiveWatchTime },
                 ].map(({ label, desc, checked, onChange }) => (
                   <label key={label} className="flex items-center gap-2.5 p-3.5 rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/40 cursor-pointer text-xs transition-colors">
                     <Checkbox checked={checked} onCheckedChange={(c) => onChange(Boolean(c))} disabled={!canEdit} />
                     <div>
-                      <span className="font-bold text-foreground block" dangerouslySetInnerHTML={{ __html: label }} />
+                      <span className="font-bold text-foreground block">{label}</span>
                       <span className="text-[10px] text-muted-foreground">{desc}</span>
                     </div>
                   </label>

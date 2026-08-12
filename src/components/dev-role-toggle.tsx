@@ -25,7 +25,7 @@ const ROLES = [
   { label: "Member", value: "Member" },
 ];
 
-export function DevRoleToggle() {
+export function DevRoleToggle({ isSuperAdmin }: { isSuperAdmin?: boolean }) {
   const user = useUserContext();
   const [activeOverride, setActiveOverride] = useState<string>("");
 
@@ -48,6 +48,8 @@ export function DevRoleToggle() {
   };
 
   if (!user) return null;
+  if (process.env.NODE_ENV === "production") return null;
+  if (!isSuperAdmin) return null;
 
   return (
     <DropdownMenu>

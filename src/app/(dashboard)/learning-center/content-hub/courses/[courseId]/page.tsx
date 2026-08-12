@@ -3,6 +3,7 @@
 import React, { useState, use } from "react"
 import Link from "next/link"
 import { ChevronLeft, PlayCircle, FileText, FileDown, HelpCircle, CheckCircle2 } from "lucide-react"
+import DOMPurify from 'isomorphic-dompurify'
 import { Button } from "@/components/ui/button"
 import { VideoPlayer } from "@/components/shared/video-player"
 import { toast } from "sonner"
@@ -64,7 +65,7 @@ export default function CourseViewerPage({ params }: { params: Promise<{ courseI
           <div className="space-y-6">
             <div className="prose dark:prose-invert max-w-none">
               <h2 className="text-2xl font-bold">{activeItem.title}</h2>
-              <div dangerouslySetInnerHTML={{ __html: activeItem.content! }} />
+              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(activeItem.content!) }} />
             </div>
             <Button onClick={markCompleted}>Mark as Read & Continue</Button>
           </div>

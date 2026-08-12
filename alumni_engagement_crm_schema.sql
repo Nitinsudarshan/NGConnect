@@ -156,6 +156,7 @@ CREATE TABLE IF NOT EXISTS public.pay_forward_contributions (
 );
 
 -- convenience view: lifetime monetary total + cap progress
+DROP VIEW IF EXISTS public.v_pay_forward_progress CASCADE;
 CREATE OR REPLACE VIEW public.v_pay_forward_progress AS
 SELECT
   a.alumni_email,
@@ -197,6 +198,7 @@ CREATE TABLE IF NOT EXISTS public.mentoring_attendance (
 );
 
 -- ---------- 10. Profile completeness view ----------
+DROP VIEW IF EXISTS public.v_alumni_profile_completeness CASCADE;
 CREATE OR REPLACE VIEW public.v_alumni_profile_completeness AS
 SELECT
   am.email AS alumni_email,
@@ -233,11 +235,12 @@ CREATE POLICY "Allow select interaction_outcomes" ON public.interaction_outcomes
 CREATE POLICY "Allow select pipelines" ON public.pipelines FOR SELECT TO authenticated USING (true);
 
 -- Allow authenticated users full CRUD on operational CRM tables
-CREATE POLICY "Allow authenticated pipeline_membership" ON public.alumni_pipeline_membership FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated interactions" ON public.alumni_interactions FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated support_areas" ON public.interaction_support_areas FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated salary_records" ON public.alumni_salary_records FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated pf_contributions" ON public.pay_forward_contributions FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated mentors" ON public.mentors FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated mentoring_sessions" ON public.mentoring_sessions FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated mentoring_attendance" ON public.mentoring_attendance FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated pipeline_membership" ON public.alumni_pipeline_membership FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
+CREATE POLICY "Allow authenticated interactions" ON public.alumni_interactions FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
+CREATE POLICY "Allow authenticated support_areas" ON public.interaction_support_areas FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
+CREATE POLICY "Allow authenticated salary_records" ON public.alumni_salary_records FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
+CREATE POLICY "Allow authenticated pf_contributions" ON public.pay_forward_contributions FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
+CREATE POLICY "Allow authenticated mentors" ON public.mentors FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
+CREATE POLICY "Allow authenticated mentoring_sessions" ON public.mentoring_sessions FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
+CREATE POLICY "Allow authenticated mentoring_attendance" ON public.mentoring_attendance FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
+

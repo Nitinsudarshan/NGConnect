@@ -143,3 +143,4 @@ ON learning_center_audit_logs FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow insert for authenticated users" 
 ON learning_center_audit_logs FOR INSERT TO authenticated WITH CHECK (true);
 
+

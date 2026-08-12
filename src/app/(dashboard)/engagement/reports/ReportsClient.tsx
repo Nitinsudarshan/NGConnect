@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { toast } from "sonner";
 
 const AVAILABLE_FIELDS = [
@@ -89,9 +89,7 @@ export default function ReportsClient({ sampleData }: ReportsClientProps) {
     }
   };
 
-  const handleExportXLSX = () => {
-    const headers = AVAILABLE_FIELDS.filter((f) => selectedFields.includes(f.id)).map((f) => f.label);
-
+  const handleExportXLSX = async () => {
     const exportRows = sampleData.map((item) => {
       const row: Record<string, any> = {};
       selectedFields.forEach((fieldId) => {
@@ -103,10 +101,28 @@ export default function ReportsClient({ sampleData }: ReportsClientProps) {
       return row;
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(exportRows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Engagement Report");
-    XLSX.writeFile(workbook, `NGConnect_Engagement_Report_${new Date().toISOString().split("T")[0]}.xlsx`);
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Engagement Report");
+    
+    if (exportRows.length > 0) {
+      const headers = Object.keys(exportRows[0]);
+      worksheet.addRow(headers);
+      exportRows.forEach(row => {
+        worksheet.addRow(Object.values(row));
+      });
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `NGConnect_Engagement_Report_${new Date().toISOString().split("T")[0]}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
     toast.success("Exported report to XLSX!");
   };
 

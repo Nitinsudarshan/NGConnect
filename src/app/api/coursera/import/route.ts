@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import * as XLSX from 'xlsx';
+import { createClient } from '@/lib/supabase/server';
+import ExcelJS from 'exceljs';
+import { Readable } from 'stream';
 
 // firstDayOfMonth: string-only, no new Date() to avoid IST timezone shift
 const firstDayOfMonth = (s: string) => s.substring(0, 7) + '-01';
@@ -50,6 +52,18 @@ async function fetchAllSupabase(queryBuilder: any) {
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const role = user.app_metadata?.role;
+  if (role !== 'Admin' && role !== 'Super Admin') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const supabase = createAdminClient();
 
   // ── STEP 0: Validate inputs ──────────────────────────────────────────────
@@ -75,6 +89,9 @@ export async function POST(request: NextRequest) {
   if (!file.name.toLowerCase().endsWith('.xlsx')) {
     return NextResponse.json({ error: 'Only .xlsx files are supported' }, { status: 400 });
   }
+  if (file.size > 5 * 1024 * 1024) {
+    return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 });
+  }
 
   // Check for duplicate import (must consider rollbacks)
   const { data: latestLogs } = await supabase
@@ -93,26 +110,45 @@ export async function POST(request: NextRequest) {
 
   // ── STEP 1: Parse the XLSX file ──────────────────────────────────────────
   const buffer = Buffer.from(await file.arrayBuffer());
-  let workbook: XLSX.WorkBook;
+  let rawRows: Record<string, any>[] = [];
   try {
-    workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
-  } catch {
-    return NextResponse.json({ error: 'Failed to parse XLSX file' }, { status: 400 });
+    const workbook = new ExcelJS.Workbook();
+    const stream = Readable.from(buffer);
+    await workbook.xlsx.read(stream);
+
+    const sheet = workbook.worksheets.find(s => s.name === 'Learner Activity' || s.name === 'Course Activity');
+    
+    if (!sheet) {
+      return NextResponse.json({
+        error: `No recognised sheet found. Sheets in file: ${workbook.worksheets.map(s => s.name).join(', ')}`
+      }, { status: 400 });
+    }
+
+    if (sheet.rowCount === 0) {
+      return NextResponse.json({ error: 'File is empty' }, { status: 400 });
+    }
+    if (sheet.rowCount > 10000) {
+      return NextResponse.json({ error: 'File has too many rows (max 10000 allowed)' }, { status: 400 });
+    }
+
+    const headerRow = sheet.getRow(1);
+    const headers = headerRow.values as (string | undefined)[];
+
+    sheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return; // skip header
+      const rowObj: Record<string, any> = {};
+      (row.values as any[]).forEach((val, colIndex) => {
+        const headerName = headers[colIndex];
+        if (headerName) {
+          rowObj[String(headerName).trim()] = val !== null && val !== undefined ? val : null;
+        }
+      });
+      rawRows.push(rowObj);
+    });
+  } catch (err: any) {
+    return NextResponse.json({ error: `Failed to parse XLSX file: ${err.message}` }, { status: 400 });
   }
 
-  const sheetName =
-    workbook.SheetNames.includes('Learner Activity') ? 'Learner Activity' :
-    workbook.SheetNames.includes('Course Activity') ? 'Course Activity' : null;
-
-  if (!sheetName) {
-    return NextResponse.json({
-      error: `No recognised sheet found. Sheets in file: ${workbook.SheetNames.join(', ')}`
-    }, { status: 400 });
-  }
-
-  const sheet = workbook.Sheets[sheetName];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rawRows: Record<string, any>[] = XLSX.utils.sheet_to_json(sheet, { defval: null });
   const totalRows = rawRows.length;
 
   // ── STEP 2: Validate columns ─────────────────────────────────────────────

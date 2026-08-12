@@ -653,7 +653,7 @@ CREATE TABLE IF NOT EXISTS public.coursera_metrics (
 ALTER TABLE public.coursera_metrics ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "coursera_metrics_all"
     ON public.coursera_metrics FOR ALL
-    TO authenticated USING (true) WITH CHECK (true);
+    TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
 
 
 CREATE TABLE IF NOT EXISTS public.coursera_monthly_metrics (
@@ -677,7 +677,7 @@ CREATE TABLE IF NOT EXISTS public.coursera_monthly_metrics (
 ALTER TABLE public.coursera_monthly_metrics ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "coursera_monthly_metrics_all"
     ON public.coursera_monthly_metrics FOR ALL
-    TO authenticated USING (true) WITH CHECK (true);
+    TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
 
 
 CREATE TABLE IF NOT EXISTS public.coursera_compliance_audit (
@@ -695,4 +695,5 @@ CREATE TABLE IF NOT EXISTS public.coursera_compliance_audit (
 ALTER TABLE public.coursera_compliance_audit ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "coursera_compliance_audit_all"
     ON public.coursera_compliance_audit FOR ALL
-    TO authenticated USING (true) WITH CHECK (true);
+    TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
+

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 
 const firstDayOfMonth = (s: string) => s.substring(0, 7) + '-01';
 
@@ -34,6 +35,18 @@ async function fetchAllSupabase(queryBuilder: any) {
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const role = user.app_metadata?.role;
+  if (role !== 'Admin' && role !== 'Super Admin') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const supabase = createAdminClient();
 
   let body: { snapshotMonth?: string; requestedBy?: string };

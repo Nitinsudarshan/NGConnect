@@ -16,6 +16,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // L1 Fix: Add role check
+  if (user.app_metadata?.role !== 'Admin' && user.app_metadata?.role !== 'Super Admin') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const formData = await req.formData();
   const file = formData.get('file') as File | null;
   if (!file) {
@@ -25,6 +30,10 @@ export async function POST(req: NextRequest) {
   const ext = file.name.split('.').pop()?.toLowerCase();
   if (!['csv', 'xlsx'].includes(ext ?? '')) {
     return NextResponse.json({ error: 'Only CSV and XLSX files are supported' }, { status: 400 });
+  }
+
+  if (file.size > 10 * 1024 * 1024) { // 10MB limit
+    return NextResponse.json({ error: 'File size must be less than 10MB' }, { status: 400 });
   }
 
   const supabaseAdmin = createAdminClient();

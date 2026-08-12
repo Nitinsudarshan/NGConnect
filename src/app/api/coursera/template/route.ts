@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 const TEMPLATE_HEADERS = [
   'Name',
@@ -42,37 +42,35 @@ const EXAMPLE_ROW = [
 ];
 
 export async function GET() {
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS, EXAMPLE_ROW]);
+  const workbook = new ExcelJS.Workbook();
+  const ws = workbook.addWorksheet('Learner Activity', {
+    views: [{ state: 'frozen', ySplit: 1 }]
+  });
 
   // Column widths
-  const colWidths = [
-    { wch: 20 }, // Name
-    { wch: 30 }, // Email
-    { wch: 40 }, // Course
-    { wch: 26 }, // Course ID
-    { wch: 36 }, // Course Slug
-    { wch: 20 }, // University
-    { wch: 22 }, // Enrollment Time
-    { wch: 26 }, // Last Course Activity Time
-    { wch: 18 }, // Overall Progress
-    { wch: 12 }, // Completed
-    { wch: 22 }, // Removed From Program
-    { wch: 20 }, // Program Name
-    { wch: 20 }, // Completion Time
-    { wch: 14 }, // Course Grade
-    { wch: 40 }, // Course Certificate URL
-    { wch: 16 }, // Learning Hours
-    { wch: 20 }, // Course Type
+  ws.columns = [
+    { header: TEMPLATE_HEADERS[0], width: 20 }, // Name
+    { header: TEMPLATE_HEADERS[1], width: 30 }, // Email
+    { header: TEMPLATE_HEADERS[2], width: 40 }, // Course
+    { header: TEMPLATE_HEADERS[3], width: 26 }, // Course ID
+    { header: TEMPLATE_HEADERS[4], width: 36 }, // Course Slug
+    { header: TEMPLATE_HEADERS[5], width: 20 }, // University
+    { header: TEMPLATE_HEADERS[6], width: 22 }, // Enrollment Time
+    { header: TEMPLATE_HEADERS[7], width: 26 }, // Last Course Activity Time
+    { header: TEMPLATE_HEADERS[8], width: 18 }, // Overall Progress
+    { header: TEMPLATE_HEADERS[9], width: 12 }, // Completed
+    { header: TEMPLATE_HEADERS[10], width: 22 }, // Removed From Program
+    { header: TEMPLATE_HEADERS[11], width: 20 }, // Program Name
+    { header: TEMPLATE_HEADERS[12], width: 20 }, // Completion Time
+    { header: TEMPLATE_HEADERS[13], width: 14 }, // Course Grade
+    { header: TEMPLATE_HEADERS[14], width: 40 }, // Course Certificate URL
+    { header: TEMPLATE_HEADERS[15], width: 16 }, // Learning Hours
+    { header: TEMPLATE_HEADERS[16], width: 20 }, // Course Type
   ];
-  ws['!cols'] = colWidths;
 
-  // Freeze first row
-  ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+  ws.addRow(EXAMPLE_ROW);
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Learner Activity');
-
-  const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  const buf = await workbook.xlsx.writeBuffer();
 
   return new Response(buf, {
     headers: {

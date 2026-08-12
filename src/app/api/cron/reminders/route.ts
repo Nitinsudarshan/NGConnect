@@ -7,7 +7,14 @@ export async function GET(request: Request) {
   try {
     // 1. Verify cron authorization to prevent public access
     const authHeader = request.headers.get('authorization');
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    const cronSecret = process.env.CRON_SECRET;
+    
+    if (!cronSecret) {
+      console.error('CRON_SECRET environment variable is not set. Failing closed.');
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 

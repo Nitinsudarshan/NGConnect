@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 
 const firstDayOfMonth = (s: string) => s.substring(0, 7) + '-01';
 
 export async function DELETE(request: NextRequest) {
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const role = user.app_metadata?.role;
+  if (role !== 'Admin' && role !== 'Super Admin') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const supabase = createAdminClient();
 
   // STEP 1: Parse and validate body

@@ -136,6 +136,26 @@ export async function rollbackImportBatch(
       if (!record.alumni_email) continue;
 
       if (record.action === 'created') {
+        // Check for any interaction activity
+        const { data: interactions } = await supabaseAdmin
+          .from('alumni_interactions')
+          .select('id')
+          .eq('alumni_email', record.alumni_email)
+          .limit(1);
+
+        // Check for any profile updates
+        const { data: audits } = await supabaseAdmin
+          .from('audit_log')
+          .select('id')
+          .eq('record_id', record.alumni_email)
+          .gt('changed_at', batch.uploaded_at)
+          .limit(1);
+
+        if ((interactions && interactions.length > 0) || (audits && audits.length > 0)) {
+          // Skip hard-delete if they have subsequent activity
+          continue;
+        }
+
         await supabaseAdmin
           .from('alumni_master')
           .delete()

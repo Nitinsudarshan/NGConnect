@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS public.learning_courses (
 );
 
 ALTER TABLE public.learning_courses ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Authenticated users can read published courses" ON public.learning_courses FOR SELECT USING (auth.role() = 'authenticated' AND status = 'published');
+CREATE POLICY "Users can read published or all if admin" ON public.learning_courses FOR SELECT USING ( (auth.role() = 'authenticated' AND status = 'published') OR ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin')) );
 
 -- 7. User Course Progress
 CREATE TABLE IF NOT EXISTS public.learning_course_progress (

@@ -112,6 +112,17 @@ export async function saveAudienceAction(id: string | null, data: { name: string
 
 export async function deleteAudienceAction(id: string, name: string) {
   const supabase = await createClient()
+
+  // Server-side safety check: Ensure no sessions or courses depend on this audience
+  const [{ count: sessionCount }, { count: courseCount }] = await Promise.all([
+    supabase.from('learning_sessions').select('*', { count: 'exact', head: true }).eq('audience_id', id),
+    supabase.from('learning_courses').select('*', { count: 'exact', head: true }).eq('audience_id', id)
+  ]);
+
+  if ((sessionCount && sessionCount > 0) || (courseCount && courseCount > 0)) {
+    return { success: false, error: "Cannot delete audience that is assigned to existing sessions or courses." }
+  }
+
   const { error } = await supabase.from('learning_audiences').delete().eq('id', id)
   if (error) return { success: false, error: error.message }
 
@@ -140,6 +151,17 @@ export async function saveSessionTypeAction(id: string | null, name: string) {
 
 export async function deleteSessionTypeAction(id: string, name: string) {
   const supabase = await createClient()
+
+  // Server-side safety check: Ensure no sessions depend on this session type
+  const { count: sessionCount } = await supabase
+    .from('learning_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('session_type_id', id);
+
+  if (sessionCount && sessionCount > 0) {
+    return { success: false, error: "Cannot delete session type that is assigned to existing sessions." }
+  }
+
   const { error } = await supabase.from('learning_session_types').delete().eq('id', id)
   if (error) return { success: false, error: error.message }
 

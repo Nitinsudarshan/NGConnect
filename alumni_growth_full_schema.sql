@@ -308,6 +308,7 @@ CREATE TABLE IF NOT EXISTS public.learning_center_audit_logs (
 );
 
 -- ---------- 8. Views ----------
+DROP VIEW IF EXISTS public.v_pay_forward_progress CASCADE;
 CREATE OR REPLACE VIEW public.v_pay_forward_progress AS
 SELECT
   a.alumni_email,
@@ -322,6 +323,7 @@ FROM public.pay_forward_contributions a
 JOIN public.contribution_types ct ON ct.id = a.contribution_type_id
 GROUP BY a.alumni_email;
 
+DROP VIEW IF EXISTS public.v_alumni_profile_completeness CASCADE;
 CREATE OR REPLACE VIEW public.v_alumni_profile_completeness AS
 SELECT
   am.email AS alumni_email,
@@ -433,31 +435,31 @@ CREATE POLICY "alumni_profile_select_all" ON public.alumni_profile FOR SELECT TO
 
 -- CRM Operational CRUD Policies
 DROP POLICY IF EXISTS "Allow authenticated pipeline_membership" ON public.alumni_pipeline_membership;
-CREATE POLICY "Allow authenticated pipeline_membership" ON public.alumni_pipeline_membership FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated pipeline_membership" ON public.alumni_pipeline_membership FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
 
 DROP POLICY IF EXISTS "Allow authenticated interactions" ON public.alumni_interactions;
-CREATE POLICY "Allow authenticated interactions" ON public.alumni_interactions FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated interactions" ON public.alumni_interactions FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
 
 DROP POLICY IF EXISTS "Allow authenticated support_areas" ON public.interaction_support_areas;
-CREATE POLICY "Allow authenticated support_areas" ON public.interaction_support_areas FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated support_areas" ON public.interaction_support_areas FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
 
 DROP POLICY IF EXISTS "Allow authenticated salary_records" ON public.alumni_salary_records;
-CREATE POLICY "Allow authenticated salary_records" ON public.alumni_salary_records FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated salary_records" ON public.alumni_salary_records FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
 
 DROP POLICY IF EXISTS "Allow authenticated pf_contributions" ON public.pay_forward_contributions;
-CREATE POLICY "Allow authenticated pf_contributions" ON public.pay_forward_contributions FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated pf_contributions" ON public.pay_forward_contributions FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
 
 DROP POLICY IF EXISTS "Allow authenticated mentors" ON public.mentors;
-CREATE POLICY "Allow authenticated mentors" ON public.mentors FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated mentors" ON public.mentors FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
 
 DROP POLICY IF EXISTS "Allow authenticated mentoring_sessions" ON public.mentoring_sessions;
-CREATE POLICY "Allow authenticated mentoring_sessions" ON public.mentoring_sessions FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated mentoring_sessions" ON public.mentoring_sessions FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
 
 DROP POLICY IF EXISTS "Allow authenticated mentoring_attendance" ON public.mentoring_attendance;
-CREATE POLICY "Allow authenticated mentoring_attendance" ON public.mentoring_attendance FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated mentoring_attendance" ON public.mentoring_attendance FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
 
 DROP POLICY IF EXISTS "Allow authenticated lc_audit_logs" ON public.learning_center_audit_logs;
-CREATE POLICY "Allow authenticated lc_audit_logs" ON public.learning_center_audit_logs FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated lc_audit_logs" ON public.learning_center_audit_logs FOR ALL TO authenticated USING ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') ) WITH CHECK ( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('Admin', 'Super Admin') );
 
 -- ---------- 12. Seed Initial Data ----------
 INSERT INTO public.ng_campuses (name, status)
@@ -532,3 +534,4 @@ ON CONFLICT (code) DO NOTHING;
 -- ============================================================================
 -- End of Alumni Growth SQL Schema
 -- ============================================================================
+

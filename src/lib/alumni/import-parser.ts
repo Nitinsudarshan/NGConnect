@@ -1,4 +1,5 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { Readable } from 'stream';
 import type { GharColumnMap, ParsedImportRow } from '@/types/import';
 import columnMap from './ghar-column-map.json';
 
@@ -12,21 +13,40 @@ const defaultColumnMap = columnMap as GharColumnMap;
  * @param fileType 'csv' | 'xlsx'
  * @param map      Optional column map override (defaults to ghar-column-map.json)
  */
-export function parseImportFile(
+export async function parseImportFile(
   buffer: ArrayBuffer,
   fileType: 'csv' | 'xlsx',
   map: GharColumnMap = defaultColumnMap
-): ParsedImportRow[] {
-  const workbook = XLSX.read(buffer, {
-    type: 'array',
-    cellDates: true,
-    raw: false,
-  });
+): Promise<ParsedImportRow[]> {
+  const workbook = new ExcelJS.Workbook();
+  const stream = Readable.from(Buffer.from(buffer));
 
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rawRows: Record<string, string>[] = XLSX.utils.sheet_to_json(sheet, {
-    defval: '',
-    raw: false,
+  if (fileType === 'csv') {
+    await workbook.csv.read(stream);
+  } else {
+    await workbook.xlsx.read(stream);
+  }
+
+  const sheet = workbook.worksheets[0];
+  const rawRows: Record<string, string>[] = [];
+  
+  if (sheet.rowCount > 10000) {
+    throw new Error('File has too many rows (max 10000 allowed)');
+  }
+
+  const headerRow = sheet.getRow(1);
+  const headers = headerRow.values as (string | undefined)[];
+
+  sheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return; // skip header
+    const rowObj: Record<string, string> = {};
+    (row.values as any[]).forEach((val, colIndex) => {
+      const headerName = headers[colIndex];
+      if (headerName) {
+        rowObj[headerName] = val !== null && val !== undefined ? String(val) : '';
+      }
+    });
+    rawRows.push(rowObj);
   });
 
   // Invert the map: GHAR header → DB field name

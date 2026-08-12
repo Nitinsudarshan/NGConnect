@@ -55,6 +55,17 @@ const getColorVar = (index: number) => {
   return opacity === 100 ? baseColor : `color-mix(in srgb, ${baseColor} ${opacity}%, transparent)`;
 }
 
+const getLabelColorVar = (index: number) => {
+  const baseIndex = index % 3;
+  const cycle = Math.floor(index / 3);
+  if (cycle > 0) return "var(--foreground)";
+  return baseIndex === 0
+    ? "var(--color-chart-primary-foreground)"
+    : baseIndex === 1
+      ? "var(--color-primary-foreground)"
+      : "var(--color-chart-neutral-foreground)";
+}
+
 export function DashboardCharts({ data }: DashboardChartsProps) {
   // Aggregate data for Status
   const statusData = useMemo(() => {
@@ -259,12 +270,27 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
                 <LabelList
                   position="insideStart"
                   dataKey="label"
-                  className="fill-foreground capitalize"
-                  fontSize={11}
-                  style={{
-                    paintOrder: "stroke",
-                    stroke: "var(--card)",
-                    strokeWidth: 3,
+                  content={(props: any) => {
+                    const { value, index, x, y, textAnchor, dominantBaseline, transform } = props;
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        textAnchor={textAnchor}
+                        dominantBaseline={dominantBaseline}
+                        transform={transform}
+                        fill={getLabelColorVar(index)}
+                        className="capitalize"
+                        fontSize={11}
+                        style={{
+                          paintOrder: "stroke",
+                          stroke: "var(--card)",
+                          strokeWidth: 3,
+                        }}
+                      >
+                        {value}
+                      </text>
+                    );
                   }}
                 />
               </RadialBar>
@@ -293,12 +319,27 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
                 <LabelList
                   position="insideStart"
                   dataKey="label"
-                  className="fill-foreground capitalize"
-                  fontSize={11}
-                  style={{
-                    paintOrder: "stroke",
-                    stroke: "var(--card)",
-                    strokeWidth: 3,
+                  content={(props: any) => {
+                    const { value, index, x, y, textAnchor, dominantBaseline, transform } = props;
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        textAnchor={textAnchor}
+                        dominantBaseline={dominantBaseline}
+                        transform={transform}
+                        fill={getLabelColorVar(index)}
+                        className="capitalize"
+                        fontSize={11}
+                        style={{
+                          paintOrder: "stroke",
+                          stroke: "var(--card)",
+                          strokeWidth: 3,
+                        }}
+                      >
+                        {value}
+                      </text>
+                    );
                   }}
                 />
               </RadialBar>

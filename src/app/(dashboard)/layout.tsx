@@ -9,7 +9,7 @@ import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { UserProvider } from "@/contexts/user-context"
 import { BreadcrumbProvider } from "@/contexts/breadcrumb-context"
-import { getUserRole } from "@/lib/roles"
+import { getUserRole, isTrueSuperAdmin } from "@/lib/roles"
 
 export default async function DashboardLayout({
     children,
@@ -28,6 +28,7 @@ export default async function DashboardLayout({
     const displayAvatar = userMetadata.avatar_url || userMetadata.picture || ""
     const activeRole = await getUserRole(user)
     const isAlumni = userMetadata.is_alumni !== false
+    const isSuperAdmin = await isTrueSuperAdmin();
 
     return (
         <UserProvider user={{
@@ -41,7 +42,7 @@ export default async function DashboardLayout({
             <BreadcrumbProvider>
                 <div className="[--header-height:calc(--spacing(14))] h-svh w-full flex flex-col overflow-hidden bg-background">
                     <SidebarProvider className="flex flex-col flex-1 h-full w-full overflow-hidden">
-                        <SiteHeader />
+                        <SiteHeader isSuperAdmin={isSuperAdmin} />
                         <div className="flex flex-1 min-h-0 w-full overflow-hidden">
                             <AppSidebar />
                             <SidebarInset className="flex-1 min-w-0 w-full overflow-y-auto bg-background">

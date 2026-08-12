@@ -42,15 +42,8 @@ export const checkRole = async (role: UserRole) => {
     const cookieStore = await cookies();
     const devRole = cookieStore.get('dev-role-override')?.value as UserRole;
     if (devRole) {
-        if (isSuperAdmin || userId === process.env.MASTER_USER_ID || claimRole === "Admin" || claimRole === "Super Admin") {
+        if (isSuperAdmin || claimRole === "Super Admin") {
             return devRole === role;
-        } else if (
-            ["Program", "Operations"].includes(claimRole as string)
-        ) {
-            // Program/Ops can ONLY swap between their base role and "Member", it's a safe sandbox downgrade.
-            if (devRole === "Member" || devRole === claimRole) {
-                return devRole === role;
-            }
         }
     }
 
@@ -87,15 +80,8 @@ export const getUserRole = async (freshUser?: any): Promise<UserRole> => {
     const cookieStore = await cookies();
     const devRole = cookieStore.get('dev-role-override')?.value as UserRole;
     if (devRole) {
-        if (isSuperAdmin || userId === process.env.MASTER_USER_ID || claimRole === "Admin" || claimRole === "Super Admin") {
+        if (isSuperAdmin || claimRole === "Super Admin") {
             return devRole;
-        } else if (
-            ["Program", "Operations"].includes(claimRole as string)
-        ) {
-            // Program/Ops can ONLY swap between their base role and "Member", it's a safe sandbox downgrade.
-            if (devRole === "Member" || devRole === claimRole) {
-                return devRole;
-            }
         }
     }
 
@@ -127,4 +113,16 @@ export const isTrueAdmin = async (): Promise<boolean> => {
     const claimRole = (sessionClaims?.metadata?.role || (sessionClaims as any)?.role) as UserRole | undefined;
     if (userId && userId === process.env.MASTER_USER_ID) return true;
     return claimRole === "Admin" || claimRole === "Super Admin";
+};
+
+/**
+ * Validates if the user is truly a Super Admin without looking at dev overrides
+ */
+export const isTrueSuperAdmin = async (): Promise<boolean> => {
+    const email = await getSupabaseUserEmail();
+    if (email && SUPER_ADMIN_EMAILS.includes(email.toLowerCase())) return true;
+
+    const { sessionClaims } = await auth();
+    const claimRole = (sessionClaims?.metadata?.role || (sessionClaims as any)?.role) as UserRole | undefined;
+    return claimRole === "Super Admin";
 };

@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   const ext = storagePath.split('.').pop()?.toLowerCase() as 'csv' | 'xlsx';
   const buffer = await fileData.arrayBuffer();
 
-  const parsed    = parseImportFile(buffer, ext);
+  const parsed    = await parseImportFile(buffer, ext);
   const validated = validateImportRows(parsed);
 
   const result = await processImportRows(validated, batchId, {

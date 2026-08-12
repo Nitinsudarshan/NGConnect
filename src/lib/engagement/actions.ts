@@ -56,6 +56,17 @@ export async function logInteractionAction(payload: LogInteractionPayload) {
       return { success: false, error: 'Selected interaction outcome is invalid or inactive' };
     }
 
+    // 1.5. Check do_not_contact suppression
+    const { data: alumniProfile } = await supabase
+      .from('alumni_master')
+      .select('do_not_contact')
+      .eq('email', payload.alumni_email)
+      .single();
+
+    if (alumniProfile?.do_not_contact) {
+      return { success: false, error: 'Cannot log interactions for alumni who have opted out of contact (do_not_contact is true)' };
+    }
+
     // 2. Client & DB rule check: requires_followup_datetime
     if (outcome.requires_followup_datetime && (!payload.followup_at || payload.followup_at.trim() === '')) {
       return { success: false, error: 'This outcome requires a follow-up date and time' };
@@ -342,6 +353,7 @@ export async function updatePipelineMembershipAction(payload: {
         .from('pipeline_stages')
         .select('id, label')
         .eq('id', payload.stage_id)
+        .eq('pipeline_id', pipeline.id)
         .maybeSingle();
 
       if (stg) {
@@ -466,6 +478,37 @@ export async function recordContributionAction(payload: {
 }) {
   try {
     const supabase = await createClient();
+
+    if (payload.amount_inr !== undefined) {
+      if (payload.amount_inr <= 0) {
+        return { success: false, error: 'Amount must be greater than 0' };
+      }
+
+      // Check remaining cap
+      const adminSupabase = createAdminClient();
+      const { data: capSetting } = await adminSupabase
+        .from('org_settings')
+        .select('value')
+        .eq('key', 'pay_forward_cap_inr')
+        .single();
+      const cap = capSetting?.value ? Number(capSetting.value) : 120000;
+
+      const { data: contributions } = await supabase
+        .from('pay_forward_contributions')
+        .select('amount_inr, contribution_types(is_monetary)')
+        .eq('alumni_email', payload.alumni_email);
+
+      let counted = 0;
+      for (const row of contributions || []) {
+        if ((row.contribution_types as any)?.is_monetary) {
+          counted += row.amount_inr || 0;
+        }
+      }
+
+      if (counted + payload.amount_inr > cap) {
+        return { success: false, error: `Contribution exceeds the remaining cap. Remaining: ${Math.max(0, cap - counted)}` };
+      }
+    }
 
     const { data, error } = await supabase
       .from('pay_forward_contributions')
