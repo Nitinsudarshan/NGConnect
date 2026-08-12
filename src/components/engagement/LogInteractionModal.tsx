@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { InteractionOutcome, PipelineSuggestion, ProfileCompleteness } from "@/types/engagement";
-import { logInteractionAction, updatePipelineMembershipAction } from "@/lib/engagement/actions";
+import { logInteractionAction, updatePipelineMembershipAction, getCallReasonsAction } from "@/lib/engagement/actions";
 import { toast } from "sonner";
 import { PhoneCall, Calendar, AlertCircle, CheckCircle2, DollarSign, UserCheck, Linkedin, Building2, HelpCircle } from "lucide-react";
 
@@ -48,6 +48,8 @@ export default function LogInteractionModal({
   masterData,
 }: LogInteractionModalProps) {
   const [selectedOutcomeId, setSelectedOutcomeId] = useState<string>("");
+  const [callReasonId, setCallReasonId] = useState<string>("");
+  const [callReasons, setCallReasons] = useState<{ id: string; label: string; is_active: boolean }[]>([]);
   const [notes, setNotes] = useState<string>("");
   const [interactionChannel, setInteractionChannel] = useState<string>("call");
   const [followupAt, setFollowupAt] = useState<string>("");
@@ -69,6 +71,16 @@ export default function LogInteractionModal({
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [suggestions, setSuggestions] = useState<PipelineSuggestion[]>([]);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      getCallReasonsAction().then(res => {
+        if (res.success && res.data) {
+          setCallReasons(res.data);
+        }
+      });
+    }
+  }, [isOpen]);
 
   const selectedOutcome = outcomes.find((o) => o.id === selectedOutcomeId);
   const requiresFollowup = selectedOutcome?.requires_followup_datetime ?? false;
@@ -94,6 +106,7 @@ export default function LogInteractionModal({
         logged_by: userEmail,
         interaction_channel: interactionChannel,
         outcome_id: selectedOutcomeId,
+        call_reason_id: callReasonId || undefined,
         notes,
         mentoring_interest: mentoringInterest,
         placement_interest: placementInterest,
@@ -184,6 +197,7 @@ export default function LogInteractionModal({
 
   const resetForm = () => {
     setSelectedOutcomeId("");
+    setCallReasonId("");
     setNotes("");
     setFollowupAt("");
     setMentoringInterest(false);
@@ -201,7 +215,7 @@ export default function LogInteractionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetForm(); onClose(); }}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-border/80 p-6 shadow-xl">
+      <DialogContent className="w-[90vw] max-w-[90vw] sm:max-w-[90vw] h-[90vh] max-h-[90vh] overflow-y-auto rounded-2xl border border-border/80 p-6 shadow-xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
             <PhoneCall className="w-5 h-5 text-primary" />
@@ -257,8 +271,7 @@ export default function LogInteractionModal({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5 pt-2">
-            {/* Outcome Tag & Channel */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground flex items-center gap-1">
                   Outcome Tag <span className="text-destructive">*</span>
@@ -278,6 +291,22 @@ export default function LogInteractionModal({
               </div>
 
               <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Call Reason</label>
+                <Select value={callReasonId} onValueChange={setCallReasonId}>
+                  <SelectTrigger className="h-10 rounded-xl">
+                    <SelectValue placeholder="Select reason..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {callReasons.filter(r => r.is_active).map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">Interaction Channel</label>
                 <Select value={interactionChannel} onValueChange={setInteractionChannel}>
                   <SelectTrigger className="h-10 rounded-xl">
@@ -285,6 +314,7 @@ export default function LogInteractionModal({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="call">Phone Call</SelectItem>
+                    <SelectItem value="message">Message</SelectItem>
                     <SelectItem value="whatsapp">WhatsApp</SelectItem>
                     <SelectItem value="email">Email</SelectItem>
                     <SelectItem value="in_person">In Person</SelectItem>

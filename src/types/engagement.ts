@@ -65,6 +65,16 @@ export interface InteractionOutcome {
   archived_at?: string | null;
 }
 
+export interface CallReason {
+  id: string;
+  code: string;
+  label: string;
+  is_active: boolean;
+  is_custom: boolean;
+  created_at?: string;
+  archived_at?: string | null;
+}
+
 export interface PipelineStage {
   id: string;
   pipeline_id: string;
@@ -94,6 +104,7 @@ export interface AlumniPipelineMembership {
   added_at: string;
   added_by: string | null;
   is_active: boolean;
+  poc_email?: string | null;
   pipelines?: Pipeline;
   pipeline_stages?: PipelineStage | null;
 }
@@ -104,6 +115,7 @@ export interface AlumniInteraction {
   logged_by: string;
   interaction_channel: string;
   outcome_id: string;
+  call_reason_id?: string | null;
   notes: string | null;
   mentoring_interest: boolean | null;
   placement_interest: boolean | null;
@@ -185,6 +197,7 @@ export interface LogInteractionPayload {
   logged_by: string;
   interaction_channel?: string;
   outcome_id: string;
+  call_reason_id?: string;
   notes?: string;
   mentoring_interest?: boolean;
   placement_interest?: boolean;

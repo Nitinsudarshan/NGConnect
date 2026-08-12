@@ -1,9 +1,10 @@
 import React from 'react';
-import { getEngagementQueue } from '@/lib/engagement/queries';
+import { getEngagementQueue, getTeamActivity } from '@/lib/engagement/queries';
 import ReportsClient from './ReportsClient';
 
 export default async function ReportsPage() {
   const { alumniList } = await getEngagementQueue();
+  const teamActivity = await getTeamActivity();
 
   const sampleData = alumniList.map((a: any) => ({
     name: a.name || 'Alumnus',
@@ -21,5 +22,5 @@ export default async function ReportsPage() {
     placement_status: 'Discussed',
   }));
 
-  return <ReportsClient sampleData={sampleData} />;
+  return <ReportsClient sampleData={sampleData} teamActivity={teamActivity} />;
 }

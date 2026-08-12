@@ -87,6 +87,7 @@ export async function logInteractionAction(payload: LogInteractionPayload) {
         logged_by: payload.logged_by,
         interaction_channel: payload.interaction_channel || 'call',
         outcome_id: payload.outcome_id,
+        call_reason_id: payload.call_reason_id || null,
         notes: finalNotes || null,
         mentoring_interest: payload.mentoring_interest ?? null,
         placement_interest: payload.placement_interest ?? null,
@@ -774,12 +775,32 @@ export async function completeFollowupAction(interactionId: string) {
   }
 }
 
-import { getKanbanColumnCards } from './queries';
+import { getKanbanColumnCards, getPipelineEligibleStaff, getCallReasons } from './queries';
+
+export async function getCallReasonsAction() {
+  try {
+    const reasons = await getCallReasons();
+    return { success: true, data: reasons };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function getPipelineEligibleStaffAction(pipelineCode: string) {
+  try {
+    const role = await getUserRole();
+    if (!role) return { success: false, error: 'Unauthorized' };
+    const staff = await getPipelineEligibleStaff(pipelineCode);
+    return { success: true, data: staff };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
 
 export async function getKanbanColumnCardsAction(
   pipelineCode: string,
   stageId: string,
-  filters: { campus?: string; year?: string; supporter?: string },
+  filters: { campus?: string; year?: string; supporter?: string; poc?: string },
   page: number = 1
 ) {
   try {
@@ -794,6 +815,85 @@ export async function getKanbanColumnCardsAction(
     return { success: true, data: cards };
   } catch (err: any) {
     return { success: false, error: err.message };
+  }
+}
+
+export async function transferPocAction(payload: {
+  alumni_email: string;
+  pipeline_code: string;
+  new_poc_email: string;
+  transferred_by: string;
+  reason?: string;
+}) {
+  try {
+    const supabase = await createClient();
+
+    const { data: pipeline } = await supabase
+      .from('pipelines')
+      .select('id')
+      .eq('code', payload.pipeline_code)
+      .single();
+
+    if (!pipeline) {
+      return { success: false, error: 'Pipeline not found' };
+    }
+
+    const { data: eligibility } = await supabase
+      .from('pipeline_poc_eligibility')
+      .select('id')
+      .eq('pipeline_id', pipeline.id)
+      .eq('staff_email', payload.new_poc_email)
+      .eq('is_active', true)
+      .single();
+
+    if (!eligibility) {
+      return { success: false, error: 'Selected staff member is not eligible to own leads in this pipeline' };
+    }
+
+    const { data: membership } = await supabase
+      .from('alumni_pipeline_membership')
+      .select('id, poc_email')
+      .eq('alumni_email', payload.alumni_email)
+      .eq('pipeline_id', pipeline.id)
+      .single();
+
+    if (!membership) {
+      return { success: false, error: 'Alumnus is not active in this pipeline' };
+    }
+
+    const oldPoc = membership.poc_email;
+    
+    const role = await getUserRole();
+    if (role !== 'Admin' && role !== 'Super Admin' && oldPoc !== payload.transferred_by) {
+      return { success: false, error: 'Unauthorized: Only the current owner or an Admin can transfer this lead' };
+    }
+
+    const { error: updateErr } = await supabase
+      .from('alumni_pipeline_membership')
+      .update({ poc_email: payload.new_poc_email })
+      .eq('id', membership.id);
+
+    if (updateErr) {
+      return { success: false, error: 'Failed to transfer lead' };
+    }
+
+    await supabase.from('audit_log').insert({
+      record_id: payload.alumni_email,
+      action_type: 'TRANSFER_POC',
+      field_name: payload.pipeline_code,
+      new_value: payload.new_poc_email,
+      changed_by_user_id: payload.transferred_by,
+      changed_at: new Date().toISOString(),
+    });
+
+    revalidatePath(`/alumni-growth/alumni/${encodeURIComponent(payload.alumni_email)}`);
+    revalidatePath(`/engagement/alumni/${encodeURIComponent(payload.alumni_email)}`);
+    revalidatePath(`/alumni-growth/pipelines/${payload.pipeline_code}`);
+    revalidatePath(`/engagement/pipelines/${payload.pipeline_code}`);
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Unexpected error' };
   }
 }
 

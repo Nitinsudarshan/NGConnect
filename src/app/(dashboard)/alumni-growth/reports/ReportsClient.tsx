@@ -13,6 +13,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageBanner } from "@/components/shared/page-banner";
 import ExcelJS from "exceljs";
 import { toast } from "sonner";
@@ -62,9 +63,10 @@ const PRESETS = [
 
 interface ReportsClientProps {
   sampleData: any[];
+  teamActivity: { staff: string; calls: number; messages: number; other: number; total: number }[];
 }
 
-export default function ReportsClient({ sampleData }: ReportsClientProps) {
+export default function ReportsClient({ sampleData, teamActivity }: ReportsClientProps) {
   const [selectedFields, setSelectedFields] = useState<string[]>([
     "name",
     "email",
@@ -76,6 +78,7 @@ export default function ReportsClient({ sampleData }: ReportsClientProps) {
   const [activePreset, setActivePreset] = useState<string>("pay_forward");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [activeTab, setActiveTab] = useState("overview");
 
   const toggleField = (id: string) => {
     if (selectedFields.includes(id)) {
@@ -167,7 +170,14 @@ export default function ReportsClient({ sampleData }: ReportsClientProps) {
         }
       />
 
-      {/* Presets Cards */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="team">Team Activity</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="mt-0 space-y-6">
+          {/* Presets Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {PRESETS.map((preset) => (
           <Card
@@ -298,18 +308,61 @@ export default function ReportsClient({ sampleData }: ReportsClientProps) {
               ))}
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="h-7 rounded-md gap-1 text-[11px] font-semibold px-2"
-            >
-              Next <ChevronRight className="w-3 h-3" />
-            </Button>
-          </div>
-        </CardFooter>
-      </Card>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="h-7 rounded-md gap-1 text-[11px] font-semibold px-2"
+              >
+                Next <ChevronRight className="w-3 h-3" />
+              </Button>
+            </div>
+          </CardFooter>
+        </Card>
+        </TabsContent>
+
+        <TabsContent value="team" className="mt-0 space-y-6">
+          <Card className="border border-border/80 rounded-2xl bg-card shadow-2xs p-3 overflow-hidden">
+            <CardHeader className="pb-3 px-2">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                Team Activity (Last 30 Days)
+              </CardTitle>
+            </CardHeader>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left border-collapse min-w-[40rem]">
+                <thead className="bg-muted/50 border-b border-border/60 uppercase tracking-wider">
+                  <tr>
+                    <th className="px-3 py-2.5 font-bold text-[9px] text-muted-foreground">Staff Member</th>
+                    <th className="px-3 py-2.5 font-bold text-[9px] text-muted-foreground">Calls</th>
+                    <th className="px-3 py-2.5 font-bold text-[9px] text-muted-foreground">Messages (WhatsApp)</th>
+                    <th className="px-3 py-2.5 font-bold text-[9px] text-muted-foreground">Other</th>
+                    <th className="px-3 py-2.5 font-bold text-[9px] text-muted-foreground">Total Interactions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {teamActivity.map((item, idx) => (
+                    <tr key={idx} className="border-t border-border/40 hover:bg-muted/15 transition-colors">
+                      <td className="px-3 py-2.5 font-semibold text-foreground">{item.staff}</td>
+                      <td className="px-3 py-2.5 text-indigo-600 dark:text-indigo-400 font-bold">{item.calls}</td>
+                      <td className="px-3 py-2.5 text-emerald-600 dark:text-emerald-400 font-bold">{item.messages}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground font-bold">{item.other}</td>
+                      <td className="px-3 py-2.5 text-foreground font-black">{item.total}</td>
+                    </tr>
+                  ))}
+                  {teamActivity.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-muted-foreground">
+                        No team activity found in the last 30 days.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

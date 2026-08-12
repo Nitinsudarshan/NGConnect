@@ -1,5 +1,5 @@
 import React from 'react';
-import { getEngagementQueue, getInteractionOutcomes, getOrgSettings } from '@/lib/engagement/queries';
+import { getEngagementQueue, getInteractionOutcomes, getOrgSettings, getMyWorkspaceKPIs } from '@/lib/engagement/queries';
 import { getSupabaseUserEmail } from '@/lib/roles';
 import WorkspaceClient from './WorkspaceClient';
 
@@ -8,6 +8,7 @@ export default async function WorkspacePage() {
   const outcomes = await getInteractionOutcomes();
   const settings = await getOrgSettings();
   const userEmail = (await getSupabaseUserEmail()) || 'staff@navgurukul.org';
+  const myWorkspaceKPIs = await getMyWorkspaceKPIs(userEmail);
   console.log('--- WORKSPACE PAGE ---');
   console.log('alumniList length:', alumniList?.length);
 
@@ -19,6 +20,7 @@ export default async function WorkspacePage() {
       outcomes={outcomes}
       settings={settings}
       userEmail={userEmail}
+      myWorkspaceKPIs={myWorkspaceKPIs}
     />
   );
 }

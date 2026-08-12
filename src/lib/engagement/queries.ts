@@ -210,6 +210,51 @@ export async function getInteractionOutcomes(): Promise<InteractionOutcome[]> {
   }
 }
 
+export async function getCallReasons() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('call_reasons')
+    .select('id, label, is_active')
+    .order('sort_order', { ascending: true });
+    
+  if (error) throw error;
+  return data;
+}
+
+export async function getTeamActivity() {
+  const supabase = await createClient();
+  
+  // Basic grouping by logged_by (we fetch all and reduce since Supabase JS client doesn't support complex group by without RPC)
+  const { data, error } = await supabase
+    .from('alumni_interactions')
+    .select('logged_by, created_at, interaction_channel')
+    .gte('created_at', new Date(new Date().setDate(new Date().getDate() - 30)).toISOString());
+
+  if (error) throw error;
+
+  const activityMap: Record<string, { calls: number; messages: number; other: number; total: number }> = {};
+  
+  (data || []).forEach(row => {
+    const user = row.logged_by || 'Unknown';
+    if (!activityMap[user]) {
+      activityMap[user] = { calls: 0, messages: 0, other: 0, total: 0 };
+    }
+    activityMap[user].total += 1;
+    if (row.interaction_channel === 'call') {
+      activityMap[user].calls += 1;
+    } else if (row.interaction_channel === 'message' || row.interaction_channel === 'whatsapp') {
+      activityMap[user].messages += 1;
+    } else {
+      activityMap[user].other += 1;
+    }
+  });
+
+  return Object.keys(activityMap).map(user => ({
+    staff: user,
+    ...activityMap[user]
+  })).sort((a, b) => b.total - a.total);
+}
+
 export async function getContributionTypes(): Promise<ContributionType[]> {
   try {
     const supabase = await createClient();
@@ -232,6 +277,38 @@ export async function getPipelines(): Promise<Pipeline[]> {
       .select('*')
       .eq('is_active', true);
     return data || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getPipelineEligibleStaff(pipelineCode: string): Promise<{ email: string; name: string }[]> {
+  try {
+    const supabase = await createClient();
+    const { data: pipeline } = await supabase.from('pipelines').select('id').eq('code', pipelineCode).single();
+    if (!pipeline) return [];
+    
+    const { data } = await supabase
+      .from('pipeline_poc_eligibility')
+      .select('staff_email')
+      .eq('pipeline_id', pipeline.id)
+      .eq('is_active', true);
+      
+    if (!data) return [];
+    
+    const adminSupabase = createAdminClient();
+    const { data: usersData, error: usersError } = await adminSupabase.auth.admin.listUsers();
+    if (usersError || !usersData?.users) {
+      return data.map((d: any) => ({ email: d.staff_email, name: d.staff_email.split('@')[0] }));
+    }
+    
+    return data.map((d: any) => {
+      const user = usersData.users.find((u: any) => u.email === d.staff_email);
+      return {
+        email: d.staff_email,
+        name: user?.user_metadata?.name || d.staff_email.split('@')[0]
+      };
+    });
   } catch {
     return [];
   }
@@ -305,6 +382,79 @@ export async function getEngagementQueue() {
     alumniList: enrichedAlumni,
     followups: (followups || []).filter(f => !suppressedSet.has(f.alumni_email)),
     recentInteractions: (recentInteractions || []).filter(i => !suppressedSet.has(i.alumni_email)),
+  };
+}
+
+export async function getMyWorkspaceKPIs(userEmail: string) {
+  const supabase = await createClient();
+
+  // 1. My Active Leads: alumni_pipeline_membership where poc_email = userEmail and is_active = true
+  const { data: myLeads } = await supabase
+    .from('alumni_pipeline_membership')
+    .select('alumni_email')
+    .eq('poc_email', userEmail)
+    .eq('is_active', true);
+
+  if (!myLeads || myLeads.length === 0) {
+    return { myActiveLeads: 0, uncontactedLeads: 0, followupsDue: 0 };
+  }
+
+  // Deduplicate emails since one alumnus could be in multiple pipelines
+  const uniqueEmails = Array.from(new Set(myLeads.map(l => l.alumni_email)));
+
+  // 2. Uncontacted Leads (last interaction > 30 days ago, or no interaction)
+  // 3. Follow-ups Due (followup_at <= today, followup_completed = false)
+  const thirtyDaysAgo = new Date(new Date().setDate(new Date().getDate() - 30)).toISOString();
+  
+  // We can fetch interactions for these emails
+  const { data: interactions } = await supabase
+    .from('alumni_interactions')
+    .select('alumni_email, created_at, followup_at, followup_completed')
+    .in('alumni_email', uniqueEmails);
+
+  const interactionGroups: Record<string, any[]> = {};
+  uniqueEmails.forEach(e => { interactionGroups[e] = []; });
+  
+  (interactions || []).forEach(inter => {
+    if (interactionGroups[inter.alumni_email]) {
+      interactionGroups[inter.alumni_email].push(inter);
+    }
+  });
+
+  let uncontactedLeads = 0;
+  let followupsDue = 0;
+  const now = new Date();
+
+  uniqueEmails.forEach(email => {
+    const userInteractions = interactionGroups[email];
+    
+    // Check uncontacted
+    if (userInteractions.length === 0) {
+      uncontactedLeads++;
+    } else {
+      const sortedInteractions = [...userInteractions].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const lastContact = sortedInteractions[0].created_at;
+      if (lastContact < thirtyDaysAgo) {
+        uncontactedLeads++;
+      }
+    }
+
+    // Check followups
+    const hasOverdueFollowup = userInteractions.some(i => {
+      if (!i.followup_at || i.followup_completed) return false;
+      const due = new Date(i.followup_at);
+      return due <= now;
+    });
+
+    if (hasOverdueFollowup) {
+      followupsDue++;
+    }
+  });
+
+  return {
+    myActiveLeads: uniqueEmails.length,
+    uncontactedLeads,
+    followupsDue,
   };
 }
 
@@ -559,7 +709,7 @@ export async function getPipelineBoardData(pipelineCode: string) {
   return getPipelineAlumniData(pipelineCode);
 }
 
-export async function getKanbanFacets() {
+export async function getKanbanFacets(pipelineCode?: string) {
   const supabase = await createClient();
 
   const { data: campusesData } = await supabase.from('alumni_master').select('campus');
@@ -570,13 +720,18 @@ export async function getKanbanFacets() {
   const years = Array.from(new Set((yearsData || []).map(r => r.entry_year).filter(Boolean)));
   const supporters = Array.from(new Set((supportersData || []).map(r => r.added_by).filter(Boolean)));
 
-  return { campuses, years, supporters };
+  let pocOptions: { email: string; name: string }[] = [];
+  if (pipelineCode) {
+    pocOptions = await getPipelineEligibleStaff(pipelineCode);
+  }
+
+  return { campuses, years, supporters, pocOptions };
 }
 
 export async function getKanbanColumnCards(
   pipelineCode: string,
   stageId: string,
-  filters: { campus?: string; year?: string; supporter?: string },
+  filters: { campus?: string; year?: string; supporter?: string; poc?: string },
   page: number = 1,
   limit: number = 25
 ) {
@@ -610,6 +765,9 @@ export async function getKanbanColumnCards(
 
   if (filters.supporter) {
     query = query.eq('added_by', filters.supporter);
+  }
+  if (filters.poc) {
+    query = query.eq('poc_email', filters.poc);
   }
   if (filters.campus) {
     query = query.eq('alumni_master.campus', filters.campus);

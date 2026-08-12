@@ -19,7 +19,7 @@ import { PipelineStage } from "@/types/engagement";
 interface MentoringClientProps {
   pipeline: any;
   stages?: PipelineStage[];
-  facets: { campuses: string[]; years: string[]; supporters: string[] };
+  facets: { campuses: string[]; years: string[]; supporters: string[]; pocOptions?: { email: string; name: string }[] };
   userEmail: string;
 }
 
@@ -30,7 +30,7 @@ const DEFAULT_STAGES = [
   { id: "default-closed", code: "closed", label: "Closed", sort_order: 4, is_terminal: true },
 ];
 
-function MentoringColumn({ stage, activeStages, filters, userEmail, collapsed, setCollapsed }: { stage: any, activeStages: any[], filters: any, userEmail: string, collapsed: boolean, setCollapsed: (v: boolean) => void }) {
+function MentoringColumn({ stage, activeStages, filters, userEmail, collapsed, setCollapsed, pocOptions }: { stage: any, activeStages: any[], filters: any, userEmail: string, collapsed: boolean, setCollapsed: (v: boolean) => void, pocOptions?: {email: string; name: string}[] }) {
   const [cards, setCards] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -137,8 +137,13 @@ function MentoringColumn({ stage, activeStages, filters, userEmail, collapsed, s
                   </Link>
                 </div>
 
-                <div className="text-[11px] text-muted-foreground truncate">
-                  {am.campus || "Unknown Campus"} • {am.entry_year || "N/A"}
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground truncate mt-1">
+                  <span>{am.campus || "Unknown Campus"} • {am.entry_year || "N/A"}</span>
+                  {card.poc_email && (
+                    <Badge variant="outline" className="text-[9px] bg-indigo-500/5 text-indigo-600 border-indigo-500/20 shrink-0">
+                      {pocOptions?.find(p => p.email === card.poc_email)?.name || card.poc_email.split('@')[0]}
+                    </Badge>
+                  )}
                 </div>
                 
                 {am.company && (
@@ -205,8 +210,11 @@ export default function MentoringClient({
   const [yearFilter, setYearFilter] = useState<string>("");
   const [supporterFilter, setSupporterFilter] = useState<string>("");
 
+  const isEligible = facets.pocOptions?.some(p => p.email === userEmail);
+  const [pocFilter, setPocFilter] = useState<string>(isEligible ? userEmail : "all");
+
   const activeStages = (stages && stages.length > 0) ? stages : DEFAULT_STAGES;
-  const isFilterActive = campusFilter !== "" || yearFilter !== "" || supporterFilter !== "";
+  const isFilterActive = campusFilter !== "" || yearFilter !== "" || supporterFilter !== "" || pocFilter !== "all";
 
   const [collapsedStates, setCollapsedStates] = useState<Record<string, boolean>>({});
 
@@ -241,6 +249,34 @@ export default function MentoringClient({
         <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground pr-2 border-r border-border/60">
           <Filter className="w-3.5 h-3.5" />
           <span>Filters</span>
+        </div>
+
+        <div className="flex bg-muted/60 p-0.5 rounded-lg border border-border/50 items-center mr-2">
+          {isEligible && (
+            <button
+              onClick={() => setPocFilter(userEmail)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${pocFilter === userEmail ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              My Leads
+            </button>
+          )}
+          <button
+            onClick={() => setPocFilter("all")}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${pocFilter === "all" ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            All
+          </button>
+          
+          <Select value={pocFilter !== userEmail && pocFilter !== "all" ? pocFilter : ""} onValueChange={setPocFilter}>
+            <SelectTrigger className={`h-7 px-3 text-xs border-0 bg-transparent shadow-none focus:ring-0 ${pocFilter !== userEmail && pocFilter !== "all" ? 'bg-background shadow-sm text-foreground rounded-md' : 'text-muted-foreground hover:text-foreground'}`}>
+              <SelectValue placeholder="Other" />
+            </SelectTrigger>
+            <SelectContent>
+              {facets.pocOptions?.filter(p => p.email !== userEmail).map(p => (
+                <SelectItem key={p.email} value={p.email}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         <Select value={campusFilter} onValueChange={setCampusFilter}>
@@ -341,8 +377,10 @@ export default function MentoringClient({
                 campus: campusFilter !== "all" ? campusFilter : undefined,
                 year: yearFilter !== "all" ? yearFilter : undefined,
                 supporter: supporterFilter !== "all" ? supporterFilter : undefined,
+                poc: pocFilter !== "all" ? pocFilter : undefined,
               }}
               userEmail={userEmail}
+              pocOptions={facets.pocOptions}
               collapsed={collapsedStates[stage.id] ?? isStagePassive(stage.code, stage.is_terminal)}
               setCollapsed={(val) => setCollapsedStates(prev => ({...prev, [stage.id]: val}))}
             />

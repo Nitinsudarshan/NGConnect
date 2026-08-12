@@ -35,6 +35,7 @@ import {
   Code2,
   CheckCircle,
   Edit3,
+  Users,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ import {
 import { PageBanner } from "@/components/shared/page-banner";
 import CourseraAlumniStats from "@/app/(dashboard)/manage/master-data/_components/CourseraAlumniStats";
 import LogInteractionModal from "@/components/engagement/LogInteractionModal";
+import TransferLeadModal from "@/components/engagement/TransferLeadModal";
 import { InteractionOutcome, OrgSettings } from "@/types/engagement";
 import { updateAlumniProfileFieldsAction } from "@/lib/engagement/actions";
 import { calculateProfileScore, formatINR } from "@/lib/engagement/utils";
@@ -80,6 +82,7 @@ export default function AlumniDetailClient({
   const [activeTab, setActiveTab] = useState("details");
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
 
   // Missing Fields Modal State
   const [isEditMissingModalOpen, setIsEditMissingModalOpen] = useState(false);
@@ -216,6 +219,11 @@ export default function AlumniDetailClient({
                 <ArrowLeft className="w-3.5 h-3.5" /> Back to Workspace
               </Link>
             </Button>
+            {memberships.length > 0 && (
+              <Button onClick={() => setIsTransferModalOpen(true)} variant="outline" className="gap-1.5 rounded-xl h-8 text-xs font-semibold shadow-xs hover:bg-muted">
+                <Users className="w-3.5 h-3.5" /> Transfer Lead
+              </Button>
+            )}
             <Button onClick={() => setIsLogModalOpen(true)} className="gap-1.5 rounded-xl h-8 text-xs font-semibold shadow-xs bg-indigo-600 hover:bg-indigo-500 text-white">
               <PhoneCall className="w-3.5 h-3.5" /> Log Interaction
             </Button>
@@ -918,6 +926,15 @@ export default function AlumniDetailClient({
           masterData={master}
         />
       )}
+
+      <TransferLeadModal
+        isOpen={isTransferModalOpen}
+        onClose={() => setIsTransferModalOpen(false)}
+        alumniEmail={master.email}
+        alumniName={master.name}
+        memberships={memberships}
+        userEmail={userEmail}
+      />
     </div>
   );
 }

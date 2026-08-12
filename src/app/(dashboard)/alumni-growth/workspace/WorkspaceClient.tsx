@@ -51,6 +51,7 @@ interface WorkspaceClientProps {
   outcomes: InteractionOutcome[];
   settings: OrgSettings;
   userEmail: string;
+  myWorkspaceKPIs: { myActiveLeads: number; uncontactedLeads: number; followupsDue: number; };
 }
 
 export default function WorkspaceClient({
@@ -60,6 +61,7 @@ export default function WorkspaceClient({
   outcomes,
   settings,
   userEmail,
+  myWorkspaceKPIs,
 }: WorkspaceClientProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -159,55 +161,51 @@ export default function WorkspaceClient({
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-        {/* Overdue Callbacks */}
+        {/* My Active Leads */}
         <div className="bg-card/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
           <div className="flex justify-between items-start">
             <div className="space-y-2">
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Overdue Callbacks</p>
-              <p className="text-3xl font-bold text-slate-900 dark:text-white">{overdueFollowups.length}</p>
-            </div>
-            <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg group-hover:bg-red-100 dark:group-hover:bg-red-900/40 transition-colors">
-              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center text-sm">
-            <span className="text-red-600 dark:text-red-400 font-medium flex items-center bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-md text-xs">
-               Action Required
-            </span>
-          </div>
-        </div>
-
-        {/* Due Today */}
-        <div className="bg-card/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
-          <div className="flex justify-between items-start">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Due Today</p>
-              <p className="text-3xl font-bold text-slate-900 dark:text-white">{dueTodayFollowups.length}</p>
-            </div>
-            <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg group-hover:bg-amber-100 dark:group-hover:bg-amber-900/40 transition-colors">
-              <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center text-sm">
-            <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-md text-xs">
-               Scheduled for today
-            </span>
-          </div>
-        </div>
-
-        {/* Total Active Pool */}
-        <div className="bg-card/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
-          <div className="flex justify-between items-start">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Active Pool</p>
-              <p className="text-3xl font-bold text-slate-900 dark:text-white">{alumniList.length}</p>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">My Active Leads</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{myWorkspaceKPIs.myActiveLeads}</p>
             </div>
             <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 transition-colors">
               <UserCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             </div>
           </div>
           <div className="mt-4 flex items-center text-sm text-slate-500 font-medium">
-            Alumni assigned to workspace
+            Sum across pipelines
+          </div>
+        </div>
+
+        {/* Uncontacted Leads */}
+        <div className="bg-card/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Uncontacted Leads</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{myWorkspaceKPIs.uncontactedLeads}</p>
+            </div>
+            <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg group-hover:bg-red-100 dark:group-hover:bg-red-900/40 transition-colors">
+              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center text-sm text-slate-500 font-medium">
+            No contact in &gt;30 days
+          </div>
+        </div>
+
+        {/* Follow-ups Due */}
+        <div className="bg-card/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Follow-ups Due</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{myWorkspaceKPIs.followupsDue}</p>
+            </div>
+            <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg group-hover:bg-amber-100 dark:group-hover:bg-amber-900/40 transition-colors">
+              <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center text-sm text-slate-500 font-medium">
+            Scheduled for today or overdue
           </div>
         </div>
       </div>
