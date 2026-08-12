@@ -6,7 +6,7 @@ import {
   LifeBuoy,
   Send,
   LayoutDashboard,
-  GalleryVerticalEnd,
+  Fingerprint,
   Users,
   GraduationCap,
   Database,
@@ -229,8 +229,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   if (isMobile) setOpenMobile(false)
                 }}
               >
-                <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                  <GalleryVerticalEnd className="size-4" />
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground [&_svg]:size-6">
+                  <Fingerprint />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-semibold">NGConnect</span>

@@ -56,6 +56,9 @@ CREATE TABLE IF NOT EXISTS public.mentors (
     expertise TEXT[] DEFAULT '{}',
     rating NUMERIC DEFAULT 0.0,
     total_sessions INTEGER DEFAULT 0,
+    contact_number TEXT,
+    linkedin_url TEXT,
+    city TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

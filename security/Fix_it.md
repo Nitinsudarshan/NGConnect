@@ -153,3 +153,118 @@
 - **Original Claim**: `deleteAudienceAction`/`deleteSessionTypeAction` skip dependency check.
 - **Re-check**: Confirmed.
 - **Status**: Confirmed.
+
+## RLS Remediation (Phase 2 Plan)
+
+### Phase 1 Answers
+1. **RLS Enabled Status:** `rowsecurity: true` confirmed for all tables listed (alumni_interactions, alumni_master, coursera_*, etc.).
+2. **is_super_admin / is_member Definitions:**
+   - `is_member()`: `SELECT ((auth.jwt() -> 'app_metadata' ->> 'role') = 'Member')`
+   - `is_super_admin()`: `SELECT (auth.jwt() ->> 'email' IN ('nitin@navgurukul.org', 'nitinsudarshan@gmail.com') OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')`
+3. **Coursera tables existence:** `coursera_metrics`, `coursera_monthly_metrics`, and `coursera_compliance_audit` DO NOT exist in the live database. (Finding moot).
+4. **Relevant FK Constraints:** 
+   - `alumni_profile`, `alumni_interactions`, `pay_forward_contributions`, `alumni_salary_records`, `alumni_pipeline_membership` all CASCADE delete to `alumni_master`.
+   - `mentoring_sessions` SET NULL on mentor delete, but CASCADE to `alumni_pipeline_membership`.
+
+### Planned SQL Statements
+
+**1. alumni_interactions, alumni_salary_records, pay_forward_contributions, mentoring_sessions, mentoring_attendance**
+Currently `ALL true/true`. Change: Limit ALL access to Staff roles.
+```sql
+-- Repeat for each of the 5 tables (example: alumni_interactions)
+DROP POLICY IF EXISTS "Allow authenticated interactions" ON alumni_interactions;
+CREATE POLICY "staff_all_alumni_interactions" ON alumni_interactions
+  FOR ALL TO authenticated
+  USING (is_super_admin() OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = ANY (ARRAY['Manager'::text, 'Operator'::text, 'Admin'::text])))
+  WITH CHECK (is_super_admin() OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = ANY (ARRAY['Manager'::text, 'Operator'::text, 'Admin'::text])));
+```
+
+**2. mentors**
+Currently `ALL true/true` (plus redundant owner policies). Change: Limit ALL access to Staff, allow authenticated users to SELECT (for viewing mentors), and keep owner-only INSERT/UPDATE.
+```sql
+DROP POLICY IF EXISTS "Allow authenticated mentors" ON mentors;
+-- 'Authenticated users can read mentors' (SELECT true) is already present.
+-- 'allow_mentor_insert_for_owner' and 'allow_mentor_update_for_owner' are already present.
+CREATE POLICY "staff_all_mentors" ON mentors
+  FOR ALL TO authenticated
+  USING (is_super_admin() OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = ANY (ARRAY['Manager'::text, 'Operator'::text, 'Admin'::text])))
+  WITH CHECK (is_super_admin() OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = ANY (ARRAY['Manager'::text, 'Operator'::text, 'Admin'::text])));
+```
+
+**3. learning_center_audit_logs**
+Currently `ALL true/true`, `INSERT true`, `SELECT true`. Change: Limit SELECT and INSERT to Staff.
+```sql
+DROP POLICY IF EXISTS "Allow authenticated lc_audit_logs" ON learning_center_audit_logs;
+DROP POLICY IF EXISTS "Allow insert for authenticated users" ON learning_center_audit_logs;
+DROP POLICY IF EXISTS "Allow read access for authenticated users" ON learning_center_audit_logs;
+CREATE POLICY "staff_all_lc_audit_logs" ON learning_center_audit_logs
+  FOR ALL TO authenticated
+  USING (is_super_admin() OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = ANY (ARRAY['Manager'::text, 'Operator'::text, 'Admin'::text])));
+```
+
+**4. alumni_master & alumni_profile**
+Currently `SELECT true`. Change: Restrict SELECT to staff OR the member themselves.
+```sql
+DROP POLICY IF EXISTS "alumni_master_select_all" ON alumni_master;
+CREATE POLICY "alumni_master_select_staff_or_self" ON alumni_master
+  FOR SELECT TO authenticated
+  USING (
+    is_super_admin() 
+    OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = ANY (ARRAY['Manager'::text, 'Operator'::text, 'Admin'::text]))
+    OR (is_member() AND email = (auth.jwt() ->> 'email'::text))
+  );
+
+DROP POLICY IF EXISTS "alumni_profile_select_all" ON alumni_profile;
+CREATE POLICY "alumni_profile_select_staff_or_self" ON alumni_profile
+  FOR SELECT TO authenticated
+  USING (
+    is_super_admin() 
+    OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = ANY (ARRAY['Manager'::text, 'Operator'::text, 'Admin'::text]))
+    OR (is_member() AND alumni_email = (auth.jwt() ->> 'email'::text))
+  );
+```
+
+**5. org_settings**
+Currently `ALL true/true`. Change: SELECT for all authenticated, ALL for Super Admin/Admin.
+```sql
+DROP POLICY IF EXISTS "Allow authenticated org_settings" ON org_settings;
+CREATE POLICY "org_settings_select_all" ON org_settings FOR SELECT TO authenticated USING (true);
+CREATE POLICY "org_settings_write_admin" ON org_settings 
+  FOR ALL TO authenticated 
+  USING ((((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = ANY (ARRAY['Super Admin'::text, 'Admin'::text])))
+  WITH CHECK ((((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = ANY (ARRAY['Super Admin'::text, 'Admin'::text])));
+```
+
+**6. pipeline_stages & contribution_types**
+Currently `ALL true/true`. Change: SELECT for all authenticated, ALL for Admin/Super Admin.
+```sql
+DROP POLICY IF EXISTS "Allow authenticated pipeline_stages" ON pipeline_stages;
+CREATE POLICY "pipeline_stages_select_all" ON pipeline_stages FOR SELECT TO authenticated USING (true);
+CREATE POLICY "pipeline_stages_write_admin" ON pipeline_stages 
+  FOR ALL TO authenticated 
+  USING ((((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = ANY (ARRAY['Super Admin'::text, 'Admin'::text])));
+
+DROP POLICY IF EXISTS "Allow authenticated contribution_types" ON contribution_types;
+CREATE POLICY "contribution_types_select_all" ON contribution_types FOR SELECT TO authenticated USING (true);
+CREATE POLICY "contribution_types_write_admin" ON contribution_types 
+  FOR ALL TO authenticated 
+  USING ((((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = ANY (ARRAY['Super Admin'::text, 'Admin'::text])));
+```
+
+**7. Coursera Hardcoded Emails (coursera_learner_month, coursera_computed_metrics, coursera_snapshots, coursera_config, coursera_import_log)**
+Change: Remove hardcoded emails from the `Admins only` SELECT policy.
+```sql
+-- Repeat for each of the 5 coursera tables
+DROP POLICY IF EXISTS "Admins only" ON coursera_learner_month;
+CREATE POLICY "Admins only" ON coursera_learner_month
+  FOR SELECT TO authenticated
+  USING ((((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = ANY (ARRAY['Admin'::text, 'Super Admin'::text])));
+```
+
+**8. RBAC Tables (rbac_permissions, role_permissions, rbac_audit_logs)**
+Currently `SELECT true`. *Waiting for decision on read-scope.* 
+For `rbac_audit_logs`, dedupe policies:
+```sql
+DROP POLICY IF EXISTS "Allow read access to authenticated users" ON rbac_audit_logs;
+-- Will update "Allow read access for authenticated users" based on decision.
+```

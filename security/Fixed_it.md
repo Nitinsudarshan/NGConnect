@@ -90,3 +90,34 @@ All findings from `Fix_it.md` have been fully addressed and verified as of this 
 - **Status**: Fixed. Refactored `SettingsClient.tsx` to just output strings natively without `dangerouslySetInnerHTML`.
 ### L5: Missing dependency check on deletes
 - **Status**: Fixed. Added foreign-key constraint pre-checks for `learning_sessions` and `learning_courses` in `deleteAudienceAction` and `deleteSessionTypeAction`.
+
+## RLS Remediation (Cluster C Phase 4-7)
+
+**Status:** Fixed and Verified on Live Database.
+
+**Action:** 
+1. Replaced wide-open `ALL true/true` RLS policies on `alumni_interactions`, `alumni_salary_records`, `pay_forward_contributions`, `mentoring_sessions`, and `mentoring_attendance` with strict role-scoped policies limiting access to `Manager`, `Operator`, `Admin`, and `Super Admin`.
+2. Limited `ALL` access on `mentors` to Staff, while allowing authenticated users to `SELECT` and preserving owner-only `INSERT`/`UPDATE` policies.
+3. Locked down `learning_center_audit_logs` to staff-only for both `SELECT` and `INSERT`.
+4. Restricted `alumni_master` and `alumni_profile` `SELECT` policies to allow staff OR the member themselves (`is_member() AND email = auth.jwt()->>'email'`) to read their own records.
+5. Restricted `INSERT`/`UPDATE`/`DELETE` on `org_settings`, `pipeline_stages`, and `contribution_types` to `Admin`/`Super Admin`, while keeping `SELECT` broad.
+6. Removed hardcoded emails from the 5 `coursera_*` tables' `Admins only` policies.
+7. Deduped `rbac_audit_logs` policies and restricted read access to `Super Admin`/`Admin`.
+8. Resolved schema drift on `mentors`: Deleted the stale definitions and added the missing `contact_number`, `linkedin_url`, and `city` columns to `learning_center_schema.sql` to match production reality.
+9. Moved root `.sql` schema files into `supabase/migrations/` to prevent future untracked drift.
+
+### Verification (Phase 5 Dump)
+```sql
+SELECT tablename, policyname, roles, cmd, qual, with_check 
+FROM pg_policies WHERE schemaname = 'public' 
+AND tablename IN ('alumni_master', 'alumni_interactions', 'learning_center_audit_logs', 'org_settings') 
+ORDER BY tablename, policyname;
+
+/* Output confirmed that:
+- alumni_interactions has 'staff_all_alumni_interactions' ALL with staff role checks.
+- alumni_master has 'alumni_master_select_staff_or_self' SELECT with staff or self checks.
+- learning_center_audit_logs has 'staff_all_lc_audit_logs' ALL with staff role checks.
+- org_settings has 'org_settings_write_admin' ALL with Admin role checks, and 'org_settings_select_all' SELECT true.
+The wide-open ALL true policies have been successfully removed.
+*/
+```

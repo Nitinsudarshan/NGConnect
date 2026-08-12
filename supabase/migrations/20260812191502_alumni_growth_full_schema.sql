@@ -253,15 +253,7 @@ CREATE TABLE IF NOT EXISTS public.pay_forward_contributions (
 );
 
 -- ---------- 6. Mentors Directory & Mentoring Sessions ----------
-CREATE TABLE IF NOT EXISTS public.mentors (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  email TEXT,
-  areas TEXT[],
-  sourced_by TEXT,
-  is_active BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+
 
 CREATE TABLE IF NOT EXISTS public.mentoring_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

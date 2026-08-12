@@ -13,7 +13,7 @@
 
 .opt4::-webkit-scrollbar { width: 8px; }
 .opt4::-webkit-scrollbar-track { background: transparent; }
-.opt4::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, var(--chart-1), var(--chart-2)); border-radius: 8px; }
+.opt4::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, var(--primary), var(--secondary)); border-radius: 8px; }
 
 .opt5::-webkit-scrollbar { width: 8px; }
 .opt5::-webkit-scrollbar-track { background: transparent; }
@@ -26,7 +26,7 @@
 
 .opt7::-webkit-scrollbar { width: 6px; }
 .opt7::-webkit-scrollbar-track { background: var(--background); }
-.opt7::-webkit-scrollbar-thumb { background: var(--chart-4); box-shadow: 0 0 10px var(--chart-4); border-radius: 3px; }
+.opt7::-webkit-scrollbar-thumb { background: var(--destructive); box-shadow: 0 0 10px var(--destructive); border-radius: 3px; }
 
 .opt8::-webkit-scrollbar { width: 12px; }
 .opt8::-webkit-scrollbar-track { 
@@ -37,7 +37,7 @@
 
 .opt9::-webkit-scrollbar { width: 8px; }
 .opt9::-webkit-scrollbar-track { background: var(--background); border-left: 1px solid var(--border); }
-.opt9::-webkit-scrollbar-thumb { background: var(--chart-5); border: 1px solid var(--foreground); }
+.opt9::-webkit-scrollbar-thumb { background: var(--warning); border: 1px solid var(--foreground); }
 
 .opt10::-webkit-scrollbar { width: 16px; }
 .opt10::-webkit-scrollbar-track { background: transparent; }

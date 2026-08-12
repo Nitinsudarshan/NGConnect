@@ -170,15 +170,7 @@ JOIN public.contribution_types ct ON ct.id = a.contribution_type_id
 GROUP BY a.alumni_email;
 
 -- ---------- 9. Mentor / session / attendance ----------
-CREATE TABLE IF NOT EXISTS public.mentors (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  email TEXT,
-  areas TEXT[],
-  sourced_by TEXT,
-  is_active BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+
 
 CREATE TABLE IF NOT EXISTS public.mentoring_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

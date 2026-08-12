@@ -55,17 +55,6 @@ const getColorVar = (index: number) => {
   return opacity === 100 ? baseColor : `color-mix(in srgb, ${baseColor} ${opacity}%, transparent)`;
 }
 
-const getLabelColorVar = (index: number) => {
-  const baseIndex = index % 3;
-  const cycle = Math.floor(index / 3);
-  if (cycle > 0) return "var(--foreground)";
-  return baseIndex === 0
-    ? "var(--color-chart-primary-foreground)"
-    : baseIndex === 1
-      ? "var(--color-primary-foreground)"
-      : "var(--color-chart-neutral-foreground)";
-}
-
 export function DashboardCharts({ data }: DashboardChartsProps) {
   // Aggregate data for Status
   const statusData = useMemo(() => {
@@ -266,36 +255,17 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
               outerRadius={110}
             >
               <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel nameKey="campus" />} />
-              <RadialBar dataKey="count" background>
-                <LabelList
-                  position="insideStart"
-                  dataKey="label"
-                  content={(props: any) => {
-                    const { value, index, x, y, textAnchor, dominantBaseline, transform } = props;
-                    return (
-                      <text
-                        x={x}
-                        y={y}
-                        textAnchor={textAnchor}
-                        dominantBaseline={dominantBaseline}
-                        transform={transform}
-                        fill={getLabelColorVar(index)}
-                        className="capitalize"
-                        fontSize={11}
-                        style={{
-                          paintOrder: "stroke",
-                          stroke: "var(--card)",
-                          strokeWidth: 3,
-                        }}
-                      >
-                        {value}
-                      </text>
-                    );
-                  }}
-                />
-              </RadialBar>
+              <RadialBar dataKey="count" background />
             </RadialBarChart>
           </ChartContainer>
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 mt-3 px-2">
+            {campusStats.chartData.map((d: any) => (
+              <div key={d.campus} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="h-2 w-2 shrink-0 rounded-sm" style={{ backgroundColor: d.fill }} />
+                {d.label}
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
@@ -315,36 +285,17 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
               outerRadius={110}
             >
               <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel nameKey="course" />} />
-              <RadialBar dataKey="count" background>
-                <LabelList
-                  position="insideStart"
-                  dataKey="label"
-                  content={(props: any) => {
-                    const { value, index, x, y, textAnchor, dominantBaseline, transform } = props;
-                    return (
-                      <text
-                        x={x}
-                        y={y}
-                        textAnchor={textAnchor}
-                        dominantBaseline={dominantBaseline}
-                        transform={transform}
-                        fill={getLabelColorVar(index)}
-                        className="capitalize"
-                        fontSize={11}
-                        style={{
-                          paintOrder: "stroke",
-                          stroke: "var(--card)",
-                          strokeWidth: 3,
-                        }}
-                      >
-                        {value}
-                      </text>
-                    );
-                  }}
-                />
-              </RadialBar>
+              <RadialBar dataKey="count" background />
             </RadialBarChart>
           </ChartContainer>
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 mt-3 px-2">
+            {courseStats.chartData.map((d: any) => (
+              <div key={d.course} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="h-2 w-2 shrink-0 rounded-sm" style={{ backgroundColor: d.fill }} />
+                {d.label}
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
@@ -404,6 +355,7 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
                   className="stroke-transparent stroke-2"
                 />
               ))}
+              <ChartLegend content={<ChartLegendContent />} />
             </RadialBarChart>
           </ChartContainer>
         </CardContent>
