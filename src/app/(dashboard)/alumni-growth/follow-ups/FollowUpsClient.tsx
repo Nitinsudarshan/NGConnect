@@ -353,20 +353,20 @@ function KanbanColumn({
             return (
               <div
                 key={item.id}
-                className={`rounded-xl border border-border/60 bg-card p-3 space-y-2.5 shadow-sm ${style.row}`}
+                className={`rounded-lg border border-border/60 bg-card p-2.5 space-y-2 shadow-2xs ${style.row}`}
               >
                 {/* Name + date */}
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-1.5">
                   <div className="min-w-0">
                     <Link
                       href={`/alumni-growth/alumni/${getAlumniSlug(item.alumni_email, item.alumni_master?.name)}`}
-                      className="text-sm font-bold text-foreground hover:text-primary transition-colors block truncate"
+                      className="text-xs font-bold text-foreground hover:text-primary transition-colors block truncate"
                     >
                       {alumniName}
                     </Link>
-                    <span className="text-[10px] text-muted-foreground font-mono">{item.alumni_email}</span>
+                    <span className="text-[10px] text-muted-foreground font-mono leading-none block">{item.alumni_email}</span>
                   </div>
-                  <div className={`flex items-center gap-1 text-[11px] font-semibold shrink-0 ${
+                  <div className={`flex items-center gap-1 text-[10px] font-medium shrink-0 ${
                     category === "overdue" ? "text-red-600" : category === "today" ? "text-amber-600" : "text-slate-500"
                   }`}>
                     {style.icon}
@@ -376,9 +376,9 @@ function KanbanColumn({
                 </div>
 
                 {/* Last Conversation summary */}
-                <div className="bg-muted/30 border border-border/50 rounded-lg px-3 py-2 space-y-0.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Last Conversation</p>
-                  <p className="text-xs text-foreground leading-snug">
+                <div className="bg-muted/30 border border-border/40 rounded-md px-2.5 py-1.5 text-[11px] leading-snug">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground block mb-0.5">Last Conversation</span>
+                  <span className="text-foreground">
                     {item.interaction_outcomes?.label || "—"}
                     {(() => {
                       const gaps: string[] = Array.isArray(item.skipped_missing_fields)
@@ -397,27 +397,27 @@ function KanbanColumn({
                         </>
                       );
                     })()}
-                  </p>
+                  </span>
                 </div>
 
-                {/* Two action buttons — uniform style */}
-                <div className="grid grid-cols-2 gap-2 pt-0.5">
+                {/* Two action buttons — compact style */}
+                <div className="grid grid-cols-2 gap-1.5 pt-0.5">
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => onViewDetails(item)}
-                    className="h-7 text-xs gap-1.5 px-2.5 rounded-lg border-border text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full"
+                    className="h-6 text-[11px] gap-1 px-2 rounded-md border-border text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full"
                   >
-                    <MessageSquare className="w-3 h-3" />
+                    <MessageSquare className="w-3 h-3 shrink-0" />
                     View Details
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => onLogCall({ email: item.alumni_email, name: alumniName })}
-                    className="h-7 text-xs gap-1.5 px-2.5 rounded-lg border-primary/30 text-primary hover:bg-primary/5 w-full"
+                    className="h-6 text-[11px] gap-1 px-2 rounded-md border-primary/30 text-primary hover:bg-primary/5 w-full font-medium"
                   >
-                    <PhoneCall className="w-3 h-3" />
+                    <PhoneCall className="w-3 h-3 shrink-0" />
                     Log Interaction
                   </Button>
                 </div>
