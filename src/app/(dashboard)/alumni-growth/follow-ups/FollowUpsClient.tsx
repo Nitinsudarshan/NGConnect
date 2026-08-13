@@ -13,7 +13,16 @@ import {
   PhoneCall,
   ChevronDown,
   ChevronUp,
+  MessageSquare,
+  ExternalLink,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -196,17 +205,110 @@ function CalendarStrip({ followups, now }: { followups: any[]; now: Date }) {
   );
 }
 
+/* ─── Conversation Detail Modal ──────────────────── */
+
+function ConversationDetailModal({
+  item,
+  open,
+  onClose,
+}: {
+  item: any;
+  open: boolean;
+  onClose: () => void;
+}) {
+  if (!item) return null;
+  const loggedAt = item.created_at
+    ? new Date(item.created_at).toLocaleString("en-IN", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    : "—";
+  const gaps: string[] = Array.isArray(item.skipped_missing_fields)
+    ? item.skipped_missing_fields
+    : [];
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg rounded-2xl border border-border/80 shadow-2xl p-0 overflow-hidden">
+        <DialogHeader className="p-5 pb-4 border-b border-border/40 bg-muted/20">
+          <DialogTitle className="text-base font-bold flex items-center gap-2 text-foreground">
+            <MessageSquare className="w-4 h-4 text-primary" />
+            Last Conversation
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            {item.alumni_master?.name || item.alumni_email} · Logged {loggedAt} by{" "}
+            {item.logged_by || "staff"}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="p-5 space-y-4 text-sm">
+          {/* Outcome */}
+          {item.interaction_outcomes?.label && (
+            <div className="space-y-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Outcome</p>
+              <Badge variant="outline" className="text-xs rounded-md">
+                {item.interaction_outcomes.label}
+              </Badge>
+            </div>
+          )}
+
+          {/* Channel */}
+          {item.interaction_channel && (
+            <div className="space-y-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Channel</p>
+              <p className="text-sm text-foreground capitalize">{item.interaction_channel}</p>
+            </div>
+          )}
+
+          {/* Data Gaps */}
+          {gaps.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Data Gaps Skipped
+              </p>
+              <p className="text-sm text-foreground">
+                <span className="font-medium">{gaps.join(", ")}</span>
+                {item.skip_reason ? (
+                  <span className="text-muted-foreground"> — {item.skip_reason}</span>
+                ) : null}
+              </p>
+            </div>
+          )}
+
+          {/* Notes */}
+          {item.notes && (
+            <div className="space-y-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Notes</p>
+              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{item.notes}</p>
+            </div>
+          )}
+
+          {/* Assigned */}
+          {(item.followup_assigned_to || item.logged_by) && (
+            <div className="space-y-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Assigned To</p>
+              <p className="text-sm text-foreground">{item.followup_assigned_to || item.logged_by}</p>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /* ─── Kanban Column ─────────────────────────────── */
 function KanbanColumn({
   title,
   category,
   items,
   onLogCall,
+  onViewDetails,
 }: {
   title: string;
   category: keyof typeof STATUS_STYLES;
   items: any[];
   onLogCall: (alumni: { email: string; name: string }) => void;
+  onViewDetails: (item: any) => void;
 }) {
   const style = STATUS_STYLES[category];
   const [collapsed, setCollapsed] = useState(false);
@@ -273,34 +375,42 @@ function KanbanColumn({
                   </div>
                 </div>
 
-                {/* Meta */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {item.interaction_outcomes?.label && (
-                    <Badge variant="outline" className="text-[10px] rounded-md px-1.5 py-0 h-4">
-                      {item.interaction_outcomes.label}
-                    </Badge>
-                  )}
-                  {item.alumni_master?.campus && (
-                    <Badge variant="secondary" className="text-[10px] rounded-md px-1.5 py-0 h-4">
-                      {item.alumni_master.campus}
-                    </Badge>
-                  )}
-                  {item.followup_assigned_to && (
-                    <span className="text-[10px] text-muted-foreground">
-                      → {item.followup_assigned_to}
-                    </span>
-                  )}
+                {/* Last Conversation summary */}
+                <div className="bg-muted/30 border border-border/50 rounded-lg px-3 py-2 space-y-0.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Last Conversation</p>
+                  <p className="text-xs text-foreground leading-snug">
+                    {item.interaction_outcomes?.label || "—"}
+                    {(() => {
+                      const gaps: string[] = Array.isArray(item.skipped_missing_fields)
+                        ? item.skipped_missing_fields
+                        : [];
+                      if (gaps.length === 0) return null;
+                      return (
+                        <>
+                          {" · "}
+                          <span className="text-muted-foreground">
+                            Data Gaps Skipped ({gaps.join(", ")}):
+                            {item.skip_reason ? (
+                              <span className="italic"> {item.skip_reason}</span>
+                            ) : null}
+                          </span>
+                        </>
+                      );
+                    })()}
+                  </p>
                 </div>
 
-                {/* Notes */}
-                {item.notes && (
-                  <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2 pl-0.5">
-                    {item.notes}
-                  </p>
-                )}
-
-                {/* Action */}
-                <div className="pt-0.5">
+                {/* Two action buttons — uniform style */}
+                <div className="grid grid-cols-2 gap-2 pt-0.5">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onViewDetails(item)}
+                    className="h-7 text-xs gap-1.5 px-2.5 rounded-lg border-border text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full"
+                  >
+                    <MessageSquare className="w-3 h-3" />
+                    View Details
+                  </Button>
                   <Button
                     size="sm"
                     variant="outline"
@@ -308,7 +418,7 @@ function KanbanColumn({
                     className="h-7 text-xs gap-1.5 px-2.5 rounded-lg border-primary/30 text-primary hover:bg-primary/5 w-full"
                   >
                     <PhoneCall className="w-3 h-3" />
-                    Log Interaction to Close Follow-up
+                    Log Interaction
                   </Button>
                 </div>
               </div>
@@ -331,6 +441,7 @@ interface FollowUpsClientProps {
 export default function FollowUpsClient({ followups, outcomes, userEmail }: FollowUpsClientProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [logModalTarget, setLogModalTarget] = useState<{ email: string; name: string } | null>(null);
+  const [detailItem, setDetailItem] = useState<any | null>(null);
 
   const now = new Date();
 
@@ -390,20 +501,30 @@ export default function FollowUpsClient({ followups, outcomes, userEmail }: Foll
           category="overdue"
           items={overdue}
           onLogCall={setLogModalTarget}
+          onViewDetails={setDetailItem}
         />
         <KanbanColumn
           title="Due Today"
           category="today"
           items={today}
           onLogCall={setLogModalTarget}
+          onViewDetails={setDetailItem}
         />
         <KanbanColumn
           title="Upcoming"
           category="upcoming"
           items={upcoming}
           onLogCall={setLogModalTarget}
+          onViewDetails={setDetailItem}
         />
       </div>
+
+      {/* Conversation Detail Modal */}
+      <ConversationDetailModal
+        item={detailItem}
+        open={!!detailItem}
+        onClose={() => setDetailItem(null)}
+      />
 
       {/* Log Interaction Modal */}
       {logModalTarget && (
