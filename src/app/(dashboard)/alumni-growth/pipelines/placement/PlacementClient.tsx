@@ -20,6 +20,7 @@ import TransferLeadModal from "@/components/engagement/TransferLeadModal";
 import { calculateProfileScore, getStageBadgeVariant } from "@/lib/engagement/utils";
 import { PipelineListView } from "@/components/engagement/PipelineListView";
 import { AlumniKanbanCard } from "@/components/engagement/AlumniKanbanCard";
+import { HelpModal } from "@/components/shared/HelpModal";
 
 interface PlacementClientProps {
   pipeline: any;
@@ -391,6 +392,10 @@ export default function PlacementClient({
             </Button>
           </div>
         )}
+        
+        <div className={!isFilterActive ? "ml-auto" : ""}>
+          <HelpModal helpId="boards.placement" />
+        </div>
       </div>
 
       {!isFilterActive ? (

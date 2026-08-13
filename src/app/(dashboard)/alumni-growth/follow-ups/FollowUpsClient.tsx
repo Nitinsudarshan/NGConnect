@@ -25,6 +25,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { PageBanner } from "@/components/shared/page-banner";
+import { HelpModal } from "@/components/shared/HelpModal";
 import { completeFollowupAction } from "@/lib/engagement/actions";
 import { toast } from "sonner";
 
@@ -83,13 +84,16 @@ export default function FollowUpsClient({ followups }: FollowUpsClientProps) {
         description={<p>Consolidated cross-pipeline calendar of all requested callbacks and scheduled touchpoints.</p>}
         icon={<CalendarClock className="h-8 w-8 text-primary" />}
         actions={
-          <div className="w-full sm:w-64">
-            <Input
-              placeholder="Search callbacks..."
-              value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-              className="h-10 rounded-xl bg-white/80 dark:bg-zinc-900/80 border-slate-200 dark:border-zinc-800 text-xs"
-            />
+          <div className="flex items-center gap-2">
+            <div className="w-full sm:w-64">
+              <Input
+                placeholder="Search callbacks..."
+                value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                className="h-10 rounded-xl bg-white/80 dark:bg-zinc-900/80 border-slate-200 dark:border-zinc-800 text-xs"
+              />
+            </div>
+            <HelpModal helpId="follow_ups" />
           </div>
         }
       />

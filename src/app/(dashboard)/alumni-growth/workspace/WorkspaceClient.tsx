@@ -39,6 +39,7 @@ import {
 import { PageBanner } from "@/components/shared/page-banner";
 import LogInteractionModal from "@/components/engagement/LogInteractionModal";
 import AlumniDetailsModule from "@/components/shared/alumni-details-module";
+import { HelpModal } from "@/components/shared/HelpModal";
 import { InteractionOutcome, OrgSettings } from "@/types/engagement";
 import { completeFollowupAction } from "@/lib/engagement/actions";
 import { calculateProfileScore } from "@/lib/engagement/utils";
@@ -160,9 +161,12 @@ export default function WorkspaceClient({
         description={<p>Prioritized daily work queue & alumni engagement roster across all teams.</p>}
         icon={<Briefcase className="h-8 w-8 text-indigo-500" />}
         actions={
-          <Badge variant="outline" className="px-3 py-1.5 text-xs rounded-full bg-white/80 dark:bg-zinc-900/80 border-indigo-200 dark:border-indigo-900 text-indigo-600 dark:text-indigo-400 font-semibold shadow-2xs">
-            <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Cool-down: {settings.followup_cooldown_days} days
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="px-3 py-1.5 text-xs rounded-full bg-white/80 dark:bg-zinc-900/80 border-indigo-200 dark:border-indigo-900 text-indigo-600 dark:text-indigo-400 font-semibold shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Cool-down: {settings.followup_cooldown_days} days
+            </Badge>
+            <HelpModal helpId="workspace" />
+          </div>
         }
       />
 

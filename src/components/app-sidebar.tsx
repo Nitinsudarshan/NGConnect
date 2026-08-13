@@ -18,6 +18,7 @@ import {
   Settings,
   TrendingUp,
   ShieldCheck,
+  FileQuestion,
 } from "lucide-react"
 
 import { NavMain, NavItem } from "@/components/nav-main"
@@ -155,7 +156,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: "/manage/rbac",
             icon: ShieldCheck,
             isActive: pathname === "/manage/rbac",
-          }
+          },
+          {
+            title: "Help Docs",
+            url: "/manage/help",
+            icon: FileQuestion,
+            isActive: pathname === "/manage/help",
+          },
         ] : []),
       ],
     }

@@ -328,32 +328,63 @@ export async function getAllPipelinePocEligibility() {
 
 export async function getPipelineEligibleStaff(pipelineCode: string): Promise<{ email: string; name: string }[]> {
   try {
-    const supabase = await createClient();
-    const { data: pipeline } = await supabase.from('pipelines').select('id').eq('code', pipelineCode).single();
-    if (!pipeline) return [];
-    
-    const { data } = await supabase
-      .from('pipeline_poc_eligibility')
-      .select('staff_email')
-      .eq('pipeline_id', pipeline.id)
-      .eq('is_active', true);
-      
-    if (!data) return [];
-    
     const adminSupabase = createAdminClient();
     const { data: usersData, error: usersError } = await adminSupabase.auth.admin.listUsers();
-    if (usersError || !usersData?.users) {
-      return data.map((d: any) => ({ email: d.staff_email, name: d.staff_email.split('@')[0] }));
-    }
     
-    return data.map((d: any) => {
-      const user = usersData.users.find((u: any) => u.email === d.staff_email);
-      return {
-        email: d.staff_email,
-        name: user?.user_metadata?.name || d.staff_email.split('@')[0]
-      };
-    });
-  } catch {
+    if (usersError || !usersData?.users) {
+      return [];
+    }
+
+    const supabase = await createClient();
+    const resourceId = `crm.pipelines.${pipelineCode}`;
+    
+    const { data: permissions } = await supabase
+      .from('rbac_permissions')
+      .select('*')
+      .eq('resource_id', resourceId);
+
+    const eligibleUsers = [];
+
+    for (const user of usersData.users) {
+      const role = user.app_metadata?.role || 'Staff';
+      const team = user.user_metadata?.team || 'None';
+      
+      let canEdit = false;
+
+      if (role === 'Super Admin') {
+        canEdit = true;
+      } else {
+        const indData = permissions?.find(d => d.subject_type === 'user' && d.subject_id === user.id);
+        const teamData = permissions?.find(d => d.subject_type === 'team' && d.subject_id === team);
+        const roleData = permissions?.find(d => d.subject_type === 'role' && d.subject_id === role);
+
+        if (indData && indData.can_edit !== undefined) {
+          canEdit = indData.can_edit;
+        } else if (teamData && teamData.can_edit !== undefined) {
+          canEdit = teamData.can_edit;
+        } else if (roleData && roleData.can_edit !== undefined) {
+          canEdit = roleData.can_edit;
+        } else if (role === 'Admin') {
+          // Graceful fallback for Admin
+          canEdit = true;
+        }
+      }
+
+      if (canEdit && user.email) {
+        // Exclude seeded dummy emails if they accidentally exist in auth
+        if (!user.email.startsWith('caller') && !user.email.startsWith('dummy')) {
+          eligibleUsers.push({
+            email: user.email,
+            name: user.user_metadata?.name || user.email.split('@')[0]
+          });
+        }
+      }
+    }
+
+    // Sort alphabetically by name
+    return eligibleUsers.sort((a, b) => a.name.localeCompare(b.name));
+  } catch (err) {
+    console.error('Error fetching eligible staff:', err);
     return [];
   }
 }
