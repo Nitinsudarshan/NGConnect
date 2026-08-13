@@ -27,6 +27,7 @@ import {
   UserPlus,
   Linkedin,
   MapPin,
+  PhoneCall,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,7 +65,9 @@ import {
   InteractionOutcome,
   OrgSettings,
   OutcomeMappingRow,
+  CallReason,
   Pipeline,
+  PipelinePocEligibility,
   PipelineStage,
 } from "@/types/engagement";
 import type { Mentor, LearningCenterAuditLog } from "@/lib/learning-center/queries";
@@ -74,6 +77,8 @@ import {
   manageContributionTypeAction,
   managePipelineStageAction,
   saveOutcomeMappingAction,
+  manageCallReasonAction,
+  managePipelinePocAction,
 } from "@/lib/engagement/actions";
 import { archiveMentorAction } from "@/lib/learning-center/actions";
 import { toast } from "sonner";
@@ -92,6 +97,8 @@ interface SettingsClientProps {
   auditLogs: LearningCenterAuditLog[];
   initialOutcomeMappings?: OutcomeMappingRow[];
   permissions: Record<string, Record<string, boolean>>;
+  callReasons?: CallReason[];
+  pipelinePocEligibility?: PipelinePocEligibility[];
 }
 
 /* ──────────────────────────────────── Nav Items ─────────────────────────────────────── */
@@ -105,6 +112,8 @@ const NAV_ITEMS: SettingsNavItem[] = [
   { label: "Pipelines",              value: "pipelines",      icon: GitBranch,     group: "Pipeline Config" },
   { label: "Pipeline Stages",        value: "pipeline_stages",icon: Layers,        group: "Pipeline Config" },
   { label: "Interaction Outcomes",   value: "outcomes",       icon: Tag,           group: "Pipeline Config" },
+  { label: "Call Reasons",           value: "call_reasons",   icon: PhoneCall,     group: "Pipeline Config" },
+  { label: "Pipeline POCs",          value: "pipeline_pocs",  icon: Users,         group: "Pipeline Config" },
   { label: "Contribution Types",     value: "contributions",  icon: Award,         group: "Pipeline Config" },
   { label: "Outcome Mapping",        value: "outcome_mapping",icon: ArrowRightLeft,group: "Pipeline Config" },
   // Group: People
@@ -140,6 +149,8 @@ export default function SettingsClient({
   auditLogs,
   initialOutcomeMappings,
   permissions,
+  callReasons,
+  pipelinePocEligibility,
 }: SettingsClientProps) {
   const valueToResource: Record<string, string> = {
     pay_forward: 'crm.settings.pay_forward_rules',
@@ -148,6 +159,8 @@ export default function SettingsClient({
     pipelines: 'crm.settings.pipelines_config',
     pipeline_stages: 'crm.settings.pipeline_stages',
     outcomes: 'crm.settings.interaction_outcomes',
+    call_reasons: 'crm.settings.call_reasons',
+    pipeline_pocs: 'crm.settings.pipeline_pocs',
     contributions: 'crm.settings.contribution_types',
     outcome_mapping: 'crm.settings.outcome_mapping',
     mentors: 'crm.settings.mentors_directory',
@@ -194,7 +207,26 @@ export default function SettingsClient({
   const [newOutcomeLabel,       setNewOutcomeLabel]       = useState("");
   const [newOutcomeReqFollowup, setNewOutcomeReqFollowup] = useState(false);
   const [newOutcomeIsTerminal,  setNewOutcomeIsTerminal]  = useState(false);
+  const [newOutcomeIsSubstantive, setNewOutcomeIsSubstantive] = useState(false);
   const [isAddingOutcome,       setIsAddingOutcome]       = useState(false);
+
+  /* ── Call Reason state ── */
+  const [callReasonsState, setCallReasonsState] = useState<CallReason[]>(callReasons || []);
+  const [editingCallReason, setEditingCallReason] = useState<CallReason | null>(null);
+  const [archivingCallReason, setArchivingCallReason] = useState<CallReason | null>(null);
+  const [newCallReasonCode, setNewCallReasonCode] = useState("");
+  const [newCallReasonLabel, setNewCallReasonLabel] = useState("");
+  const [newCallReasonIsActive, setNewCallReasonIsActive] = useState(true);
+  const [isAddingCallReason, setIsAddingCallReason] = useState(false);
+
+  /* ── Pipeline POC state ── */
+  const [pipelinePocsState, setPipelinePocsState] = useState<PipelinePocEligibility[]>(pipelinePocEligibility || []);
+  const [editingPipelinePoc, setEditingPipelinePoc] = useState<PipelinePocEligibility | null>(null);
+  const [archivingPipelinePoc, setArchivingPipelinePoc] = useState<PipelinePocEligibility | null>(null);
+  const [newPocPipelineId, setNewPocPipelineId] = useState("");
+  const [newPocStaffEmail, setNewPocStaffEmail] = useState("");
+  const [newPocIsActive, setNewPocIsActive] = useState(true);
+  const [isAddingPipelinePoc, setIsAddingPipelinePoc] = useState(false);
 
   /* ── Contribution type state ── */
   const [contribTypes, setContribTypes] = useState<ContributionType[]>(initialContribTypes);
@@ -284,15 +316,56 @@ export default function SettingsClient({
       label: newOutcomeLabel,
       requires_followup_datetime: newOutcomeReqFollowup,
       is_terminal: newOutcomeIsTerminal,
+      is_substantive_conversation: newOutcomeIsSubstantive,
     });
     setIsAddingOutcome(false);
     if (res.success) {
       toast.success("Outcome saved");
       setNewOutcomeCode(""); setNewOutcomeLabel("");
-      setNewOutcomeReqFollowup(false); setNewOutcomeIsTerminal(false);
+      setNewOutcomeReqFollowup(false); setNewOutcomeIsTerminal(false); setNewOutcomeIsSubstantive(false);
       setEditingOutcome(null);
     } else {
       toast.error(res.error || "Failed to save outcome");
+    }
+  };
+
+  const handleAddCallReason = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCallReasonCode || !newCallReasonLabel) return;
+    setIsAddingCallReason(true);
+    const res = await manageCallReasonAction({
+      id: editingCallReason?.id,
+      code: newCallReasonCode.toLowerCase().replace(/\s+/g, "_"),
+      label: newCallReasonLabel,
+      is_active: newCallReasonIsActive,
+    });
+    setIsAddingCallReason(false);
+    if (res.success) {
+      toast.success("Call reason saved");
+      setNewCallReasonCode(""); setNewCallReasonLabel(""); setNewCallReasonIsActive(true);
+      setEditingCallReason(null);
+    } else {
+      toast.error(res.error || "Failed to save call reason");
+    }
+  };
+
+  const handleAddPipelinePoc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPocPipelineId || !newPocStaffEmail) return;
+    setIsAddingPipelinePoc(true);
+    const res = await managePipelinePocAction({
+      id: editingPipelinePoc?.id,
+      pipeline_id: newPocPipelineId,
+      staff_email: newPocStaffEmail,
+      is_active: newPocIsActive,
+    });
+    setIsAddingPipelinePoc(false);
+    if (res.success) {
+      toast.success("Pipeline POC saved");
+      setNewPocPipelineId(""); setNewPocStaffEmail(""); setNewPocIsActive(true);
+      setEditingPipelinePoc(null);
+    } else {
+      toast.error(res.error || "Failed to save Pipeline POC");
     }
   };
 
@@ -347,6 +420,30 @@ export default function SettingsClient({
       toast.error(res.error);
     }
     setArchivingOutcome(null);
+  };
+
+  const handleConfirmArchiveCallReason = async () => {
+    if (!archivingCallReason) return;
+    const res = await manageCallReasonAction({ ...archivingCallReason, archive: true });
+    if (res.success) {
+      setCallReasonsState(prev => prev.filter(c => c.id !== archivingCallReason.id));
+      toast.success("Call reason deleted");
+    } else {
+      toast.error(res.error || "Failed to delete call reason");
+    }
+    setArchivingCallReason(null);
+  };
+
+  const handleConfirmArchivePipelinePoc = async () => {
+    if (!archivingPipelinePoc) return;
+    const res = await managePipelinePocAction({ ...archivingPipelinePoc, archive: true });
+    if (res.success) {
+      setPipelinePocsState(prev => prev.filter(p => p.id !== archivingPipelinePoc.id));
+      toast.success("Pipeline POC deleted");
+    } else {
+      toast.error(res.error || "Failed to delete Pipeline POC");
+    }
+    setArchivingPipelinePoc(null);
   };
 
   const handleConfirmArchiveContrib = async () => {
@@ -843,6 +940,11 @@ export default function SettingsClient({
                         {o.is_terminal
                           ? <CheckCircle2 className="w-3.5 h-3.5 text-destructive mx-auto" />
                           : <XCircle className="w-3.5 h-3.5 text-muted-foreground/30 mx-auto" />}
+                        {o.is_substantive_conversation && (
+                          <div className="mt-1">
+                            <Badge variant="outline" className="text-[9px] bg-indigo-500/10 text-indigo-600 border-indigo-500/20">Substantive</Badge>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="text-center">
                         {o.is_custom
@@ -862,6 +964,7 @@ export default function SettingsClient({
                               setNewOutcomeLabel(o.label);
                               setNewOutcomeReqFollowup(o.requires_followup_datetime);
                               setNewOutcomeIsTerminal(o.is_terminal);
+                              setNewOutcomeIsSubstantive(o.is_substantive_conversation);
                               setEditingOutcome(o);
                             }}>
                               <Edit2 className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
@@ -914,10 +1017,222 @@ export default function SettingsClient({
                         <Checkbox checked={newOutcomeIsTerminal} onCheckedChange={(c) => setNewOutcomeIsTerminal(!!c)} />
                         Terminal (ends pipeline engagement)
                       </label>
+                      <label className="flex items-center gap-2 text-xs cursor-pointer">
+                        <Checkbox checked={newOutcomeIsSubstantive} onCheckedChange={(c) => setNewOutcomeIsSubstantive(!!c)} />
+                        Substantive Conversation
+                      </label>
                     </div>
                     <div className="flex justify-end pt-1">
                       <Button type="submit" size="sm" disabled={isAddingOutcome} className="h-9 rounded-xl gap-1 font-medium">
                         <Plus className="w-4 h-4" /> {isAddingOutcome ? "Adding…" : "Add Outcome"}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* ════════════════ CALL REASONS ════════════════ */}
+        {activeTab === "call_reasons" && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Call Reasons</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Reasons available when logging calls or outreach attempts.
+              </p>
+            </div>
+
+            <div className="border rounded-lg overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs font-mono">Code</TableHead>
+                    <TableHead className="text-xs">Label</TableHead>
+                    <TableHead className="text-xs text-center">Active</TableHead>
+                    {canEdit && <TableHead className="text-xs text-right">Actions</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {callReasonsState.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-mono text-[11px] text-muted-foreground">{c.code}</TableCell>
+                      <TableCell className="text-xs font-medium">{c.label}</TableCell>
+                      <TableCell className="text-center">
+                        {c.is_active
+                          ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mx-auto" />
+                          : <XCircle className="w-3.5 h-3.5 text-muted-foreground/30 mx-auto" />}
+                      </TableCell>
+                      {canEdit && (
+                        <TableCell className="text-right py-1">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="w-3.5 h-3.5" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuItem className="text-xs" onClick={() => {
+                                setEditingCallReason(c);
+                                setNewCallReasonCode(c.code);
+                                setNewCallReasonLabel(c.label);
+                                setNewCallReasonIsActive(c.is_active);
+                              }}>
+                                <Edit2 className="w-3.5 h-3.5 mr-2" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-xs text-destructive focus:text-destructive" onClick={() => setArchivingCallReason(c)}>
+                                <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                  {callReasonsState.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={canEdit ? 4 : 3} className="text-center py-6 text-muted-foreground text-xs">
+                        No call reasons defined
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {canEdit && (
+              <Card className="border-dashed bg-muted/20">
+                <CardHeader className="py-4">
+                  <CardTitle className="text-sm">
+                    {editingCallReason ? "Edit Call Reason" : "Add New Call Reason"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pb-4">
+                  <form onSubmit={handleAddCallReason} className="space-y-4 max-w-lg">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Code (Unique)</label>
+                        <Input value={newCallReasonCode} onChange={e => setNewCallReasonCode(e.target.value)} placeholder="e.g. check_in" className="h-9 text-sm font-mono" disabled={!!editingCallReason} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Display Label</label>
+                        <Input value={newCallReasonLabel} onChange={e => setNewCallReasonLabel(e.target.value)} placeholder="e.g. General Check-in" className="h-9 text-sm" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center gap-2 text-xs cursor-pointer">
+                        <Checkbox checked={newCallReasonIsActive} onCheckedChange={(c) => setNewCallReasonIsActive(!!c)} />
+                        Active
+                      </label>
+                    </div>
+                    <div className="flex justify-end pt-1 gap-2">
+                      {editingCallReason && (
+                        <Button type="button" variant="outline" size="sm" onClick={() => {
+                          setEditingCallReason(null);
+                          setNewCallReasonCode(""); setNewCallReasonLabel(""); setNewCallReasonIsActive(true);
+                        }}>Cancel</Button>
+                      )}
+                      <Button type="submit" size="sm" disabled={isAddingCallReason} className="h-9 rounded-xl gap-1 font-medium">
+                        {editingCallReason ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                        {isAddingCallReason ? "Saving…" : (editingCallReason ? "Save Changes" : "Add Reason")}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* ════════════════ PIPELINE POCS ════════════════ */}
+        {activeTab === "pipeline_pocs" && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Pipeline POC Eligibility</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Manage which staff members can be assigned as POCs for each pipeline.
+              </p>
+            </div>
+
+            <div className="border rounded-lg overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">Pipeline</TableHead>
+                    <TableHead className="text-xs">Staff Email</TableHead>
+                    <TableHead className="text-xs text-center">Active</TableHead>
+                    {canEdit && <TableHead className="text-xs text-right">Actions</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pipelinePocsState.map((p) => {
+                    const pipe = pipelines?.find(pl => pl.id === p.pipeline_id);
+                    return (
+                    <TableRow key={p.id}>
+                      <TableCell className="text-xs font-medium">{pipe ? pipe.label : p.pipeline_id}</TableCell>
+                      <TableCell className="text-xs">{p.staff_email}</TableCell>
+                      <TableCell className="text-center">
+                        {p.is_active
+                          ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mx-auto" />
+                          : <XCircle className="w-3.5 h-3.5 text-muted-foreground/30 mx-auto" />}
+                      </TableCell>
+                      {canEdit && (
+                        <TableCell className="text-right py-1">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="w-3.5 h-3.5" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuItem className="text-xs text-destructive focus:text-destructive" onClick={() => setArchivingPipelinePoc(p)}>
+                                <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  )})}
+                  {pipelinePocsState.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={canEdit ? 4 : 3} className="text-center py-6 text-muted-foreground text-xs">
+                        No POC eligibility rules defined
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {canEdit && (
+              <Card className="border-dashed bg-muted/20">
+                <CardHeader className="py-4">
+                  <CardTitle className="text-sm">
+                    Assign POC Eligibility
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pb-4">
+                  <form onSubmit={handleAddPipelinePoc} className="space-y-4 max-w-lg">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Pipeline</label>
+                        <select
+                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                          value={newPocPipelineId}
+                          onChange={e => setNewPocPipelineId(e.target.value)}
+                        >
+                          <option value="">Select pipeline...</option>
+                          {pipelines?.map(p => (
+                            <option key={p.id} value={p.id}>{p.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Staff Email</label>
+                        <Input value={newPocStaffEmail} onChange={e => setNewPocStaffEmail(e.target.value)} placeholder="staff@navgurukul.org" className="h-9 text-sm" />
+                      </div>
+                    </div>
+                    <div className="flex justify-end pt-1 gap-2">
+                      <Button type="submit" size="sm" disabled={isAddingPipelinePoc} className="h-9 rounded-xl gap-1 font-medium">
+                        <Plus className="w-4 h-4" /> {isAddingPipelinePoc ? "Adding…" : "Add POC"}
                       </Button>
                     </div>
                   </form>
@@ -1370,6 +1685,26 @@ export default function SettingsClient({
         description="Are you sure you want to archive this stage? It will be removed from the pipeline options, but historical placements remain."
         confirmLabel="Archive Stage"
         onConfirm={handleConfirmArchivePipelineStage}
+      />
+
+      <ConfirmDeleteDialog
+        open={!!archivingCallReason}
+        onOpenChange={(open) => !open && setArchivingCallReason(null)}
+        title="Delete Call Reason"
+        itemName={archivingCallReason?.label}
+        description="Are you sure you want to delete this call reason? This action cannot be undone."
+        confirmLabel="Delete Call Reason"
+        onConfirm={handleConfirmArchiveCallReason}
+      />
+
+      <ConfirmDeleteDialog
+        open={!!archivingPipelinePoc}
+        onOpenChange={(open) => !open && setArchivingPipelinePoc(null)}
+        title="Delete Pipeline POC Eligibility"
+        itemName={archivingPipelinePoc?.staff_email}
+        description="Are you sure you want to remove this staff member's eligibility for this pipeline?"
+        confirmLabel="Remove POC"
+        onConfirm={handleConfirmArchivePipelinePoc}
       />
     </div>
   );

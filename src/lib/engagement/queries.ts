@@ -23,23 +23,23 @@ export async function getOutcomeMapping(): Promise<OutcomeMappingRow[]> {
 
 const DEFAULT_PIPELINE_STAGES: Record<string, Omit<PipelineStage, 'id' | 'pipeline_id'>[]> = {
   pay_forward: [
-    { code: 'paid', label: 'Paid', sort_order: 1, is_terminal: true, is_custom: false, is_active: true },
-    { code: 'communicated', label: 'Communicated', sort_order: 2, is_terminal: false, is_custom: false, is_active: true },
-    { code: 'waiting', label: 'Waiting', sort_order: 3, is_terminal: false, is_custom: false, is_active: true },
-    { code: 'not_paying_right_now', label: 'Not Paying Right Now', sort_order: 4, is_terminal: false, is_custom: false, is_active: true },
+    { code: 'paid', label: 'Paid', sort_order: 1, is_terminal: true, is_custom: false, is_active: true, requires_outcome: false },
+    { code: 'communicated', label: 'Communicated', sort_order: 2, is_terminal: false, is_custom: false, is_active: true, requires_outcome: false },
+    { code: 'waiting', label: 'Waiting', sort_order: 3, is_terminal: false, is_custom: false, is_active: true, requires_outcome: false },
+    { code: 'not_paying_right_now', label: 'Not Paying Right Now', sort_order: 4, is_terminal: false, is_custom: false, is_active: true, requires_outcome: false },
   ],
   mentoring: [
-    { code: 'needs_assessment', label: 'Needs assessment', sort_order: 1, is_terminal: false, is_custom: false, is_active: true },
-    { code: 'matched_with_mentor', label: 'Matched with mentor', sort_order: 2, is_terminal: false, is_custom: false, is_active: true },
-    { code: 'in_session', label: 'In session', sort_order: 3, is_terminal: false, is_custom: false, is_active: true },
-    { code: 'closed', label: 'Closed', sort_order: 4, is_terminal: true, is_custom: false, is_active: true },
+    { code: 'needs_assessment', label: 'Needs assessment', sort_order: 1, is_terminal: false, is_custom: false, is_active: true, requires_outcome: false },
+    { code: 'matched_with_mentor', label: 'Matched with mentor', sort_order: 2, is_terminal: false, is_custom: false, is_active: true, requires_outcome: false },
+    { code: 'in_session', label: 'In session', sort_order: 3, is_terminal: false, is_custom: false, is_active: true, requires_outcome: false },
+    { code: 'closed', label: 'Closed', sort_order: 4, is_terminal: true, is_custom: false, is_active: true, requires_outcome: false },
   ],
   placement: [
-    { code: 'needs_identified', label: 'Needs identified', sort_order: 1, is_terminal: false, is_custom: false, is_active: true },
-    { code: 'searching_matched', label: 'Actively searching / matched to opportunity', sort_order: 2, is_terminal: false, is_custom: false, is_active: true },
-    { code: 'interviewing', label: 'Interviewing', sort_order: 3, is_terminal: false, is_custom: false, is_active: true },
-    { code: 'placed', label: 'Placed', sort_order: 4, is_terminal: true, is_custom: false, is_active: true },
-    { code: 'not_placed_closed', label: 'Not placed (closed)', sort_order: 5, is_terminal: true, is_custom: false, is_active: true },
+    { code: 'needs_identified', label: 'Needs identified', sort_order: 1, is_terminal: false, is_custom: false, is_active: true, requires_outcome: false },
+    { code: 'searching_matched', label: 'Actively searching / matched to opportunity', sort_order: 2, is_terminal: false, is_custom: false, is_active: true, requires_outcome: false },
+    { code: 'interviewing', label: 'Interviewing', sort_order: 3, is_terminal: false, is_custom: false, is_active: true, requires_outcome: false },
+    { code: 'placed', label: 'Placed', sort_order: 4, is_terminal: true, is_custom: false, is_active: true, requires_outcome: false },
+    { code: 'not_placed_closed', label: 'Not placed (closed)', sort_order: 5, is_terminal: true, is_custom: false, is_active: true, requires_outcome: false },
   ],
 };
 
@@ -214,39 +214,71 @@ export async function getCallReasons() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('call_reasons')
-    .select('id, label, is_active')
-    .order('sort_order', { ascending: true });
+    .select('id, code, label, is_active')
+    .order('created_at', { ascending: true });
     
   if (error) throw error;
   return data;
 }
 
-export async function getTeamActivity() {
+export async function getAlumnusOwnershipSummary(alumniEmail: string) {
+  const supabase = await createClient();
+  const { data: memberships } = await supabase
+    .from('alumni_pipeline_membership')
+    .select('poc_email, pipelines(code)')
+    .eq('alumni_email', alumniEmail)
+    .eq('is_active', true);
+
+  let payForwardOwner: string | null = null;
+  let mentoringOwner: string | null = null;
+  let placementOwner: string | null = null;
+
+  if (memberships) {
+    for (const m of memberships) {
+      const pipe = m.pipelines as any;
+      if (pipe?.code === 'pay_forward') payForwardOwner = m.poc_email || null;
+      if (pipe?.code === 'mentoring') mentoringOwner = m.poc_email || null;
+      if (pipe?.code === 'placement') placementOwner = m.poc_email || null;
+    }
+  }
+
+  return {
+    payForwardOwner,
+    careerSupportOwner: mentoringOwner || placementOwner || null,
+  };
+}
+
+export async function getTeamActivity(startDate?: string, endDate?: string) {
   const supabase = await createClient();
   
-  // Basic grouping by logged_by (we fetch all and reduce since Supabase JS client doesn't support complex group by without RPC)
-  const { data, error } = await supabase
+  let query = supabase
     .from('alumni_interactions')
-    .select('logged_by, created_at, interaction_channel')
-    .gte('created_at', new Date(new Date().setDate(new Date().getDate() - 30)).toISOString());
+    .select('logged_by, call_reasons(label)');
+    
+  if (startDate) {
+    query = query.gte('created_at', startDate);
+  } else {
+    // Default to last 30 days if no date provided
+    query = query.gte('created_at', new Date(new Date().setDate(new Date().getDate() - 30)).toISOString());
+  }
 
+  if (endDate) {
+    query = query.lte('created_at', endDate);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
 
-  const activityMap: Record<string, { calls: number; messages: number; other: number; total: number }> = {};
+  const activityMap: Record<string, { byReason: Record<string, number>; total: number }> = {};
   
   (data || []).forEach(row => {
     const user = row.logged_by || 'Unknown';
     if (!activityMap[user]) {
-      activityMap[user] = { calls: 0, messages: 0, other: 0, total: 0 };
+      activityMap[user] = { byReason: {}, total: 0 };
     }
+    const reason = (row.call_reasons as any)?.label || 'Unspecified';
     activityMap[user].total += 1;
-    if (row.interaction_channel === 'call') {
-      activityMap[user].calls += 1;
-    } else if (row.interaction_channel === 'message' || row.interaction_channel === 'whatsapp') {
-      activityMap[user].messages += 1;
-    } else {
-      activityMap[user].other += 1;
-    }
+    activityMap[user].byReason[reason] = (activityMap[user].byReason[reason] || 0) + 1;
   });
 
   return Object.keys(activityMap).map(user => ({
@@ -276,6 +308,18 @@ export async function getPipelines(): Promise<Pipeline[]> {
       .from('pipelines')
       .select('*')
       .eq('is_active', true);
+    return data || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getAllPipelinePocEligibility() {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from('pipeline_poc_eligibility')
+      .select('*');
     return data || [];
   } catch {
     return [];
@@ -324,12 +368,12 @@ export async function getEngagementQueue() {
     .order('name', { ascending: true })
     .limit(300);
 
-  // Fetch suppressed alumni to filter out
+  // Fetch suppressed alumni to attach suppression reason
   const { data: suppressed } = await supabase
     .from('alumni_contact_suppression')
-    .select('alumni_email');
+    .select('alumni_email, reason');
   
-  const suppressedSet = new Set((suppressed || []).map(s => s.alumni_email));
+  const suppressedMap = new Map((suppressed || []).map(s => [s.alumni_email, s.reason || 'do_not_contact']));
 
   // Fetch alumni_profile list
   const { data: profiles } = await supabase
@@ -356,11 +400,11 @@ export async function getEngagementQueue() {
   }
 
   const enrichedAlumni = (alumni || [])
-    .filter(a => !suppressedSet.has(a.email))
     .map((a) => ({
       ...a,
       profile: profileMap[a.email] || null,
       hasSalaryRecords: salarySet.has(a.email),
+      contactSuppressionReason: suppressedMap.get(a.email) || null,
     }));
 
   // Fetch active pending followups
@@ -380,13 +424,41 @@ export async function getEngagementQueue() {
 
   return {
     alumniList: enrichedAlumni,
-    followups: (followups || []).filter(f => !suppressedSet.has(f.alumni_email)),
-    recentInteractions: (recentInteractions || []).filter(i => !suppressedSet.has(i.alumni_email)),
+    followups: (followups || []).filter(f => !suppressedMap.has(f.alumni_email)),
+    recentInteractions: (recentInteractions || []).filter(i => !suppressedMap.has(i.alumni_email)),
   };
 }
 
 export async function getMyWorkspaceKPIs(userEmail: string) {
   const supabase = await createClient();
+  const currentTime = new Date();
+  
+  // Today's start and end boundaries
+  const todayStart = new Date(currentTime.setHours(0, 0, 0, 0)).toISOString();
+  const todayEnd = new Date(currentTime.setHours(23, 59, 59, 999)).toISOString();
+
+  // 0. Team-wide metrics for today
+  const { count: callsLoggedToday } = await supabase
+    .from('alumni_interactions')
+    .select('id', { count: 'exact', head: true })
+    .gte('created_at', todayStart)
+    .lte('created_at', todayEnd)
+    .eq('interaction_channel', 'call');
+
+  const { count: followupsAddedToday } = await supabase
+    .from('alumni_interactions')
+    .select('id', { count: 'exact', head: true })
+    .gte('created_at', todayStart)
+    .lte('created_at', todayEnd)
+    .not('followup_at', 'is', null);
+
+  const { data: interactedAlumniToday } = await supabase
+    .from('alumni_interactions')
+    .select('alumni_email')
+    .gte('created_at', todayStart)
+    .lte('created_at', todayEnd);
+
+  const interactedToday = new Set(interactedAlumniToday?.map(i => i.alumni_email) || []).size;
 
   // 1. My Active Leads: alumni_pipeline_membership where poc_email = userEmail and is_active = true
   const { data: myLeads } = await supabase
@@ -396,7 +468,14 @@ export async function getMyWorkspaceKPIs(userEmail: string) {
     .eq('is_active', true);
 
   if (!myLeads || myLeads.length === 0) {
-    return { myActiveLeads: 0, uncontactedLeads: 0, followupsDue: 0 };
+    return { 
+      myActiveLeads: 0, 
+      uncontactedLeads: 0, 
+      followupsDue: 0,
+      callsLoggedToday: callsLoggedToday || 0,
+      followupsAddedToday: followupsAddedToday || 0,
+      interactedToday,
+    };
   }
 
   // Deduplicate emails since one alumnus could be in multiple pipelines
@@ -423,7 +502,7 @@ export async function getMyWorkspaceKPIs(userEmail: string) {
 
   let uncontactedLeads = 0;
   let followupsDue = 0;
-  const now = new Date();
+  const currentTimestamp = new Date();
 
   uniqueEmails.forEach(email => {
     const userInteractions = interactionGroups[email];
@@ -443,7 +522,7 @@ export async function getMyWorkspaceKPIs(userEmail: string) {
     const hasOverdueFollowup = userInteractions.some(i => {
       if (!i.followup_at || i.followup_completed) return false;
       const due = new Date(i.followup_at);
-      return due <= now;
+      return due <= currentTimestamp;
     });
 
     if (hasOverdueFollowup) {
@@ -455,6 +534,9 @@ export async function getMyWorkspaceKPIs(userEmail: string) {
     myActiveLeads: uniqueEmails.length,
     uncontactedLeads,
     followupsDue,
+    callsLoggedToday: callsLoggedToday || 0,
+    followupsAddedToday: followupsAddedToday || 0,
+    interactedToday,
   };
 }
 
@@ -584,6 +666,13 @@ export async function getAlumnusEngagementDetails(alumniEmail: string) {
 
   const orgSettings = await getOrgSettings();
 
+  // Suppression status
+  const { data: suppression } = await supabase
+    .from('alumni_contact_suppression')
+    .select('suppressed_since, reason')
+    .eq('alumni_email', resolvedEmail)
+    .single();
+
   return {
     master,
     profile,
@@ -598,6 +687,8 @@ export async function getAlumnusEngagementDetails(alumniEmail: string) {
     completeness,
     pfProgress,
     orgSettings,
+    isSuppressed: !!suppression,
+    contactSuppressionReason: suppression?.reason || (suppression ? 'do_not_contact' : null),
   };
 }
 
@@ -853,4 +944,290 @@ export async function getKanbanColumnCards(
   }
 
   return paginated;
+}
+
+export async function getKanbanBoardCards(
+  pipelineCode: string,
+  stages: any[],
+  filters: { campus?: string; year?: string; supporter?: string; poc?: string },
+  limit: number = 500
+) {
+  const supabase = await createClient();
+  
+  // 1. Get Pipeline
+  const { data: pipeline } = await supabase
+    .from('pipelines')
+    .select('id')
+    .eq('code', pipelineCode)
+    .single();
+
+  if (!pipeline) return {};
+
+  // 2. Base query for ALL memberships in this pipeline
+  let query = supabase
+    .from('alumni_pipeline_membership')
+    .select('*, alumni_master!inner(email, name, campus, company, phone_number, entry_year)')
+    .eq('pipeline_id', pipeline.id)
+    .eq('is_active', true);
+
+  if (filters.supporter) {
+    query = query.eq('added_by', filters.supporter);
+  }
+  if (filters.poc) {
+    query = query.eq('poc_email', filters.poc);
+  }
+  if (filters.campus) {
+    query = query.eq('alumni_master.campus', filters.campus);
+  }
+  if (filters.year) {
+    query = query.eq('alumni_master.entry_year', filters.year);
+  }
+
+  // 3. Fetch suppressed alumni to attach reason
+  const { data: suppressed } = await supabase
+    .from('alumni_contact_suppression')
+    .select('alumni_email, reason');
+  
+  const suppressedMap = new Map((suppressed || []).map(s => [s.alumni_email, s.reason || 'do_not_contact']));
+
+  const { data: memberships, error } = await query;
+  if (error || !memberships) return {};
+
+  // 4. Do not filter out suppressed for Kanban, we want them visible but badged
+  const activeMemberships = memberships;
+
+  // 5. Calculate days since last contact
+  const emails = activeMemberships.map(m => m.alumni_email);
+  const { data: interactions } = await supabase
+    .from('alumni_interactions')
+    .select('alumni_email, created_at')
+    .in('alumni_email', emails);
+
+  const lastContactMap: Record<string, number> = {};
+  if (interactions) {
+    for (const i of interactions) {
+      const ts = new Date(i.created_at).getTime();
+      if (!lastContactMap[i.alumni_email] || ts > lastContactMap[i.alumni_email]) {
+        lastContactMap[i.alumni_email] = ts;
+      }
+    }
+  }
+
+  // 6. Fetch extra metadata if Pay-Forward
+  const pfProgressMap: Record<string, PayForwardProgress> = {};
+  const salaryMap: Record<string, number> = {};
+  
+  if (pipelineCode === 'pay_forward' && activeMemberships.length > 0) {
+    const { data: pfProg } = await supabase
+      .from('v_pay_forward_progress')
+      .select('*')
+      .in('alumni_email', emails);
+
+    if (pfProg) {
+      for (const row of pfProg) {
+        pfProgressMap[row.alumni_email] = row;
+      }
+    }
+
+    const { data: salaries } = await supabase
+      .from('alumni_salary_records')
+      .select('alumni_email, amount_monthly_inr, recorded_at')
+      .in('alumni_email', emails)
+      .order('recorded_at', { ascending: false });
+
+    if (salaries) {
+      for (const s of salaries) {
+        if (!salaryMap[s.alumni_email]) {
+          salaryMap[s.alumni_email] = Number(s.amount_monthly_inr);
+        }
+      }
+    }
+  }
+
+  // 7. Sort and Group by Stage ID
+  const now = Date.now();
+  const sorted = activeMemberships.sort((a, b) => {
+    const aLast = lastContactMap[a.alumni_email] || 0;
+    const bLast = lastContactMap[b.alumni_email] || 0;
+    const aDays = aLast === 0 ? 9999 : (now - aLast) / (1000 * 60 * 60 * 24);
+    const bDays = bLast === 0 ? 9999 : (now - bLast) / (1000 * 60 * 60 * 24);
+    return bDays - aDays; // descending
+  });
+
+  const cardsByStage: Record<string, any[]> = {};
+  stages.forEach(s => { cardsByStage[s.id] = []; });
+
+  sorted.forEach(m => {
+    let card = m;
+    if (pipelineCode === 'pay_forward') {
+      card = { ...m, pfProgress: pfProgressMap[m.alumni_email], salary: salaryMap[m.alumni_email] };
+    }
+
+    let assignedStageId = m.stage_id;
+    // Handle fallback if stage_id is null but status string matches a stage label
+    if (!assignedStageId) {
+      const match = stages.find(s => s.label === m.status);
+      if (match) assignedStageId = match.id;
+    }
+
+    if (assignedStageId && cardsByStage[assignedStageId] && cardsByStage[assignedStageId].length < limit) {
+      cardsByStage[assignedStageId].push(card);
+    }
+  });
+
+  return cardsByStage;
+}
+
+export async function getPipelineListView(
+  pipelineCode: string,
+  filters: { campus?: string; year?: string; supporter?: string; poc?: string; stage?: string },
+  sort: { field: 'name' | 'stage' | 'campus' | 'year' | 'poc'; direction: 'asc' | 'desc' },
+  page: number,
+  pageSize: number = 25
+) {
+  const supabase = await createClient();
+  
+  // 1. Get Pipeline
+  const { data: pipeline } = await supabase
+    .from('pipelines')
+    .select('id')
+    .eq('code', pipelineCode)
+    .single();
+
+  if (!pipeline) return { data: [], totalCount: 0 };
+
+  // 2. Base query
+  let query = supabase
+    .from('alumni_pipeline_membership')
+    .select('*, alumni_master!inner(email, name, campus, company, phone_number, entry_year), pipeline_stages!inner(id, code, label)', { count: 'exact' })
+    .eq('pipeline_id', pipeline.id)
+    .eq('is_active', true);
+
+  if (filters.supporter) {
+    query = query.eq('added_by', filters.supporter);
+  }
+  if (filters.poc) {
+    query = query.eq('poc_email', filters.poc);
+  }
+  if (filters.campus) {
+    query = query.eq('alumni_master.campus', filters.campus);
+  }
+  if (filters.year) {
+    query = query.eq('alumni_master.entry_year', filters.year);
+  }
+  if (filters.stage) {
+    query = query.eq('stage_id', filters.stage);
+  }
+
+  // 3. Sorting
+  const ascending = sort.direction === 'asc';
+  if (sort.field === 'name') {
+    query = query.order('name', { foreignTable: 'alumni_master', ascending });
+  } else if (sort.field === 'campus') {
+    query = query.order('campus', { foreignTable: 'alumni_master', ascending });
+  } else if (sort.field === 'year') {
+    query = query.order('entry_year', { foreignTable: 'alumni_master', ascending });
+  } else if (sort.field === 'poc') {
+    query = query.order('poc_email', { ascending });
+  } else if (sort.field === 'stage') {
+    query = query.order('label', { foreignTable: 'pipeline_stages', ascending });
+  } else {
+    // Default fallback sort
+    query = query.order('updated_at', { ascending: false });
+  }
+
+  // 4. Pagination
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize - 1;
+  query = query.range(start, end);
+
+  const { data: memberships, count, error } = await query;
+  
+  if (error || !memberships) {
+    console.error("List view fetch error:", error);
+    return { data: [], totalCount: 0 };
+  }
+
+  // 5. Fetch suppressed alumni to attach reason
+  const { data: suppressed } = await supabase
+    .from('alumni_contact_suppression')
+    .select('alumni_email, reason');
+  const suppressedMap = new Map((suppressed || []).map(s => [s.alumni_email, s.reason || 'do_not_contact']));
+
+  const activeMemberships = memberships;
+
+  // 6. Augment with interaction / salary data (Pay-Forward only really needs salary, all might want last contact)
+  const emails = activeMemberships.map(m => m.alumni_email);
+  
+  const { data: interactions } = await supabase
+    .from('alumni_interactions')
+    .select('alumni_email, created_at')
+    .in('alumni_email', emails);
+
+  const lastContactMap: Record<string, number> = {};
+  if (interactions) {
+    for (const i of interactions) {
+      const ts = new Date(i.created_at).getTime();
+      const em = i.alumni_email;
+      if (!lastContactMap[em] || ts > lastContactMap[em]) {
+        lastContactMap[em] = ts;
+      }
+    }
+  }
+
+  let salaryMap: Record<string, number> = {};
+  let pfProgressMap: Record<string, any> = {};
+
+  if (pipelineCode === 'pay_forward') {
+    const { data: salaries } = await supabase
+      .from('alumni_salary_records')
+      .select('alumni_email, salary_amount')
+      .in('alumni_email', emails)
+      .order('effective_date', { ascending: false });
+
+    if (salaries) {
+      for (const s of salaries) {
+        if (!salaryMap[s.alumni_email]) {
+          salaryMap[s.alumni_email] = Number(s.salary_amount);
+        }
+      }
+    }
+
+    const { data: pfCaps } = await supabase
+      .from('alumni_pf_caps')
+      .select('alumni_email, target_amount, total_paid, is_fulfilled')
+      .in('alumni_email', emails);
+
+    if (pfCaps) {
+      for (const c of pfCaps) {
+        pfProgressMap[c.alumni_email] = c;
+      }
+    }
+  }
+
+  // 7. Map to final card shape
+  const now = Date.now();
+  const finalData = activeMemberships.map(m => {
+    let days = -1;
+    if (lastContactMap[m.alumni_email]) {
+      days = Math.floor((now - lastContactMap[m.alumni_email]) / (1000 * 60 * 60 * 24));
+    }
+    
+    // For fallback salary if record missing
+    const fallbackSal = m.alumni_master?.starting_salary ? (Number(m.alumni_master.starting_salary) / 12) : 0;
+    
+    return {
+      ...m,
+      stage: m.pipeline_stages,
+      days_since_last_contact: days,
+      salary: salaryMap[m.alumni_email] || fallbackSal,
+      pfProgress: pfProgressMap[m.alumni_email] || null,
+      contactSuppressionReason: suppressedMap.get(m.alumni_email) || null
+    };
+  });
+
+  return {
+    data: finalData,
+    totalCount: count || 0
+  };
 }

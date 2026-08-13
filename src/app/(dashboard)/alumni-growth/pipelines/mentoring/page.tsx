@@ -5,7 +5,7 @@ import MentoringClient from './MentoringClient';
 
 export default async function MentoringPage() {
   const { pipeline, stages } = await getPipelineBoardData('mentoring');
-  const facets = await getKanbanFacets();
+  const facets = await getKanbanFacets('mentoring');
   const userEmail = (await getSupabaseUserEmail()) || 'staff@navgurukul.org';
 
   return (

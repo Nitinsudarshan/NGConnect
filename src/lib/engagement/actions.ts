@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { checkAccess, checkClusterAccess } from '@/lib/permissions';
 import { auth } from '@/lib/auth';
 import { getUserRole, getSupabaseUserEmail } from '@/lib/roles';
-import { LogInteractionPayload, OutcomeMappingRow, PipelineSuggestion } from '@/types/engagement';
+import { LogInteractionPayload, OutcomeMappingRow, PipelineSuggestion, PipelineStage } from '@/types/engagement';
 import { revalidatePath } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase/admin';
 
@@ -175,7 +175,7 @@ export async function logInteractionAction(payload: LogInteractionPayload) {
 
     // 6. Calculate Pipeline suggestions if discussed
     const suggestions: PipelineSuggestion[] = [];
-    if (outcome.code === 'discussed') {
+    if (outcome.is_substantive_conversation) {
       if (payload.placement_interest) {
         suggestions.push({
           pipelineCode: 'placement',
@@ -375,6 +375,23 @@ export async function updatePipelineMembershipAction(payload: {
       }
     }
 
+    // Fallback: If no stage is resolved, assign them to the first active stage in the pipeline
+    if (!finalStageId) {
+      const { data: firstStage } = await supabase
+        .from('pipeline_stages')
+        .select('id, label')
+        .eq('pipeline_id', pipeline.id)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      
+      if (firstStage) {
+        finalStageId = firstStage.id;
+        finalStatus = firstStage.label;
+      }
+    }
+
     const recordToUpsert: any = {
       alumni_email: payload.alumni_email,
       pipeline_id: pipeline.id,
@@ -382,6 +399,29 @@ export async function updatePipelineMembershipAction(payload: {
       added_by: payload.added_by,
       is_active: isActive,
     };
+
+    if (payload.pipeline_code === 'mentoring' || payload.pipeline_code === 'placement') {
+      const siblingCode = payload.pipeline_code === 'mentoring' ? 'placement' : 'mentoring';
+      const { data: siblingPipeline } = await supabase
+        .from('pipelines')
+        .select('id')
+        .eq('code', siblingCode)
+        .single();
+        
+      if (siblingPipeline) {
+        const { data: siblingMembership } = await supabase
+          .from('alumni_pipeline_membership')
+          .select('poc_email')
+          .eq('alumni_email', payload.alumni_email)
+          .eq('pipeline_id', siblingPipeline.id)
+          .not('poc_email', 'is', null)
+          .maybeSingle();
+
+        if (siblingMembership?.poc_email) {
+          recordToUpsert.poc_email = siblingMembership.poc_email;
+        }
+      }
+    }
 
     if (finalStageId) {
       recordToUpsert.stage_id = finalStageId;
@@ -656,6 +696,7 @@ export async function manageOutcomeAction(payload: {
   label: string;
   requires_followup_datetime?: boolean;
   is_terminal?: boolean;
+  is_substantive_conversation?: boolean;
   is_active?: boolean;
   archive?: boolean;
 }) {
@@ -675,6 +716,7 @@ export async function manageOutcomeAction(payload: {
         label: payload.label,
         requires_followup_datetime: payload.requires_followup_datetime ?? false,
         is_terminal: payload.is_terminal ?? false,
+        is_substantive_conversation: payload.is_substantive_conversation ?? false,
         is_custom: true,
         is_active: payload.is_active ?? true,
         archived_at: payload.archive ? new Date().toISOString() : null,
@@ -775,7 +817,7 @@ export async function completeFollowupAction(interactionId: string) {
   }
 }
 
-import { getKanbanColumnCards, getPipelineEligibleStaff, getCallReasons } from './queries';
+import { getKanbanColumnCards, getKanbanBoardCards, getPipelineEligibleStaff, getCallReasons, getPipelineListView } from './queries';
 
 export async function getCallReasonsAction() {
   try {
@@ -818,6 +860,27 @@ export async function getKanbanColumnCardsAction(
   }
 }
 
+export async function getKanbanBoardCardsAction(
+  pipelineCode: string,
+  stages: any[],
+  filters: { campus?: string; year?: string; supporter?: string; poc?: string }
+) {
+  try {
+    const role = await getUserRole();
+    const { userId } = await auth();
+    const hasAccess = await checkAccess(userId, 'crm.workspace', 'view');
+    if (!hasAccess && role !== 'Admin' && role !== 'Super Admin') {
+      return { success: false, error: 'Unauthorized: insufficient permissions' };
+    }
+    
+    // Fetch all cards for all stages at once, limit to 500 per stage to prevent memory overflow
+    const cardsByStage = await getKanbanBoardCards(pipelineCode, stages, filters, 500);
+    return { success: true, data: cardsByStage };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
 export async function transferPocAction(payload: {
   alumni_email: string;
   pipeline_code: string;
@@ -828,20 +891,26 @@ export async function transferPocAction(payload: {
   try {
     const supabase = await createClient();
 
-    const { data: pipeline } = await supabase
-      .from('pipelines')
-      .select('id')
-      .eq('code', payload.pipeline_code)
-      .single();
+    const targetPipelines = payload.pipeline_code === 'career_support' 
+      ? ['mentoring', 'placement'] 
+      : [payload.pipeline_code];
 
-    if (!pipeline) {
+    const { data: pipelines } = await supabase
+      .from('pipelines')
+      .select('id, code')
+      .in('code', targetPipelines);
+
+    if (!pipelines || pipelines.length === 0) {
       return { success: false, error: 'Pipeline not found' };
     }
+
+    // For career_support, checking eligibility on 'mentoring' is sufficient as they are paired
+    const checkPipelineId = pipelines.find(p => p.code === (payload.pipeline_code === 'career_support' ? 'mentoring' : payload.pipeline_code))?.id || pipelines[0].id;
 
     const { data: eligibility } = await supabase
       .from('pipeline_poc_eligibility')
       .select('id')
-      .eq('pipeline_id', pipeline.id)
+      .eq('pipeline_id', checkPipelineId)
       .eq('staff_email', payload.new_poc_email)
       .eq('is_active', true)
       .single();
@@ -850,28 +919,33 @@ export async function transferPocAction(payload: {
       return { success: false, error: 'Selected staff member is not eligible to own leads in this pipeline' };
     }
 
-    const { data: membership } = await supabase
-      .from('alumni_pipeline_membership')
-      .select('id, poc_email')
-      .eq('alumni_email', payload.alumni_email)
-      .eq('pipeline_id', pipeline.id)
-      .single();
+    const pipelineIds = pipelines.map(p => p.id);
 
-    if (!membership) {
+    const { data: memberships } = await supabase
+      .from('alumni_pipeline_membership')
+      .select('id, poc_email, pipeline_id')
+      .eq('alumni_email', payload.alumni_email)
+      .in('pipeline_id', pipelineIds);
+
+    if (!memberships || memberships.length === 0) {
       return { success: false, error: 'Alumnus is not active in this pipeline' };
     }
 
-    const oldPoc = membership.poc_email;
-    
     const role = await getUserRole();
-    if (role !== 'Admin' && role !== 'Super Admin' && oldPoc !== payload.transferred_by) {
-      return { success: false, error: 'Unauthorized: Only the current owner or an Admin can transfer this lead' };
+    const isAdmin = role === 'Admin' || role === 'Super Admin';
+
+    for (const membership of memberships) {
+      if (!isAdmin && membership.poc_email !== payload.transferred_by) {
+         return { success: false, error: 'Unauthorized: Only the current owner or an Admin can transfer this lead' };
+      }
     }
+
+    const membershipIds = memberships.map(m => m.id);
 
     const { error: updateErr } = await supabase
       .from('alumni_pipeline_membership')
       .update({ poc_email: payload.new_poc_email })
-      .eq('id', membership.id);
+      .in('id', membershipIds);
 
     if (updateErr) {
       return { success: false, error: 'Failed to transfer lead' };
@@ -888,8 +962,15 @@ export async function transferPocAction(payload: {
 
     revalidatePath(`/alumni-growth/alumni/${encodeURIComponent(payload.alumni_email)}`);
     revalidatePath(`/engagement/alumni/${encodeURIComponent(payload.alumni_email)}`);
-    revalidatePath(`/alumni-growth/pipelines/${payload.pipeline_code}`);
-    revalidatePath(`/engagement/pipelines/${payload.pipeline_code}`);
+    if (payload.pipeline_code === 'career_support') {
+      revalidatePath(`/alumni-growth/pipelines/mentoring`);
+      revalidatePath(`/engagement/pipelines/mentoring`);
+      revalidatePath(`/alumni-growth/pipelines/placement`);
+      revalidatePath(`/engagement/pipelines/placement`);
+    } else {
+      revalidatePath(`/alumni-growth/pipelines/${payload.pipeline_code}`);
+      revalidatePath(`/engagement/pipelines/${payload.pipeline_code}`);
+    }
 
     return { success: true };
   } catch (err: any) {
@@ -928,3 +1009,109 @@ export async function saveOutcomeMappingAction(rows: OutcomeMappingRow[], action
   }
 }
 
+export async function manageCallReasonAction(payload: {
+  id?: string;
+  code: string;
+  label: string;
+  is_active?: boolean;
+  archive?: boolean;
+}) {
+  try {
+    const role = await getUserRole();
+    if (role !== 'Admin' && role !== 'Super Admin') {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    const supabase = await createClient();
+    
+    if (payload.archive && payload.id) {
+      const { error } = await supabase.from('call_reasons').delete().eq('id', payload.id);
+      if (error) return { success: false, error: error.message };
+    } else {
+      const { error } = await supabase.from('call_reasons').upsert(
+        {
+          id: payload.id,
+          code: payload.code,
+          label: payload.label,
+          is_active: payload.is_active ?? true,
+        },
+        { onConflict: 'code' }
+      );
+      if (error) return { success: false, error: error.message };
+    }
+
+    revalidatePath('/alumni-growth/settings');
+    
+    const action = payload.archive ? 'delete' : (payload.id ? 'update' : 'create');
+    await logAlumniGrowthAudit('call_reasons', null, action as any, `Action ${action} on call reason ${payload.label}`);
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function managePipelinePocAction(payload: {
+  id?: string;
+  pipeline_id: string;
+  staff_email: string;
+  is_active?: boolean;
+  archive?: boolean;
+}) {
+  try {
+    const role = await getUserRole();
+    if (role !== 'Admin' && role !== 'Super Admin') {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    const supabase = await createClient();
+    
+    if (payload.archive && payload.id) {
+      const { error } = await supabase.from('pipeline_poc_eligibility').delete().eq('id', payload.id);
+      if (error) return { success: false, error: error.message };
+    } else {
+      const { error } = await supabase.from('pipeline_poc_eligibility').upsert(
+        {
+          id: payload.id,
+          pipeline_id: payload.pipeline_id,
+          staff_email: payload.staff_email,
+          is_active: payload.is_active ?? true,
+        },
+        { onConflict: 'pipeline_id,staff_email' }
+      );
+      if (error) return { success: false, error: error.message };
+    }
+
+    revalidatePath('/alumni-growth/settings');
+    
+    const action = payload.archive ? 'delete' : (payload.id ? 'update' : 'create');
+    await logAlumniGrowthAudit('pipeline_poc_eligibility', null, action as any, `Action ${action} on pipeline POC ${payload.staff_email}`);
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function getPipelineListViewAction(
+  pipelineCode: string,
+  filters: { campus?: string; year?: string; supporter?: string; poc?: string; stage?: string },
+  sort: { field: 'name' | 'stage' | 'campus' | 'year' | 'poc'; direction: 'asc' | 'desc' },
+  page: number,
+  pageSize: number = 25
+) {
+  try {
+    const role = await getUserRole();
+    const { userId } = await auth();
+    const hasAccess = await checkAccess(userId, 'crm.workspace', 'view');
+    if (!hasAccess && role !== 'Admin' && role !== 'Super Admin') {
+      return { success: false, error: 'Unauthorized: insufficient permissions' };
+    }
+
+    const { data, totalCount } = await getPipelineListView(pipelineCode, filters, sort, page, pageSize);
+    return { success: true, data, totalCount };
+  } catch (error: any) {
+    console.error("Failed to fetch pipeline list view:", error);
+    return { success: false, error: error.message };
+  }
+}

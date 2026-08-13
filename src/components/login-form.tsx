@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { MiniLoader } from "./mini-loader";
 import { LoadingSpinner } from "./loading-view";
 import { createClient } from "@/lib/supabase/client";
 
@@ -37,7 +36,7 @@ export function LoginForm() {
         <div className="p-7 md:p-8">
           <header className="text-center mb-7">
             <div className="flex justify-center mb-4">
-              <MiniLoader />
+              <LoadingSpinner size="md" />
             </div>
             <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
               Welcome

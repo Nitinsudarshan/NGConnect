@@ -1,7 +1,7 @@
 -- 1. Pipeline POC Eligibility
 CREATE TABLE IF NOT EXISTS public.pipeline_poc_eligibility (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  pipeline_id TEXT NOT NULL REFERENCES public.pipelines(id) ON DELETE CASCADE,
+  pipeline_id UUID NOT NULL REFERENCES public.pipelines(id) ON DELETE CASCADE,
   staff_email TEXT NOT NULL,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

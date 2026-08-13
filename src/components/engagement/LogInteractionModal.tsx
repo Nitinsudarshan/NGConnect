@@ -25,6 +25,7 @@ import { InteractionOutcome, PipelineSuggestion, ProfileCompleteness } from "@/t
 import { logInteractionAction, updatePipelineMembershipAction, getCallReasonsAction } from "@/lib/engagement/actions";
 import { toast } from "sonner";
 import { PhoneCall, Calendar, AlertCircle, CheckCircle2, DollarSign, UserCheck, Linkedin, Building2, HelpCircle } from "lucide-react";
+import { FollowupDateSelector } from "./FollowupDateSelector";
 
 interface LogInteractionModalProps {
   isOpen: boolean;
@@ -83,8 +84,64 @@ export default function LogInteractionModal({
   }, [isOpen]);
 
   const selectedOutcome = outcomes.find((o) => o.id === selectedOutcomeId);
-  const requiresFollowup = selectedOutcome?.requires_followup_datetime ?? false;
-  const isDiscussed = selectedOutcome?.code === "discussed";
+  const isDiscussed = 
+    selectedOutcome?.is_substantive_conversation || 
+    selectedOutcome?.code === "discussed" || 
+    selectedOutcome?.code === "connected_discussed" ||
+    selectedOutcome?.code === "replied_pipeline_add" ||
+    selectedOutcome?.code === "email_received";
+
+  const suppressionReason = masterData?.contactSuppressionReason;
+  const isSuppressed = !!suppressionReason;
+  const allowedChannels = isSuppressed ? ["email"] : ["call", "message", "email"];
+
+  // Ensure selected channel is valid
+  React.useEffect(() => {
+    if (!allowedChannels.includes(interactionChannel)) {
+      setInteractionChannel(allowedChannels[0]);
+    }
+  }, [allowedChannels, interactionChannel]);
+
+  const CHANNEL_OUTCOMES: Record<string, string[]> = {
+    call: ['invalid_number', 'no_answer', 'callback_requested', 'discussed', 'connected_declined', 'connected_not_interested', 'do_not_contact'],
+    message: ['invalid_number', 'no_answer', 'replied_requested_callback', 'replied_not_interested', 'do_not_contact', 'replied_pipeline_add'],
+    email: ['email_received', 'email_sent']
+  };
+
+  const visibleOutcomes = outcomes.filter(o => 
+    CHANNEL_OUTCOMES[interactionChannel]?.includes(o.code)
+  );
+
+  // Auto-deselect outcome if it's no longer valid for the channel
+  React.useEffect(() => {
+    if (selectedOutcomeId && !visibleOutcomes.find(o => o.id === selectedOutcomeId)) {
+      setSelectedOutcomeId("");
+    }
+  }, [interactionChannel, selectedOutcomeId, visibleOutcomes]);
+
+  const getFollowupConfig = () => {
+    if (!selectedOutcome) return { mode: 'hidden' as const };
+    const code = selectedOutcome.code;
+    
+    if (interactionChannel === 'call') {
+      if (code === 'no_answer' || code === 'connected_declined') return { mode: 'auto' as const, autoDays: 3 };
+      if (code === 'connected_not_interested') return { mode: 'auto' as const, autoDays: 180 };
+      if (code === 'discussed' || code === 'connected_discussed') return { mode: 'custom' as const };
+    }
+    
+    if (interactionChannel === 'message') {
+      if (code === 'replied_not_interested') return { mode: 'auto' as const, autoDays: 180 };
+      if (code === 'no_answer') return { mode: 'custom' as const };
+    }
+
+    if (interactionChannel === 'email' && code === 'email_sent') {
+       return { mode: 'hidden' as const };
+    }
+
+    return selectedOutcome.requires_followup_datetime ? { mode: 'custom' as const } : { mode: 'optional' as const };
+  };
+
+  const followupConfig = getFollowupConfig();
 
   const missingCompany = completeness?.missing_company ?? !masterData?.company;
   const missingSalary = completeness?.missing_salary ?? (!masterData?.starting_salary && !salaryAmount);
@@ -147,7 +204,7 @@ export default function LogInteractionModal({
       return;
     }
 
-    if (requiresFollowup && (!followupAt || followupAt.trim() === "")) {
+    if (followupConfig.mode === 'custom' && (!followupAt || followupAt.trim() === "")) {
       toast.error("This outcome requires a follow-up date and time");
       return;
     }
@@ -273,24 +330,6 @@ export default function LogInteractionModal({
           <form onSubmit={handleSubmit} className="space-y-5 pt-2">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground flex items-center gap-1">
-                  Outcome Tag <span className="text-destructive">*</span>
-                </label>
-                <Select value={selectedOutcomeId} onValueChange={setSelectedOutcomeId}>
-                  <SelectTrigger className="h-10 rounded-xl">
-                    <SelectValue placeholder="Select outcome..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {outcomes.map((o) => (
-                      <SelectItem key={o.id} value={o.id}>
-                        {o.label} {o.requires_followup_datetime ? " (Requires Callback Date)" : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">Call Reason</label>
                 <Select value={callReasonId} onValueChange={setCallReasonId}>
                   <SelectTrigger className="h-10 rounded-xl">
@@ -313,11 +352,27 @@ export default function LogInteractionModal({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="call">Phone Call</SelectItem>
-                    <SelectItem value="message">Message</SelectItem>
-                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                    <SelectItem value="email">Email</SelectItem>
-                    <SelectItem value="in_person">In Person</SelectItem>
+                    {allowedChannels.includes("call") && <SelectItem value="call">Phone Call</SelectItem>}
+                    {allowedChannels.includes("message") && <SelectItem value="message">Message</SelectItem>}
+                    {allowedChannels.includes("email") && <SelectItem value="email">Email</SelectItem>}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground flex items-center gap-1">
+                  Outcome Tag <span className="text-destructive">*</span>
+                </label>
+                <Select value={selectedOutcomeId} onValueChange={setSelectedOutcomeId}>
+                  <SelectTrigger className="h-10 rounded-xl">
+                    <SelectValue placeholder="Select outcome..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {visibleOutcomes.map((o) => (
+                      <SelectItem key={o.id} value={o.id}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -417,36 +472,12 @@ export default function LogInteractionModal({
               </div>
             )}
 
-            {/* Mandatory Followup Datetime */}
-            {requiresFollowup && (
-              <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-destructive">
-                  <AlertCircle className="w-4 h-4" />
-                  Mandatory Follow-up Date & Time Required
-                </div>
-                <Input
-                  type="datetime-local"
-                  value={followupAt}
-                  onChange={(e) => setFollowupAt(e.target.value)}
-                  className="h-10 bg-background rounded-xl"
-                  required
-                />
-              </div>
-            )}
-
-            {!requiresFollowup && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-muted-foreground" /> Optional Follow-up Date & Time
-                </label>
-                <Input
-                  type="datetime-local"
-                  value={followupAt}
-                  onChange={(e) => setFollowupAt(e.target.value)}
-                  className="h-10 rounded-xl"
-                />
-              </div>
-            )}
+            <FollowupDateSelector 
+              value={followupAt} 
+              onChange={setFollowupAt} 
+              mode={followupConfig.mode} 
+              autoDays={followupConfig.autoDays} 
+            />
 
             {/* Interest Tags if Connected - Discussed */}
             {isDiscussed && (

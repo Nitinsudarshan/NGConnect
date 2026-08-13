@@ -51,7 +51,14 @@ interface WorkspaceClientProps {
   outcomes: InteractionOutcome[];
   settings: OrgSettings;
   userEmail: string;
-  myWorkspaceKPIs: { myActiveLeads: number; uncontactedLeads: number; followupsDue: number; };
+  myWorkspaceKPIs: { 
+    myActiveLeads: number; 
+    uncontactedLeads: number; 
+    followupsDue: number;
+    callsLoggedToday: number;
+    followupsAddedToday: number;
+    interactedToday: number;
+  };
 }
 
 export default function WorkspaceClient({
@@ -160,7 +167,7 @@ export default function WorkspaceClient({
       />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
         {/* My Active Leads */}
         <div className="bg-card/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
           <div className="flex justify-between items-start">
@@ -206,6 +213,54 @@ export default function WorkspaceClient({
           </div>
           <div className="mt-4 flex items-center text-sm text-slate-500 font-medium">
             Scheduled for today or overdue
+          </div>
+        </div>
+
+        {/* Calls Logged (Today) */}
+        <div className="bg-card/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Calls Logged (Today)</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{myWorkspaceKPIs.callsLoggedToday}</p>
+            </div>
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40 transition-colors">
+              <PhoneCall className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center text-sm text-slate-500 font-medium">
+            System-wide today
+          </div>
+        </div>
+
+        {/* Follow-ups Added (Today) */}
+        <div className="bg-card/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Follow-ups Added (Today)</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{myWorkspaceKPIs.followupsAddedToday}</p>
+            </div>
+            <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40 transition-colors">
+              <CalendarClock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center text-sm text-slate-500 font-medium">
+            System-wide today
+          </div>
+        </div>
+
+        {/* Interacted (Today) */}
+        <div className="bg-card/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Interacted (Today)</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{myWorkspaceKPIs.interactedToday}</p>
+            </div>
+            <div className="p-2 bg-fuchsia-50 dark:bg-fuchsia-900/20 rounded-lg group-hover:bg-fuchsia-100 dark:group-hover:bg-fuchsia-900/40 transition-colors">
+              <Briefcase className="w-5 h-5 text-fuchsia-600 dark:text-fuchsia-400" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center text-sm text-slate-500 font-medium">
+            Unique alumni system-wide
           </div>
         </div>
       </div>
@@ -325,8 +380,18 @@ export default function WorkspaceClient({
                         {scoreResult.score}% Score
                       </Badge>
                     </td>
-                    <td className="px-3 py-2.5 font-mono text-[11px] text-muted-foreground">
-                      {item.phone_number || "—"}
+                    <td className="px-3 py-2.5">
+                      {item.contactSuppressionReason === 'invalid_number' ? (
+                        <Badge variant="destructive" className="text-[9px] px-1.5 py-0 bg-red-100 text-red-700 hover:bg-red-200 shadow-none border-red-200">
+                          Incorrect Number
+                        </Badge>
+                      ) : item.contactSuppressionReason === 'do_not_contact' ? (
+                        <Badge variant="destructive" className="text-[9px] px-1.5 py-0 bg-red-100 text-red-700 hover:bg-red-200 shadow-none border-red-200">
+                          Do Not Call
+                        </Badge>
+                      ) : (
+                        <span className="font-mono text-[11px] text-muted-foreground">{item.phone_number || "—"}</span>
+                      )}
                     </td>
                     <td className="px-3 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-2">

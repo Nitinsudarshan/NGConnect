@@ -1,5 +1,5 @@
 import React from 'react';
-import { getContributionTypes, getInteractionOutcomes, getOrgSettings, getOutcomeMapping, getPipelines, getPipelineStages } from '@/lib/engagement/queries';
+import { getContributionTypes, getInteractionOutcomes, getOrgSettings, getOutcomeMapping, getPipelines, getPipelineStages, getCallReasons, getAllPipelinePocEligibility } from '@/lib/engagement/queries';
 import { getSupabaseUserEmail, getUserRole } from '@/lib/roles';
 import { getMentors, getLearningCenterAuditLogs } from '@/lib/learning-center/queries';
 import { getUserPermissions } from '@/lib/permissions';
@@ -22,6 +22,8 @@ export default async function SettingsPage() {
     mentors,
     auditLogs,
     outcomeMappings,
+    callReasons,
+    pipelinePocEligibility,
   ] = await Promise.all([
     getOrgSettings(),
     getInteractionOutcomes(),
@@ -33,6 +35,8 @@ export default async function SettingsPage() {
     getMentors(),
     getLearningCenterAuditLogs(),
     getOutcomeMapping(),
+    getCallReasons(),
+    getAllPipelinePocEligibility(),
   ]);
 
   const { userId } = await auth();
@@ -51,6 +55,8 @@ export default async function SettingsPage() {
       auditLogs={auditLogs}
       initialOutcomeMappings={outcomeMappings}
       permissions={permissions}
+      callReasons={callReasons}
+      pipelinePocEligibility={pipelinePocEligibility}
     />
   );
 }

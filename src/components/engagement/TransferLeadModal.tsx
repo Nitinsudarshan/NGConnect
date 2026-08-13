@@ -86,17 +86,18 @@ export default function TransferLeadModal({ isOpen, onClose, alumniEmail, alumni
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-3">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold">Select Pipeline</label>
+            <label className="text-xs font-semibold">Select Lead Type</label>
             <Select value={pipelineCode} onValueChange={setPipelineCode}>
               <SelectTrigger className="text-xs h-9">
-                <SelectValue placeholder="Select active pipeline" />
+                <SelectValue placeholder="Select lead type" />
               </SelectTrigger>
               <SelectContent>
-                {memberships.map(m => (
-                  <SelectItem key={m.pipelines?.code} value={m.pipelines?.code}>
-                    {m.pipelines?.label}
-                  </SelectItem>
-                ))}
+                {memberships.some(m => m.pipelines?.code === 'pay_forward') && (
+                  <SelectItem value="pay_forward">Pay-Forward</SelectItem>
+                )}
+                {memberships.some(m => m.pipelines?.code === 'mentoring' || m.pipelines?.code === 'placement') && (
+                  <SelectItem value="career_support">Career Support (Mentoring & Placement)</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>

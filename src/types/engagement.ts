@@ -59,18 +59,9 @@ export interface InteractionOutcome {
   label: string;
   requires_followup_datetime: boolean;
   is_terminal: boolean;
+  is_substantive_conversation: boolean;
   is_custom: boolean;
   is_active: boolean;
-  created_at?: string;
-  archived_at?: string | null;
-}
-
-export interface CallReason {
-  id: string;
-  code: string;
-  label: string;
-  is_active: boolean;
-  is_custom: boolean;
   created_at?: string;
   archived_at?: string | null;
 }
@@ -84,6 +75,7 @@ export interface PipelineStage {
   is_terminal: boolean;
   is_custom: boolean;
   is_active: boolean;
+  requires_outcome: boolean;
   created_at?: string;
   archived_at?: string | null;
 }
@@ -93,6 +85,23 @@ export interface Pipeline {
   code: 'pay_forward' | 'mentoring' | 'placement' | string;
   label: string;
   is_active: boolean;
+}
+
+export interface CallReason {
+  id: string;
+  code: string;
+  label: string;
+  is_active: boolean;
+  sort_order?: number;
+  created_at?: string;
+}
+
+export interface PipelinePocEligibility {
+  id: string;
+  pipeline_id: string;
+  staff_email: string;
+  is_active: boolean;
+  created_at?: string;
 }
 
 export interface AlumniPipelineMembership {

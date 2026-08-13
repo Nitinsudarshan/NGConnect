@@ -42,6 +42,14 @@ export function EditLogTab({ logs, sourceFilter }: EditLogTabProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [entityFilter, setEntityFilter] = useState<string>("all")
   const [actionFilter, setActionFilter] = useState<string>("all")
+  const [page, setPage] = useState(1)
+
+  const ITEMS_PER_PAGE = 10
+
+  // Reset page when filters change
+  React.useEffect(() => {
+    setPage(1)
+  }, [searchTerm, entityFilter, actionFilter])
 
   // Pre-filter by source
   const sourceLogs = logs.filter((log) => {
@@ -61,6 +69,9 @@ export function EditLogTab({ logs, sourceFilter }: EditLogTabProps) {
 
     return matchesSearch && matchesEntity && matchesAction
   })
+
+  const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE)
+  const currentLogs = filteredLogs.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
 
   const getEntityBadge = (entityType: string) => {
     switch (entityType) {
@@ -245,7 +256,7 @@ export function EditLogTab({ logs, sourceFilter }: EditLogTabProps) {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredLogs.map((log) => (
+                  currentLogs.map((log) => (
                     <TableRow key={log.id}>
                       <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
@@ -270,6 +281,32 @@ export function EditLogTab({ logs, sourceFilter }: EditLogTabProps) {
               </TableBody>
             </Table>
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-2 text-sm text-muted-foreground px-2">
+              <div>
+                Showing {(page - 1) * ITEMS_PER_PAGE + 1} to {Math.min(page * ITEMS_PER_PAGE, filteredLogs.length)} of {filteredLogs.length} entries
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -5,7 +5,7 @@ import PlacementClient from './PlacementClient';
 
 export default async function PlacementPage() {
   const { pipeline, stages } = await getPipelineBoardData('placement');
-  const facets = await getKanbanFacets();
+  const facets = await getKanbanFacets('placement');
   const userEmail = (await getSupabaseUserEmail()) || 'staff@navgurukul.org';
 
   return (

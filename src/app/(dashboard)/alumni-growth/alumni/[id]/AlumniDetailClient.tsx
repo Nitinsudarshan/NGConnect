@@ -143,6 +143,17 @@ export default function AlumniDetailClient({
   const cumulativeLearningHours = courseraTotalHours + mentoringHours + otherLearningHours;
   const cumulativeLearningHoursFormatted = `${cumulativeLearningHours.toFixed(1)} hrs`;
 
+  let payForwardOwner: string | null = null;
+  let mentoringOwner: string | null = null;
+  let placementOwner: string | null = null;
+
+  memberships.forEach((m: any) => {
+    if (m.pipelines?.code === 'pay_forward') payForwardOwner = m.poc_email || null;
+    if (m.pipelines?.code === 'mentoring') mentoringOwner = m.poc_email || null;
+    if (m.pipelines?.code === 'placement') placementOwner = m.poc_email || null;
+  });
+  const careerSupportOwner = mentoringOwner || placementOwner || null;
+
   const profileScoreResult = calculateProfileScore(
     {
       name: master.name,
@@ -232,29 +243,51 @@ export default function AlumniDetailClient({
       />
 
       {/* Active Pipeline Badges & Status Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-card border border-border/80 shadow-2xs">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Active Pipelines:</span>
-          {memberships.map((m: any) => (
-            <Badge key={m.id} className="rounded-lg px-2.5 py-0.5 text-[11px] font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-              {m.pipelines?.label} ({m.status})
+      <div className="flex flex-col gap-3 p-3 rounded-xl bg-card border border-border/80 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Active Pipelines:</span>
+            {memberships.map((m: any) => (
+              <Badge key={m.id} className="rounded-lg px-2.5 py-0.5 text-[11px] font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                {m.pipelines?.label} ({m.status})
+              </Badge>
+            ))}
+            {memberships.length === 0 && (
+              <span className="text-xs text-muted-foreground italic">No active pipeline memberships</span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Badge className={`rounded-full text-[11px] font-bold px-2.5 py-0.5 ${profileScoreResult.badgeColor}`}>
+              Profile Score: {profileScoreResult.score}%
             </Badge>
-          ))}
-          {memberships.length === 0 && (
-            <span className="text-xs text-muted-foreground italic">No active pipeline memberships</span>
-          )}
+            <Badge variant="outline" className="rounded-full text-[11px] font-semibold px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+              Status: {master.status || "Active"}
+            </Badge>
+            <Badge variant="outline" className="rounded-full text-[11px] font-semibold px-2.5 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20">
+              Active Member: {isActiveMember ? "YES" : "NO"}
+            </Badge>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Badge className={`rounded-full text-[11px] font-bold px-2.5 py-0.5 ${profileScoreResult.badgeColor}`}>
-            Profile Score: {profileScoreResult.score}%
-          </Badge>
-          <Badge variant="outline" className="rounded-full text-[11px] font-semibold px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
-            Status: {master.status || "Active"}
-          </Badge>
-          <Badge variant="outline" className="rounded-full text-[11px] font-semibold px-2.5 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20">
-            Active Member: {isActiveMember ? "YES" : "NO"}
-          </Badge>
+        {/* Ownership Slots */}
+        <div className="flex items-center gap-4 pt-2 border-t border-border/40">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Pay-Forward Owner:</span>
+            {payForwardOwner ? (
+              <Badge variant="outline" className="text-[11px] font-medium px-2 py-0.5">{payForwardOwner}</Badge>
+            ) : (
+              <span className="text-[11px] text-muted-foreground italic">Unassigned</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Career Support Owner:</span>
+            {careerSupportOwner ? (
+              <Badge variant="outline" className="text-[11px] font-medium px-2 py-0.5">{careerSupportOwner}</Badge>
+            ) : (
+              <span className="text-[11px] text-muted-foreground italic">Unassigned</span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -400,7 +433,7 @@ export default function AlumniDetailClient({
                         <div key={s.id} className="py-1 px-2 flex items-center justify-between text-xs">
                           <div>
                             <div className="font-bold text-foreground text-[10px]">₹{s.amount} ({s.unit?.toUpperCase()})</div>
-                            <div className="text-[9px] text-muted-foreground font-mono">{new Date(s.recorded_at).toLocaleDateString()}</div>
+                            <div suppressHydrationWarning className="text-[9px] text-muted-foreground font-mono">{new Date(s.recorded_at).toLocaleDateString()}</div>
                           </div>
                           <span className="font-bold text-emerald-600 dark:text-emerald-400 text-[11px]">
                             ₹{formatINR(s.amount_monthly_inr)}/mo
@@ -472,7 +505,7 @@ export default function AlumniDetailClient({
                   <div>
                     <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">Last Touchpoint</CardTitle>
                     {lastInteraction && (
-                      <span className="text-[9px] text-muted-foreground font-mono block">
+                      <span suppressHydrationWarning className="text-[9px] text-muted-foreground font-mono block">
                         {new Date(lastInteraction.created_at).toLocaleDateString()}
                       </span>
                     )}

@@ -5,7 +5,7 @@ import PayForwardClient from './PayForwardClient';
 
 export default async function PayForwardPage() {
   const { pipeline, stages } = await getPipelineBoardData('pay_forward');
-  const facets = await getKanbanFacets();
+  const facets = await getKanbanFacets('pay_forward');
   const userEmail = (await getSupabaseUserEmail()) || 'staff@navgurukul.org';
 
   return (

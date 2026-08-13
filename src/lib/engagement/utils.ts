@@ -94,3 +94,27 @@ export function calculateProfileScore(
 
   return { score, stage, badgeColor, missingFields };
 }
+
+export function getStageBadgeVariant(count: number, stageCode: string): "default" | "secondary" | "destructive" | "success" | "warning" | "danger" | "outline" {
+  if (count === 0) return "secondary";
+
+  const positive = [
+    'committed_not_started', 'paying_monthly', 'completed', 'completed_continuing', // Pay Forward
+    'matched_with_mentor', 'in_session', // Mentoring
+    'interviewing', 'placed' // Placement
+  ];
+  const warning = [
+    'paying_irregular', 'paused_expected_return' // Pay Forward
+  ];
+  const danger = [
+    'not_eligible', 'not_paying_no_plan', 'unreachable', 'declined_opted_out', // Pay Forward
+    'closed', // Mentoring
+    'not_placed_closed' // Placement
+  ];
+
+  if (positive.includes(stageCode)) return "success";
+  if (warning.includes(stageCode)) return "warning";
+  if (danger.includes(stageCode)) return "danger";
+  
+  return "default";
+}
