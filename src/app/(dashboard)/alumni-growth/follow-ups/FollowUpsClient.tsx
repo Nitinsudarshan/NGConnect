@@ -349,75 +349,57 @@ function KanbanColumn({
           {items.map((item) => {
             const dueDate = new Date(item.followup_at);
             const alumniName = item.alumni_master?.name || item.alumni_email;
+            const campus = item.alumni_master?.campus || "Unknown Campus";
+            const assignedPoc = item.followup_assigned_to || item.logged_by;
 
             return (
               <div
                 key={item.id}
-                className={`rounded-lg border border-border/60 bg-card p-2.5 space-y-2 shadow-2xs ${style.row}`}
+                className={`rounded-lg border border-border/70 bg-card p-2.5 space-y-2 shadow-2xs hover:shadow-md hover:border-primary/40 transition-all ${style.row}`}
               >
-                {/* Name + date */}
+                {/* Header: Name & Scheduled Date */}
                 <div className="flex items-start justify-between gap-1.5">
-                  <div className="min-w-0">
-                    <Link
-                      href={`/alumni-growth/alumni/${getAlumniSlug(item.alumni_email, item.alumni_master?.name)}`}
-                      className="text-xs font-bold text-foreground hover:text-primary transition-colors block truncate"
-                    >
-                      {alumniName}
-                    </Link>
-                    <span className="text-[10px] text-muted-foreground font-mono leading-none block">{item.alumni_email}</span>
-                  </div>
-                  <div className={`flex items-center gap-1 text-[10px] font-medium shrink-0 ${
-                    category === "overdue" ? "text-red-600" : category === "today" ? "text-amber-600" : "text-slate-500"
-                  }`}>
+                  <Link
+                    href={`/alumni-growth/alumni/${getAlumniSlug(item.alumni_email, item.alumni_master?.name)}`}
+                    className="font-semibold text-xs text-foreground hover:text-primary transition-colors truncate block"
+                  >
+                    {alumniName}
+                  </Link>
+                  <div className={`flex items-center gap-1 text-[10px] font-semibold shrink-0 px-1.5 py-0.5 rounded border ${style.badge}`}>
                     {style.icon}
                     {dueDate.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}{" "}
                     {dueDate.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                   </div>
                 </div>
 
-                {/* Last Conversation summary */}
-                <div className="bg-muted/30 border border-border/40 rounded-md px-2.5 py-1.5 text-[11px] leading-snug">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground block mb-0.5">Last Conversation</span>
-                  <span className="text-foreground">
-                    {item.interaction_outcomes?.label || "—"}
-                    {(() => {
-                      const gaps: string[] = Array.isArray(item.skipped_missing_fields)
-                        ? item.skipped_missing_fields
-                        : [];
-                      if (gaps.length === 0) return null;
-                      return (
-                        <>
-                          {" · "}
-                          <span className="text-muted-foreground">
-                            Data Gaps Skipped ({gaps.join(", ")}):
-                            {item.skip_reason ? (
-                              <span className="italic"> {item.skip_reason}</span>
-                            ) : null}
-                          </span>
-                        </>
-                      );
-                    })()}
-                  </span>
+                {/* Subtitle / Meta row */}
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground truncate">
+                  <span className="truncate">{campus} • {item.alumni_email}</span>
+                  {assignedPoc && (
+                    <Badge variant="outline" className="text-[9px] bg-indigo-500/5 text-indigo-600 border-indigo-500/20 shrink-0 h-4 px-1.5 py-0 font-medium leading-none flex items-center">
+                      {assignedPoc.split('@')[0]}
+                    </Badge>
+                  )}
                 </div>
 
-                {/* Two action buttons — compact style */}
-                <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+                {/* Action buttons */}
+                <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-border/40">
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => onViewDetails(item)}
-                    className="h-6 text-[11px] gap-1 px-2 rounded-md border-border text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full"
+                    className="h-6 text-[11px] gap-1 px-2 rounded border-border text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full"
                   >
-                    <MessageSquare className="w-3 h-3 shrink-0" />
+                    <MessageSquare className="w-3 h-3 shrink-0 text-muted-foreground" />
                     View Details
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => onLogCall({ email: item.alumni_email, name: alumniName })}
-                    className="h-6 text-[11px] gap-1 px-2 rounded-md border-primary/30 text-primary hover:bg-primary/5 w-full font-medium"
+                    className="h-6 text-[11px] gap-1 px-2 rounded border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/60 w-full font-medium"
                   >
-                    <PhoneCall className="w-3 h-3 shrink-0" />
+                    <PhoneCall className="w-3 h-3 shrink-0 text-primary" />
                     Log Interaction
                   </Button>
                 </div>
