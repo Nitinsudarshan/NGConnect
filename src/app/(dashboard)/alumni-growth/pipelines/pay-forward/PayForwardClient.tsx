@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 
 import { PipelineStage } from "@/types/engagement";
-import { TransferLeadModal } from "@/components/engagement/TransferLeadModal";
+import TransferLeadModal from "@/components/engagement/TransferLeadModal";
 import { calculateProfileScore, getStageBadgeVariant } from "@/lib/engagement/utils";
 import { PipelineListView } from "@/components/engagement/PipelineListView";
 import { AlumniKanbanCard } from "@/components/engagement/AlumniKanbanCard";
