@@ -551,9 +551,12 @@ export async function getPipelineOwnershipMap(
   for (const m of memberships) {
     const code = pipelineMap.get(m.pipeline_id);
     if (!code || !m.alumni_email) continue;
+    const pipelineCode = code as string;
     if (!grouped[m.alumni_email]) grouped[m.alumni_email] = {};
-    grouped[m.alumni_email][code] = m;
+    grouped[m.alumni_email][pipelineCode] = m;
   }
+
+
 
 
 
@@ -903,18 +906,24 @@ export async function getMyWorkspaceKPIs(userEmail: string) {
         }
       }
 
-      // Check followups
-      userInteractions.forEach(i => {
-        if (!i.followup_at || i.followup_completed) return;
+      // Check followups per lead
+      const hasOverdue = userInteractions.some(i => {
+        if (!i.followup_at || i.followup_completed) return false;
         const dueISO = new Date(i.followup_at).toISOString();
-        if (dueISO < todayStartISO) {
-          overdueFollowups++;
-        } else if (dueISO >= todayStartISO && dueISO <= todayEndISO) {
-          dueToday++;
-        }
+        return dueISO < todayStartISO;
       });
+
+      const hasDueToday = userInteractions.some(i => {
+        if (!i.followup_at || i.followup_completed) return false;
+        const dueISO = new Date(i.followup_at).toISOString();
+        return dueISO >= todayStartISO && dueISO <= todayEndISO;
+      });
+
+      if (hasOverdue) overdueFollowups++;
+      if (hasDueToday) dueToday++;
     }
   });
+
 
   return {
     myActiveLeads: uniqueEmails.length, // Intentionally keeps suppressed alumni in count

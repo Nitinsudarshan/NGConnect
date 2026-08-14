@@ -214,38 +214,79 @@ export default function WorkspaceClient({
     }
   };
 
-  const handleAssignToMe = async (alumniEmail: string) => {
-    setAssigningEmail(alumniEmail);
+  const handleAssignToMe = async (alumniEmail: string, pipelineCode: "pay_forward" | "career_support") => {
+    const key = `${alumniEmail}:${pipelineCode}`;
+    setAssigningEmail(key);
     const res = await assignToMeAction({
       alumni_email: alumniEmail,
-      pipeline_code: "career_support",
+      pipeline_code: pipelineCode,
       assigned_by: userEmail,
     });
     setAssigningEmail(null);
 
     if (res.success) {
-      toast.success("Lead claimed successfully!");
-      // Move item from Unassigned to My Queue locally
-      const claimedItem = unassignedList.find((a) => a.email === alumniEmail);
-      if (claimedItem) {
-        setUnassignedList((prev) => prev.filter((a) => a.email !== alumniEmail));
-        setMyQueueList((prev) => [
-          {
-            ...claimedItem,
-            poc_email: userEmail,
+      toast.success(`Claimed ${pipelineCode === "pay_forward" ? "Pay-Forward" : "Career Support"} lead!`);
+
+      const updateOwnership = (prevOwnership: any) => {
+        const newOwnership = { ...prevOwnership };
+        if (pipelineCode === "pay_forward") {
+          newOwnership.payForward = { state: "owned", owner: userEmail };
+        } else {
+          newOwnership.careerSupport = { state: "owned", owner: userEmail, mismatch: false };
+        }
+        return newOwnership;
+      };
+
+      // 1. Update or Add in My Queue
+      setMyQueueList((prev) => {
+        const existingIndex = prev.findIndex((a) => a.email === alumniEmail);
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = {
+            ...updated[existingIndex],
             pocAssignedAt: new Date().toISOString(),
-            pipelineOwnership: {
-              ...claimedItem.pipelineOwnership,
-              careerSupport: { state: "owned", owner: userEmail, mismatch: false },
-            },
-          },
-          ...prev,
-        ]);
-      }
+            pipelineOwnership: updateOwnership(updated[existingIndex].pipelineOwnership),
+          };
+          return updated;
+        } else {
+          const unassignedItem = unassignedList.find((a) => a.email === alumniEmail);
+          if (unassignedItem) {
+            return [
+              {
+                ...unassignedItem,
+                poc_email: userEmail,
+                pocAssignedAt: new Date().toISOString(),
+                pipelineOwnership: updateOwnership(unassignedItem.pipelineOwnership),
+              },
+              ...prev,
+            ];
+          }
+          return prev;
+        }
+      });
+
+      // 2. Update or Remove in Unassigned list
+      setUnassignedList((prev) => {
+        return prev
+          .map((a) => {
+            if (a.email !== alumniEmail) return a;
+            const newOwnership = updateOwnership(a.pipelineOwnership);
+            const bothFilled =
+              newOwnership.payForward?.state !== "unassigned" &&
+              newOwnership.careerSupport?.state !== "unassigned";
+            if (bothFilled) return null; // remove
+            return {
+              ...a,
+              pipelineOwnership: newOwnership,
+            };
+          })
+          .filter(Boolean) as any[];
+      });
     } else {
       toast.error(res.error || "Failed to claim lead");
     }
   };
+
 
   // Filter Unassigned List by Segmented Control
   const filteredUnassignedList = unassignedList.filter((item) => {
@@ -851,18 +892,65 @@ export default function WorkspaceClient({
 
                       <td className="px-3 py-2.5 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {activeTab === "unassigned" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={assigningEmail === item.email}
-                              onClick={() => handleAssignToMe(item.email)}
-                              className="h-7 rounded-md text-xs font-semibold gap-1 px-2.5 text-indigo-600 border-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/20"
-                            >
-                              <UserPlus className="w-3 h-3" />
-                              {assigningEmail === item.email ? "Assigning..." : "Assign to me"}
-                            </Button>
-                          )}
+                          {activeTab === "unassigned" && (() => {
+                            const isPfUnassigned = item.pipelineOwnership?.payForward?.state === "unassigned";
+                            const isCsUnassigned = item.pipelineOwnership?.careerSupport?.state === "unassigned";
+
+                            if (isPfUnassigned && isCsUnassigned) {
+                              return (
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={assigningEmail === `${item.email}:pay_forward`}
+                                    onClick={() => handleAssignToMe(item.email, "pay_forward")}
+                                    className="h-7 rounded-md text-[11px] font-semibold gap-1 px-2 text-indigo-600 border-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/20"
+                                  >
+                                    <UserPlus className="w-3 h-3" />
+                                    {assigningEmail === `${item.email}:pay_forward` ? "Claiming..." : "Claim Pay-Forward"}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={assigningEmail === `${item.email}:career_support`}
+                                    onClick={() => handleAssignToMe(item.email, "career_support")}
+                                    className="h-7 rounded-md text-[11px] font-semibold gap-1 px-2 text-purple-600 border-purple-200 hover:bg-purple-50 dark:hover:bg-purple-950/20"
+                                  >
+                                    <UserPlus className="w-3 h-3" />
+                                    {assigningEmail === `${item.email}:career_support` ? "Claiming..." : "Claim Career Support"}
+                                  </Button>
+                                </div>
+                              );
+                            } else if (isPfUnassigned) {
+                              return (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={assigningEmail === `${item.email}:pay_forward`}
+                                  onClick={() => handleAssignToMe(item.email, "pay_forward")}
+                                  className="h-7 rounded-md text-xs font-semibold gap-1 px-2.5 text-indigo-600 border-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/20"
+                                >
+                                  <UserPlus className="w-3 h-3" />
+                                  {assigningEmail === `${item.email}:pay_forward` ? "Assigning..." : "Assign to me"}
+                                </Button>
+                              );
+                            } else if (isCsUnassigned) {
+                              return (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={assigningEmail === `${item.email}:career_support`}
+                                  onClick={() => handleAssignToMe(item.email, "career_support")}
+                                  className="h-7 rounded-md text-xs font-semibold gap-1 px-2.5 text-indigo-600 border-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/20"
+                                >
+                                  <UserPlus className="w-3 h-3" />
+                                  {assigningEmail === `${item.email}:career_support` ? "Assigning..." : "Assign to me"}
+                                </Button>
+                              );
+                            }
+                            return null;
+                          })()}
+
 
                           <Button
                             size="sm"

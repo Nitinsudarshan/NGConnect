@@ -1161,14 +1161,21 @@ export async function assignToMeAction(payload: {
 
     const membershipIds = memberships.map(m => m.id);
 
-    const { error: updateErr } = await supabase
+    const { data: updated, error: updateErr } = await supabase
       .from('alumni_pipeline_membership')
       .update({ poc_email: payload.assigned_by })
-      .in('id', membershipIds);
+      .in('id', membershipIds)
+      .is('poc_email', null)
+      .select('id');
 
     if (updateErr) {
       return { success: false, error: 'Failed to assign lead' };
     }
+
+    if (!updated || updated.length < membershipIds.length) {
+      return { success: false, error: 'This lead was just claimed by someone else — refresh and try again' };
+    }
+
 
     await supabase.from('audit_log').insert({
       record_id: payload.alumni_email,
