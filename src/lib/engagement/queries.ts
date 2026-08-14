@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { ContributionType, DEFAULT_OUTCOME_MAPPINGS, InteractionOutcome, Mentor, OrgSettings, OutcomeMappingRow, PayForwardProgress, Pipeline, PipelineStage, ProfileCompleteness } from '@/types/engagement';
+import { ContributionType, DEFAULT_OUTCOME_MAPPINGS, InteractionOutcome, Mentor, OrgSettings, OutcomeMappingRow, PayForwardProgress, Pipeline, PipelineOwnership, PipelineStage, ProfileCompleteness } from '@/types/engagement';
 import { calculateProfileScore } from './utils';
 import { slugify } from '@/lib/utils';
+
 import { getUserCourseraData } from '@/lib/learning-center/queries';
 
 export async function getOutcomeMapping(): Promise<OutcomeMappingRow[]> {
@@ -460,38 +461,389 @@ export async function getEngagementQueue() {
   };
 }
 
+export async function getLastSyncedAt(): Promise<string | null> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from('alumni_master')
+      .select('created_at, updated_at')
+      .order('updated_at', { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!data) return null;
+    return data.updated_at || data.created_at || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getUnassignedCounts(): Promise<{ unassignedPayForward: number; unassignedCareerSupport: number }> {
+  try {
+    const supabase = await createClient();
+
+    const { data: pipelines } = await supabase
+      .from('pipelines')
+      .select('id, code');
+
+    const pipelineMap = new Map((pipelines || []).map(p => [p.id, p.code]));
+
+    const { data: unassignedMemberships } = await supabase
+      .from('alumni_pipeline_membership')
+      .select('alumni_email, pipeline_id')
+      .eq('is_active', true)
+      .is('poc_email', null);
+
+    if (!unassignedMemberships) return { unassignedPayForward: 0, unassignedCareerSupport: 0 };
+
+    const payForwardEmails = new Set<string>();
+    const careerSupportEmails = new Set<string>();
+
+    for (const m of unassignedMemberships) {
+      const code = pipelineMap.get(m.pipeline_id);
+      if (code === 'pay_forward') {
+        payForwardEmails.add(m.alumni_email);
+      } else if (code === 'mentoring' || code === 'placement') {
+        careerSupportEmails.add(m.alumni_email);
+      }
+    }
+
+    return {
+      unassignedPayForward: payForwardEmails.size,
+      unassignedCareerSupport: careerSupportEmails.size,
+    };
+  } catch {
+    return { unassignedPayForward: 0, unassignedCareerSupport: 0 };
+  }
+}
+
+export async function getPipelineOwnershipMap(
+  supabase: any,
+  alumniEmails: string[]
+): Promise<Record<string, PipelineOwnership>> {
+  if (!alumniEmails || alumniEmails.length === 0) return {};
+
+  const { data: pipelines } = await supabase
+    .from('pipelines')
+    .select('id, code');
+
+  const pipelineMap = new Map((pipelines || []).map((p: any) => [p.id, p.code]));
+
+  const { data: memberships } = await supabase
+    .from('alumni_pipeline_membership')
+    .select('alumni_email, pipeline_id, poc_email, is_active')
+    .in('alumni_email', alumniEmails)
+    .eq('is_active', true);
+
+  const map: Record<string, PipelineOwnership> = {};
+  for (const email of alumniEmails) {
+    map[email] = {
+      payForward: { state: 'n/a', owner: null },
+      careerSupport: { state: 'n/a', owner: null, mismatch: false },
+    };
+  }
+
+  if (!memberships) return map;
+
+  const grouped: Record<string, Record<string, any>> = {};
+  for (const email of alumniEmails) grouped[email] = {};
+
+  for (const m of memberships) {
+    const code = pipelineMap.get(m.pipeline_id);
+    if (!code || !m.alumni_email) continue;
+    if (!grouped[m.alumni_email]) grouped[m.alumni_email] = {};
+    grouped[m.alumni_email][code] = m;
+  }
+
+
+
+  for (const email of alumniEmails) {
+    const p = grouped[email] || {};
+
+    // 1. Pay-Forward
+    if (p.pay_forward) {
+      if (!p.pay_forward.poc_email) {
+        map[email].payForward = { state: 'unassigned', owner: null };
+      } else {
+        map[email].payForward = { state: 'owned', owner: p.pay_forward.poc_email };
+      }
+    } else {
+      map[email].payForward = { state: 'n/a', owner: null };
+    }
+
+    // 2. Career Support (Mentoring & Placement)
+    const m = p.mentoring;
+    const pl = p.placement;
+
+    if (!m && !pl) {
+      map[email].careerSupport = { state: 'n/a', owner: null, mismatch: false };
+    } else if (m && !pl) {
+      const state = !m.poc_email ? 'unassigned' : 'owned';
+      map[email].careerSupport = { state, owner: m.poc_email || null, mismatch: false };
+    } else if (!m && pl) {
+      const state = !pl.poc_email ? 'unassigned' : 'owned';
+      map[email].careerSupport = { state, owner: pl.poc_email || null, mismatch: false };
+    } else {
+      const mOwner = m.poc_email || null;
+      const plOwner = pl.poc_email || null;
+
+      if (!mOwner && !plOwner) {
+        map[email].careerSupport = { state: 'unassigned', owner: null, mismatch: false };
+      } else if (mOwner && !plOwner) {
+        map[email].careerSupport = { state: 'owned', owner: mOwner, mismatch: false };
+      } else if (!mOwner && plOwner) {
+        map[email].careerSupport = { state: 'owned', owner: plOwner, mismatch: false };
+      } else if (mOwner === plOwner) {
+        map[email].careerSupport = { state: 'owned', owner: mOwner, mismatch: false };
+      } else {
+        // Differing non-null owners -> Mismatch!
+        map[email].careerSupport = { state: 'owned', owner: mOwner, mismatch: true };
+      }
+    }
+  }
+
+  return map;
+}
+
+async function enrichAlumniList(supabase: any, alumniRows: any[]) {
+  if (!alumniRows || alumniRows.length === 0) return [];
+
+  const emails = alumniRows.map(a => a.email);
+  const ownershipMap = await getPipelineOwnershipMap(supabase, emails);
+
+  // Fetch suppressed
+  const { data: suppressed } = await supabase
+    .from('alumni_contact_suppression')
+    .select('alumni_email, reason')
+    .in('alumni_email', emails);
+  const suppressedMap = new Map((suppressed || []).map((s: any) => [s.alumni_email, s.reason || 'do_not_contact']));
+
+  // Fetch profiles
+  const { data: profiles } = await supabase
+    .from('alumni_profile')
+    .select('*')
+    .in('alumni_email', emails);
+  const profileMap: Record<string, any> = {};
+  if (profiles) {
+    for (const p of profiles) {
+      profileMap[p.alumni_email] = p;
+    }
+  }
+
+  // Fetch salary records presence
+  const { data: salaryRecords } = await supabase
+    .from('alumni_salary_records')
+    .select('alumni_email')
+    .in('alumni_email', emails);
+  const salarySet = new Set<string>();
+  if (salaryRecords) {
+    for (const s of salaryRecords) {
+      salarySet.add(s.alumni_email);
+    }
+  }
+
+  // Fetch settings for cooldown
+  const settings = await getOrgSettings();
+  const cooldownDays = settings.followup_cooldown_days || 3;
+  const cooldownMs = cooldownDays * 86400000;
+  const nowMs = Date.now();
+
+  // Fetch recent interactions for cooldown
+  const { data: recentInteractions } = await supabase
+    .from('alumni_interactions')
+    .select('alumni_email, created_at')
+    .in('alumni_email', emails)
+    .order('created_at', { ascending: false });
+
+  const lastInteractionMap = new Map<string, string>();
+  if (recentInteractions) {
+    for (const i of recentInteractions) {
+      if (!lastInteractionMap.has(i.alumni_email)) {
+        lastInteractionMap.set(i.alumni_email, i.created_at);
+      }
+    }
+  }
+
+  // Fetch audit log for ASSIGN_POC / TRANSFER_POC (for 'New' badge)
+  const { data: assignmentLogs } = await supabase
+    .from('audit_log')
+    .select('record_id, changed_at')
+    .in('record_id', emails)
+    .in('action_type', ['ASSIGN_POC', 'TRANSFER_POC'])
+    .order('changed_at', { ascending: false });
+
+  const pocAssignedAtMap = new Map<string, string>();
+  if (assignmentLogs) {
+    for (const log of assignmentLogs) {
+      if (!pocAssignedAtMap.has(log.record_id)) {
+        pocAssignedAtMap.set(log.record_id, log.changed_at);
+      }
+    }
+  }
+
+  return alumniRows.map(a => {
+    const lastContactStr = lastInteractionMap.get(a.email);
+    let cooldownUntil: string | null = null;
+    if (lastContactStr) {
+      const lastMs = new Date(lastContactStr).getTime();
+      if (lastMs + cooldownMs > nowMs) {
+        cooldownUntil = new Date(lastMs + cooldownMs).toISOString();
+      }
+    }
+
+    const pocAssignedAt = pocAssignedAtMap.get(a.email) || a.created_at || null;
+
+    return {
+      ...a,
+      profile: profileMap[a.email] || null,
+      hasSalaryRecords: salarySet.has(a.email),
+      contactSuppressionReason: suppressedMap.get(a.email) || null,
+      cooldownUntil,
+      pocAssignedAt,
+      pipelineOwnership: ownershipMap[a.email] || {
+        payForward: { state: 'n/a', owner: null },
+        careerSupport: { state: 'n/a', owner: null, mismatch: false },
+      },
+    };
+  });
+}
+
+export async function getMyQueueAlumni(userEmail: string) {
+  const supabase = await createClient();
+
+  const { data: memberships } = await supabase
+    .from('alumni_pipeline_membership')
+    .select('alumni_email')
+    .eq('poc_email', userEmail)
+    .eq('is_active', true);
+
+  if (!memberships || memberships.length === 0) return [];
+
+  const uniqueEmails = Array.from(new Set(memberships.map(m => m.alumni_email)));
+
+  const { data: alumni } = await supabase
+    .from('alumni_master')
+    .select('*')
+    .in('email', uniqueEmails)
+    .order('name', { ascending: true });
+
+  return enrichAlumniList(supabase, alumni || []);
+}
+
+export async function getUnassignedAlumni(pipelineType?: 'pay_forward' | 'career_support') {
+  const supabase = await createClient();
+
+  const { data: memberships } = await supabase
+    .from('alumni_pipeline_membership')
+    .select('alumni_email')
+    .eq('is_active', true)
+    .is('poc_email', null);
+
+  if (!memberships || memberships.length === 0) return [];
+
+  const uniqueEmails = Array.from(new Set(memberships.map(m => m.alumni_email)));
+
+  const { data: alumni } = await supabase
+    .from('alumni_master')
+    .select('*')
+    .in('email', uniqueEmails)
+    .order('name', { ascending: true });
+
+  const enriched = await enrichAlumniList(supabase, alumni || []);
+
+  if (!pipelineType) return enriched;
+
+  return enriched.filter(item => {
+    if (pipelineType === 'pay_forward') {
+      return item.pipelineOwnership?.payForward?.state === 'unassigned';
+    }
+    if (pipelineType === 'career_support') {
+      return item.pipelineOwnership?.careerSupport?.state === 'unassigned';
+    }
+    return true;
+  });
+}
+
+
+export async function getTeamAlumni({
+  page = 1,
+  pageSize = 10,
+}: {
+  page?: number;
+  pageSize?: number;
+}) {
+  const supabase = await createClient();
+
+  const offset = (page - 1) * pageSize;
+
+  const { data: alumni, count } = await supabase
+    .from('alumni_master')
+    .select('*', { count: 'exact' })
+    .order('name', { ascending: true })
+    .range(offset, offset + pageSize - 1);
+
+  const enriched = await enrichAlumniList(supabase, alumni || []);
+  const totalEntries = count || 0;
+  const totalPages = Math.ceil(totalEntries / pageSize) || 1;
+
+  return {
+    alumniList: enriched,
+    totalEntries,
+    totalPages,
+  };
+}
+
 export async function getMyWorkspaceKPIs(userEmail: string) {
   const supabase = await createClient();
   const currentTime = new Date();
   
-  // Today's start and end boundaries
-  const todayStart = new Date(currentTime.setHours(0, 0, 0, 0)).toISOString();
-  const todayEnd = new Date(currentTime.setHours(23, 59, 59, 999)).toISOString();
+  const startOfToday = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate());
+  const todayStartISO = startOfToday.toISOString();
+  const todayEndISO = new Date(startOfToday.getTime() + 86400000 - 1).toISOString();
 
-  // 0. Team-wide metrics for today
+  // 0. Suppressed emails
+  const { data: suppressed } = await supabase
+    .from('alumni_contact_suppression')
+    .select('alumni_email');
+  const suppressedSet = new Set((suppressed || []).map(s => s.alumni_email));
+
+  // 1. Team-wide metrics for today
   const { count: callsLoggedToday } = await supabase
     .from('alumni_interactions')
     .select('id', { count: 'exact', head: true })
-    .gte('created_at', todayStart)
-    .lte('created_at', todayEnd)
+    .gte('created_at', todayStartISO)
+    .lte('created_at', todayEndISO)
     .eq('interaction_channel', 'call');
 
   const { count: followupsAddedToday } = await supabase
     .from('alumni_interactions')
     .select('id', { count: 'exact', head: true })
-    .gte('created_at', todayStart)
-    .lte('created_at', todayEnd)
+    .gte('created_at', todayStartISO)
+    .lte('created_at', todayEndISO)
     .not('followup_at', 'is', null);
 
   const { data: interactedAlumniToday } = await supabase
     .from('alumni_interactions')
     .select('alumni_email')
-    .gte('created_at', todayStart)
-    .lte('created_at', todayEnd);
+    .gte('created_at', todayStartISO)
+    .lte('created_at', todayEndISO);
 
   const interactedToday = new Set(interactedAlumniToday?.map(i => i.alumni_email) || []).size;
 
-  // 1. My Active Leads: alumni_pipeline_membership where poc_email = userEmail and is_active = true
+  // Team Overdue Followups (org-wide, excluded suppressed)
+  const { data: teamOverdueInteractions } = await supabase
+    .from('alumni_interactions')
+    .select('alumni_email')
+    .eq('followup_completed', false)
+    .lt('followup_at', todayStartISO);
+
+  const teamOverdueFollowups = new Set(
+    (teamOverdueInteractions || [])
+      .map(i => i.alumni_email)
+      .filter(email => !suppressedSet.has(email))
+  ).size;
+
+  // 2. My Active Leads: alumni_pipeline_membership where poc_email = userEmail and is_active = true
   const { data: myLeads } = await supabase
     .from('alumni_pipeline_membership')
     .select('alumni_email')
@@ -502,21 +854,20 @@ export async function getMyWorkspaceKPIs(userEmail: string) {
     return { 
       myActiveLeads: 0, 
       uncontactedLeads: 0, 
-      followupsDue: 0,
+      overdueFollowups: 0,
+      dueToday: 0,
+      teamOverdueFollowups,
       callsLoggedToday: callsLoggedToday || 0,
       followupsAddedToday: followupsAddedToday || 0,
       interactedToday,
     };
   }
 
-  // Deduplicate emails since one alumnus could be in multiple pipelines
+  // Deduplicate emails
   const uniqueEmails = Array.from(new Set(myLeads.map(l => l.alumni_email)));
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
 
-  // 2. Uncontacted Leads (last interaction > 30 days ago, or no interaction)
-  // 3. Follow-ups Due (followup_at <= today, followup_completed = false)
-  const thirtyDaysAgo = new Date(new Date().setDate(new Date().getDate() - 30)).toISOString();
-  
-  // We can fetch interactions for these emails
+  // Fetch interactions for my leads
   const { data: interactions } = await supabase
     .from('alumni_interactions')
     .select('alumni_email, created_at, followup_at, followup_completed')
@@ -532,44 +883,51 @@ export async function getMyWorkspaceKPIs(userEmail: string) {
   });
 
   let uncontactedLeads = 0;
-  let followupsDue = 0;
-  const currentTimestamp = new Date();
+  let overdueFollowups = 0;
+  let dueToday = 0;
 
   uniqueEmails.forEach(email => {
-    const userInteractions = interactionGroups[email];
+    const isSuppressed = suppressedSet.has(email);
+    const userInteractions = interactionGroups[email] || [];
     
-    // Check uncontacted
-    if (userInteractions.length === 0) {
-      uncontactedLeads++;
-    } else {
-      const sortedInteractions = [...userInteractions].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      const lastContact = sortedInteractions[0].created_at;
-      if (lastContact < thirtyDaysAgo) {
+    // Actionable KPIs exclude suppressed alumni!
+    if (!isSuppressed) {
+      // Check uncontacted
+      if (userInteractions.length === 0) {
         uncontactedLeads++;
+      } else {
+        const sortedInteractions = [...userInteractions].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const lastContact = sortedInteractions[0].created_at;
+        if (lastContact < thirtyDaysAgo) {
+          uncontactedLeads++;
+        }
       }
-    }
 
-    // Check followups
-    const hasOverdueFollowup = userInteractions.some(i => {
-      if (!i.followup_at || i.followup_completed) return false;
-      const due = new Date(i.followup_at);
-      return due <= currentTimestamp;
-    });
-
-    if (hasOverdueFollowup) {
-      followupsDue++;
+      // Check followups
+      userInteractions.forEach(i => {
+        if (!i.followup_at || i.followup_completed) return;
+        const dueISO = new Date(i.followup_at).toISOString();
+        if (dueISO < todayStartISO) {
+          overdueFollowups++;
+        } else if (dueISO >= todayStartISO && dueISO <= todayEndISO) {
+          dueToday++;
+        }
+      });
     }
   });
 
   return {
-    myActiveLeads: uniqueEmails.length,
+    myActiveLeads: uniqueEmails.length, // Intentionally keeps suppressed alumni in count
     uncontactedLeads,
-    followupsDue,
+    overdueFollowups,
+    dueToday,
+    teamOverdueFollowups,
     callsLoggedToday: callsLoggedToday || 0,
     followupsAddedToday: followupsAddedToday || 0,
     interactedToday,
   };
 }
+
 
 export async function getAlumnusEngagementDetails(alumniEmail: string) {
   const supabase = await createClient();

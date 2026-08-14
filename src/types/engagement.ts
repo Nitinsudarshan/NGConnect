@@ -221,3 +221,18 @@ export interface LogInteractionPayload {
   skipped_missing_fields?: string[];
   skip_reason?: string;
 }
+
+export type PipelineOwnershipState = 'owned' | 'unassigned' | 'n/a';
+
+export interface PipelineOwnership {
+  payForward: {
+    state: PipelineOwnershipState;
+    owner: string | null;
+  };
+  careerSupport: {
+    state: PipelineOwnershipState;
+    owner: string | null;
+    mismatch: boolean;
+  };
+}
+
