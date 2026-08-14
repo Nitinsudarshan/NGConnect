@@ -1167,7 +1167,45 @@ export async function getPipelineAlumniData(pipelineCode: string) {
 
 export { calculateProfileScore } from './utils';
 
-export async function getFollowUpsData() {
+async function enrichFollowUpsWithOwnership(supabase: any, followups: any[]) {
+  if (!followups || followups.length === 0) return [];
+  const emails = Array.from(new Set(followups.map(f => f.alumni_email).filter(Boolean)));
+  const ownershipMap = await getPipelineOwnershipMap(supabase, emails);
+
+  return followups.map(f => ({
+    ...f,
+    pipelineOwnership: ownershipMap[f.alumni_email] || {
+      payForward: { state: 'n/a', owner: null },
+      careerSupport: { state: 'n/a', owner: null, mismatch: false },
+    },
+  }));
+}
+
+export async function getMyFollowUps(userEmail: string) {
+  const supabase = await createClient();
+
+  const { data: memberships } = await supabase
+    .from('alumni_pipeline_membership')
+    .select('alumni_email')
+    .eq('poc_email', userEmail)
+    .eq('is_active', true);
+
+  if (!memberships || memberships.length === 0) return [];
+
+  const myAlumniEmails = Array.from(new Set(memberships.map(m => m.alumni_email)));
+
+  const { data: followups } = await supabase
+    .from('alumni_interactions')
+    .select('*, interaction_outcomes(*), alumni_master(name, phone_number, campus, company)')
+    .eq('followup_completed', false)
+    .not('followup_at', 'is', null)
+    .in('alumni_email', myAlumniEmails)
+    .order('followup_at', { ascending: true });
+
+  return enrichFollowUpsWithOwnership(supabase, followups || []);
+}
+
+export async function getTeamFollowUps() {
   const supabase = await createClient();
 
   const { data: followups } = await supabase
@@ -1177,8 +1215,13 @@ export async function getFollowUpsData() {
     .not('followup_at', 'is', null)
     .order('followup_at', { ascending: true });
 
-  return followups || [];
+  return enrichFollowUpsWithOwnership(supabase, followups || []);
 }
+
+export async function getFollowUpsData() {
+  return getTeamFollowUps();
+}
+
 
 export async function getMentorsList(): Promise<Mentor[]> {
   try {
