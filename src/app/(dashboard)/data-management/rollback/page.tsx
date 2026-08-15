@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { HelpModal } from '@/components/shared/HelpModal';
 
 export default function RollbackCenterPage() {
   const [batches, setBatches] = useState<ImportBatch[]>([]);
@@ -153,6 +154,9 @@ export default function RollbackCenterPage() {
               Restore single records or undo entire dataset imports. All rollback actions are fully audited.
             </p>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <HelpModal helpId="data_management.rollback" />
         </div>
       </div>
 

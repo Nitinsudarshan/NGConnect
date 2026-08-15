@@ -6,6 +6,7 @@ import { ChevronLeft, PlayCircle, FileText, FileDown, HelpCircle, CheckCircle2 }
 import DOMPurify from 'isomorphic-dompurify'
 import { Button } from "@/components/ui/button"
 import { VideoPlayer } from "@/components/shared/video-player"
+import { HelpModal } from "@/components/shared/HelpModal"
 import { toast } from "sonner"
 
 export default function CourseViewerPage({ params }: { params: Promise<{ courseId: string }> }) {
@@ -121,11 +122,14 @@ export default function CourseViewerPage({ params }: { params: Promise<{ courseI
       {/* Sidebar Navigation */}
       <div className="w-80 flex-shrink-0 border-r bg-card flex flex-col">
         <div className="p-4 border-b">
-          <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2 text-muted-foreground">
-            <Link href="/learning-center/content-hub">
-              <ChevronLeft className="w-4 h-4 mr-1" /> Back to Library
-            </Link>
-          </Button>
+          <div className="flex items-center justify-between mb-2">
+            <Button variant="ghost" size="sm" asChild className="-ml-2 text-muted-foreground">
+              <Link href="/learning-center/content-hub">
+                <ChevronLeft className="w-4 h-4 mr-1" /> Back to Library
+              </Link>
+            </Button>
+            <HelpModal helpId="learning_center.course_detail" />
+          </div>
           <h2 className="font-bold line-clamp-2">{course.title}</h2>
           <div className="mt-2 text-xs font-medium text-muted-foreground">
             {course.items.filter(i => i.completed).length} of {course.items.length} completed

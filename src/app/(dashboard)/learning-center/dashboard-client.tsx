@@ -32,6 +32,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { PageBanner } from "@/components/shared/page-banner"
+import { HelpModal } from "@/components/shared/HelpModal"
 import { SessionPlaybackModal } from "@/components/shared/session-playback-modal"
 import { ContinueWatchingCard } from "@/components/learning-center/continue-watching-card"
 import { CustContainer } from "@/components/learning-center/cust-container"
@@ -158,6 +159,7 @@ export function LearningCenterDashboardClient({
         title="Learning Center"
         description="Overview of mentorship sessions, member viewing hours, and learning progress."
         icon={<GraduationCap className="w-6 h-6 text-indigo-500" />}
+        actions={<HelpModal helpId="learning_center.dashboard" />}
       />
 
       {/* Stat Cards: Tailored for Member vs Admin */}

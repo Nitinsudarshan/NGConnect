@@ -25,6 +25,7 @@ import { useUserContext } from '@/contexts/user-context';
 import type { AlumniMaster } from '@/types/alumni';
 import AlumniDetailsModule from '@/components/shared/alumni-details-module';
 import { PageBanner } from '@/components/shared/page-banner';
+import { HelpModal } from '@/components/shared/HelpModal';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -196,16 +197,19 @@ export default function MasterDataPage() {
         description={<p>Source-of-truth organizational records imported from GHAR exports.</p>}
         icon={<Database className="h-8 w-8 text-indigo-500" />}
         actions={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchMasterData}
-            disabled={loading}
-            className="gap-2 h-10 px-4 text-sm font-semibold rounded-lg transition-all shadow-sm shrink-0 bg-white/80 dark:bg-zinc-900/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 border-slate-200 dark:border-zinc-700"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Reload Data
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchMasterData}
+              disabled={loading}
+              className="gap-2 h-10 px-4 text-sm font-semibold rounded-lg transition-all shadow-sm shrink-0 bg-white/80 dark:bg-zinc-900/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 border-slate-200 dark:border-zinc-700"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Reload Data
+            </Button>
+            <HelpModal helpId="manage.master_data" />
+          </div>
         }
       />
 

@@ -2,6 +2,7 @@ import React from "react";
 import { PageBanner } from "@/components/shared/page-banner";
 import { BookOpen } from "lucide-react";
 import HelpDocsClient from "./HelpDocsClient";
+import { HelpModal } from "@/components/shared/HelpModal";
 
 export const metadata = {
   title: "Help Docs | Manage | NGConnect",
@@ -20,6 +21,7 @@ export default function HelpDocsPage() {
           </p>
         }
         icon={<BookOpen className="h-8 w-8 text-amber-500" />}
+        actions={<HelpModal helpId="manage.help" />}
       />
       <HelpDocsClient />
     </div>

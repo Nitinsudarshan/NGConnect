@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { HelpModal } from '@/components/shared/HelpModal';
 
 function RecordHistoryContent() {
   const searchParams = useSearchParams();
@@ -161,6 +162,9 @@ function RecordHistoryContent() {
               {emailParam ? `Viewing history log details for ${emailParam}.` : 'Search alumni accounts to view and restore granular field modifications over time.'}
             </p>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <HelpModal helpId="data_management.record_history" />
         </div>
       </div>
 

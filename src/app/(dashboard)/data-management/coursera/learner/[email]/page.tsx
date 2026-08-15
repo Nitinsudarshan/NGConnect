@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation';
 import { getUserRole } from '@/lib/roles';
 import Link from 'next/link';
 import LearnerDetailClient from './_components/LearnerDetailClient';
+import { HelpModal } from '@/components/shared/HelpModal';
 
 interface PageProps {
   params: Promise<{ email: string }>;
@@ -75,7 +76,7 @@ export default async function LearnerDetailPage({ params }: PageProps) {
           <h1 className="text-2xl font-bold">{learnerName}</h1>
           <p className="text-muted-foreground text-sm">{email}</p>
         </div>
-        <div className="md:ml-auto flex gap-6 text-center">
+        <div className="md:ml-auto flex items-center gap-6 text-center">
           <div>
             <div className="text-xl font-bold">{lifetimeHours.toFixed(1)}h</div>
             <div className="text-xs text-muted-foreground">Lifetime Hours</div>
@@ -88,6 +89,7 @@ export default async function LearnerDetailPage({ params }: PageProps) {
             <div className="text-xl font-bold">{coursesCompleted}</div>
             <div className="text-xs text-muted-foreground">Completed</div>
           </div>
+          <HelpModal helpId="data_management.coursera_learner" />
         </div>
       </div>
 

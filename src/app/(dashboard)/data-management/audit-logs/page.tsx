@@ -24,6 +24,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import LoadingView from '@/components/loading-view';
+import { HelpModal } from '@/components/shared/HelpModal';
 
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -90,16 +91,19 @@ export default function AuditLogsPage() {
             </p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={fetchLogs}
-          disabled={loading}
-          className="gap-2 rounded-md transition-all active:scale-95"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh Audit Trail
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchLogs}
+            disabled={loading}
+            className="gap-2 rounded-md transition-all active:scale-95"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh Audit Trail
+          </Button>
+          <HelpModal helpId="data_management.audit_logs" />
+        </div>
       </div>
 
 

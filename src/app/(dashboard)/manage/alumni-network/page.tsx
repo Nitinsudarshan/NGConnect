@@ -5,6 +5,7 @@ import { UsersTable } from "../users/users-table";
 import { AlumniNetworkStatsCards, AlumniNetworkStatsCharts } from "./alumni-stats";
 
 import { checkAccess } from "@/lib/permissions";
+import { HelpModal } from "@/components/shared/HelpModal";
 
 export default async function AlumniNetworkPage() {
   const clientSupabase = await createClient();
@@ -55,6 +56,9 @@ export default async function AlumniNetworkPage() {
           <p className="text-muted-foreground mt-1 text-sm font-medium">
             Manage your external Alumni Network members (Team: Alumni Network, Role: Member).
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <HelpModal helpId="manage.alumni_network" />
         </div>
       </div>
 

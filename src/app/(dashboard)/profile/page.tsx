@@ -34,6 +34,7 @@ import {
   Palette,
   BookOpen
 } from "lucide-react";
+import { HelpModal } from "@/components/shared/HelpModal";
 
 // Presets for the preview card gradient banner
 const BANNER_THEMES = [
@@ -312,9 +313,12 @@ export default function ProfilePage() {
             Update your professional information and customize how your profile looks on the network.
           </p>
         </div>
-        <div className="flex items-center gap-2 mt-4 md:mt-0 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900/60 px-3 py-1.5 rounded-md text-xs font-medium">
-          <Sparkles className="h-3.5 w-3.5" />
-          <span>Local Mock Database Active</span>
+        <div className="flex items-center gap-2 mt-4 md:mt-0">
+          <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900/60 px-3 py-1.5 rounded-md text-xs font-medium">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Local Mock Database Active</span>
+          </div>
+          <HelpModal helpId="profile" />
         </div>
       </div>
 

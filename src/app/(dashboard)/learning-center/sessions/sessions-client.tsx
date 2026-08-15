@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { PageBanner } from "@/components/shared/page-banner"
+import { HelpModal } from "@/components/shared/HelpModal"
 import { SessionPlaybackModal } from "@/components/shared/session-playback-modal"
 import { SessionMediaModal } from "@/components/learning-center/session-media-modal"
 import { EditSessionModal } from "@/components/learning-center/edit-session-modal"
@@ -59,12 +60,15 @@ export function SessionsClient({
         description="Manage upcoming and past mentorship sessions."
         icon={<Video className="w-6 h-6" />}
         actions={
-          <Button asChild>
-            <Link href="/learning-center/sessions/create">
-              <Plus className="w-4 h-4 mr-2" />
-              New Session
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild>
+              <Link href="/learning-center/sessions/create">
+                <Plus className="w-4 h-4 mr-2" />
+                New Session
+              </Link>
+            </Button>
+            <HelpModal helpId="learning_center.sessions" />
+          </div>
         }
       />
 

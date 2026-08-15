@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getUserRole } from '@/lib/roles';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { HelpModal } from '@/components/shared/HelpModal';
 
 interface SearchParams {
   month?: string;
@@ -86,7 +87,7 @@ export default async function ActivityLogsPage({
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-20 animate-in fade-in slide-in-from-bottom-3 duration-500">
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/60 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Link href="/data-management/coursera" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -97,6 +98,9 @@ export default async function ActivityLogsPage({
           <p className="text-muted-foreground text-sm mt-0.5">
             {selectedMonth ? formatMonth(selectedMonth, firstImportMonth) : 'All months'} · {(count ?? 0).toLocaleString()} learners
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <HelpModal helpId="data_management.coursera_logs" />
         </div>
       </div>
 

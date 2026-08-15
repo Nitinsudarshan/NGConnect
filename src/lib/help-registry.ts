@@ -10,8 +10,8 @@
 
 export interface HelpSection {
   title: string;
-  color: string; // Tailwind color name e.g. "blue", "emerald", "purple"
-  content: React.ReactNode | string;
+  color: string; // Tailwind color name e.g. "blue", "emerald", "purple", "amber", "rose", "sky"
+  content?: React.ReactNode | string;
   type?: "text" | "bullets" | "cards";
   items?: { title?: string; text: string }[];
 }
@@ -27,9 +27,82 @@ export interface HelpEntry {
   sections: HelpSection[];
 }
 
-// We use a plain object with serialisable section types so the registry can be
-// consumed both in client components and in the server-rendered Manage page.
 export const HELP_REGISTRY: HelpEntry[] = [
+  /* ──────────────────────── MAIN DASHBOARD & REPORTS ──────────────────────── */
+  {
+    id: "dashboard.overview",
+    label: "Platform Overview",
+    location: "Main Platform › Dashboard",
+    title: "NGConnect Main Executive Dashboard",
+    description: "Your operational command center for alumni engagement, learning progress, and platform performance.",
+    sections: [
+      {
+        title: "1. What is the Main Dashboard?",
+        color: "blue",
+        type: "text",
+        content:
+          "The Main Dashboard aggregates high-level metrics across all major modules in NGConnect: Alumni Growth pipelines, Coursera learning activity, mentoring sessions, and system throughput. Use this overview to monitor team cadence and identify priority areas.",
+      },
+      {
+        title: "2. Key Metrics & Cards",
+        color: "emerald",
+        type: "bullets",
+        items: [
+          { title: "Total Alumni", text: "Count of all verified alumni records registered in the system." },
+          { title: "Active Pipeline Leads", text: "Alumni currently undergoing active outreach across Mentoring, Pay-Forward, and Placement." },
+          { title: "Learning Engagement", text: "Active Coursera learners and completed mentoring sessions over the last 30 days." },
+          { title: "Pay-Forward Collections", text: "Cumulative financial contributions collected towards funding future cohorts." },
+        ],
+      },
+      {
+        title: "3. Navigation & Quick Links",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Alumni Growth", text: "Jump straight into your daily Workspace queue or review Kanban boards." },
+          { title: "Learning Center", text: "Schedule sessions, review recordings, or check course completion rates." },
+          { title: "Data Management", text: "Import new spreadsheets, review Coursera progress, or view system audit logs." },
+          { title: "System Manage", text: "Manage user permissions (RBAC), user accounts, or master data options." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "reports.generator",
+    label: "Global Report Exporter",
+    location: "Main Platform › Reports",
+    title: "Global Custom Report Exporter",
+    description: "Generate, filter, and export comprehensive cross-module analytical reports.",
+    sections: [
+      {
+        title: "1. Executive Export Suite",
+        color: "blue",
+        type: "text",
+        content:
+          "The Global Report Exporter allows administrators and program leads to assemble custom data extractions combining demographic data, placement outcomes, Pay-Forward records, and Coursera learning progress into formatted Excel workbooks.",
+      },
+      {
+        title: "2. Export Workflow",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Select Data Scope", text: "Choose between full alumni export, pipeline-specific status reports, or learning progress summaries." },
+          { title: "Apply Date & Campus Filters", text: "Narrow down records by cohort graduation year, campus location, or placement cycle." },
+          { title: "Choose Output Format", text: "Export as structured CSV or multi-tab Excel workbooks (.xlsx)." },
+        ],
+      },
+      {
+        title: "3. Data Safety",
+        color: "rose",
+        type: "bullets",
+        items: [
+          { title: "Privacy Compliance", text: "Exports contain personal identifying information (PII). Handle strictly in accordance with Navgurukul data protection policies." },
+          { title: "Audit Trail", text: "All export operations are logged in the System Audit Logs for security monitoring." },
+        ],
+      },
+    ],
+  },
+
   /* ──────────────────────── PIPELINE BOARDS ──────────────────────── */
   {
     id: "boards.mentoring",
@@ -218,7 +291,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
     ],
   },
 
-  /* ──────────────────────── WORKSPACE ──────────────────────── */
+  /* ──────────────────────── WORKSPACE & ALUMNI GROWTH ──────────────────────── */
   {
     id: "workspace",
     label: "Workspace",
@@ -264,8 +337,6 @@ export const HELP_REGISTRY: HelpEntry[] = [
       },
     ],
   },
-
-  /* ──────────────────────── FOLLOW-UPS ──────────────────────── */
   {
     id: "follow_ups",
     label: "Follow-ups",
@@ -309,8 +380,6 @@ export const HELP_REGISTRY: HelpEntry[] = [
       },
     ],
   },
-
-  /* ──────────────────────── REPORTS ──────────────────────── */
   {
     id: "reports",
     label: "CRM Reports",
@@ -348,6 +417,69 @@ export const HELP_REGISTRY: HelpEntry[] = [
         type: "text",
         content:
           "Reports reflect real-time data directly from the database. There is no caching. Export data at the start of a meeting for the most accurate figures.",
+      },
+    ],
+  },
+  {
+    id: "alumni.detail",
+    label: "Alumni Profile Detail",
+    location: "Alumni Growth › Alumni Profile",
+    title: "Alumni 360° Profile Guide",
+    description: "Comprehensive view of an alumni's employment, pipeline status, interaction history, and learning activity.",
+    sections: [
+      {
+        title: "1. What is the 360° Profile?",
+        color: "blue",
+        type: "text",
+        content:
+          "The Alumni Profile view brings together every touchpoint recorded for an alumni across all pipelines (Mentoring, Pay-Forward, Placement), Coursera learning metrics, historical call logs, and contact details in a single view.",
+      },
+      {
+        title: "2. Profile Sections",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Overview & Contacts", text: "Primary phone, email, current employment, city, campus, and cohort year." },
+          { title: "Pipeline Statuses", text: "Current stage and owner across Mentoring, Pay-Forward, and Placement tracks." },
+          { title: "Interaction Timeline", text: "Chronological log of calls, WhatsApp notes, and stage movement history." },
+          { title: "Coursera & Skills", text: "Enrolled courses, total learning hours, and completion certifications." },
+        ],
+      },
+      {
+        title: "3. Action Controls",
+        color: "emerald",
+        type: "bullets",
+        items: [
+          { title: "Log Call / Interaction", text: "Add a touchpoint directly to this alumni's record with immediate outcome categorization." },
+          { title: "Edit Employment & Profile Data", text: "Update salary, current company, or position details to ensure data completeness." },
+          { title: "Reassign POC", text: "Transfer ownership on specific pipelines to eligible team members." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "alumni.all_data",
+    label: "All Alumni Master Grid",
+    location: "Alumni Growth › All Alumni",
+    title: "Master Alumni Directory & Data Table",
+    description: "Filter, search, and manage all registered alumni in a unified table layout.",
+    sections: [
+      {
+        title: "1. Unified Data Directory",
+        color: "blue",
+        type: "text",
+        content:
+          "The Master Data Grid displays all alumni records in NGConnect. It supports multi-column sorting, quick search by name or email, campus filtering, and inline profile access.",
+      },
+      {
+        title: "2. Key Operations",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Global Search", text: "Filter instantly by typing any keyword (name, phone number, company, or campus)." },
+          { title: "Multi-Filter Bar", text: "Segment by graduation batch, employment status, gender, or pipeline state." },
+          { title: "Export Selection", text: "Download selected rows or filtered sets directly to CSV." },
+        ],
       },
     ],
   },
@@ -655,6 +787,651 @@ export const HELP_REGISTRY: HelpEntry[] = [
         type: "text",
         content:
           "Only users with 'view' permission for crm.settings.edit_log can access this tab. If you believe a setting was changed incorrectly, review this log first, then escalate to an Admin.",
+      },
+    ],
+  },
+
+  /* ──────────────────────── LEARNING CENTER ──────────────────────── */
+  {
+    id: "learning_center.dashboard",
+    label: "Learning Center Overview",
+    location: "Learning Center › Dashboard",
+    title: "Learning Center & Mentoring Hub Guide",
+    description: "Overview of student learning sessions, mentor scheduling, course materials, and recording archives.",
+    sections: [
+      {
+        title: "1. What is the Learning Center?",
+        color: "blue",
+        type: "text",
+        content:
+          "The Learning Center manages all academic and professional mentoring interactions between alumni mentors, industry experts, and Navgurukul students. It integrates session scheduling, student feedback, curriculum content, and recorded video archives.",
+      },
+      {
+        title: "2. Key Metrics & Features",
+        color: "emerald",
+        type: "bullets",
+        items: [
+          { title: "Upcoming Sessions", text: "View live and scheduled mentoring classes for the coming week." },
+          { title: "Active Mentors", text: "List of onboarded alumni and volunteers available for session assignment." },
+          { title: "Course Content Hub", text: "Curriculum tracks, technical modules, and learning resources." },
+          { title: "Session Recordings", text: "Searchable repository of recorded video sessions for student revision." },
+        ],
+      },
+      {
+        title: "3. Best Practices",
+        color: "amber",
+        type: "cards",
+        items: [
+          { title: "Schedule Ahead", text: "Create sessions at least 48 hours prior to allow student notification." },
+          { title: "Collect Feedback", text: "Ensure post-session attendance and feedback forms are filled promptly." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "learning_center.sessions",
+    label: "Sessions Directory",
+    location: "Learning Center › Sessions",
+    title: "Mentoring & Class Sessions Directory",
+    description: "Manage, filter, and schedule live or upcoming mentoring sessions.",
+    sections: [
+      {
+        title: "1. Managing Sessions",
+        color: "blue",
+        type: "text",
+        content:
+          "The Sessions Directory provides a comprehensive list of past, live, and upcoming mentoring sessions. Filter by mentor, campus, status (Scheduled, Live, Completed, Cancelled), or course topic.",
+      },
+      {
+        title: "2. Quick Actions",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Create New Session", text: "Click 'Schedule Session' to assign a mentor, pick a room link, and specify date & time." },
+          { title: "View Attendance & Feedback", text: "Open session details to inspect student attendance rates and feedback ratings." },
+          { title: "Upload Recording Link", text: "Attach Zoom/Google Meet recording URLs to completed sessions for archive." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "learning_center.create_session",
+    label: "Schedule Session Wizard",
+    location: "Learning Center › Create Session",
+    title: "Session Scheduling Wizard",
+    description: "Step-by-step guide to creating and publishing a mentoring session.",
+    sections: [
+      {
+        title: "1. Scheduling Workflow",
+        color: "blue",
+        type: "text",
+        content:
+          "Follow the step-by-step form to register a new mentoring session. Ensure mentor availability is confirmed before publishing.",
+      },
+      {
+        title: "2. Required Fields",
+        color: "amber",
+        type: "bullets",
+        items: [
+          { title: "Session Title & Topic", text: "Be descriptive e.g. 'Advanced React State Management & Hooks'." },
+          { title: "Assigned Mentor", text: "Select an onboarded mentor from the directory." },
+          { title: "Target Campus / Cohort", text: "Specify which student group should attend." },
+          { title: "Meeting Link", text: "Provide a valid Zoom, Google Meet, or MS Teams link." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "learning_center.session_feedback",
+    label: "Session Feedback",
+    location: "Learning Center › Feedback",
+    title: "Student & Mentor Feedback Review",
+    description: "Analyze post-session evaluation forms and quality scores.",
+    sections: [
+      {
+        title: "1. Feedback System",
+        color: "blue",
+        type: "text",
+        content:
+          "Post-session feedback helps monitor mentor effectiveness, session relevance, and student satisfaction. Students submit 1–5 star ratings alongside qualitative comments.",
+      },
+      {
+        title: "2. Key Indicators",
+        color: "emerald",
+        type: "bullets",
+        items: [
+          { title: "Average Rating", text: "Overall rating out of 5 stars calculated across all submissions." },
+          { title: "Punctuality & Clarity", text: "Metrics evaluating mentor presentation and time management." },
+          { title: "Flagged Issues", text: "Submissions with ratings under 3 stars are flagged for team review." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "learning_center.recordings",
+    label: "Session Recordings",
+    location: "Learning Center › Recordings",
+    title: "Video & Audio Recordings Archive",
+    description: "Browse, search, and stream recorded mentoring sessions and masterclasses.",
+    sections: [
+      {
+        title: "1. Recordings Library",
+        color: "blue",
+        type: "text",
+        content:
+          "All recorded mentoring sessions are stored and tagged by topic, course, and mentor. Students and staff can rewatch past lectures at any time.",
+      },
+      {
+        title: "2. Search & Categories",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Filter by Course Track", text: "Narrow recordings by Web Development, Python, Soft Skills, or Placement Prep." },
+          { title: "Mentor Search", text: "Find all lectures conducted by a specific mentor." },
+          { title: "Playback Speed & Notes", text: "Stream directly with adjustable playback options and attached session notes." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "learning_center.content_hub",
+    label: "Content & Course Hub",
+    location: "Learning Center › Content Hub",
+    title: "Curriculum Content Hub",
+    description: "Central repository of courses, learning paths, and technical modules.",
+    sections: [
+      {
+        title: "1. Course Repository",
+        color: "blue",
+        type: "text",
+        content:
+          "The Content Hub organizes Navgurukul's learning material into structured courses and modules. Manage course titles, descriptions, prerequisites, and resource links.",
+      },
+      {
+        title: "2. Structuring Courses",
+        color: "purple",
+        type: "bullets",
+        items: [
+          { title: "Modules & Lessons", text: "Courses are subdivided into ordered modules and lesson topics." },
+          { title: "Attached Resources", text: "Include GitHub links, Google Docs, slides, and code sandboxes." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "learning_center.course_detail",
+    label: "Course Detail View",
+    location: "Learning Center › Course Detail",
+    title: "Course Curriculum & Lesson Plan",
+    description: "Detailed view of course syllabus, enrolled students, and associated sessions.",
+    sections: [
+      {
+        title: "1. Syllabus Overview",
+        color: "blue",
+        type: "text",
+        content:
+          "View the full lesson hierarchy for a specific course, including completion stats and upcoming scheduled sessions.",
+      },
+      {
+        title: "2. Actions",
+        color: "emerald",
+        type: "cards",
+        items: [
+          { title: "Edit Curriculum", text: "Update module order, lesson titles, or linked assignments." },
+          { title: "Link Mentoring Session", text: "Attach a live mentoring session directly to a lesson topic." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "learning_center.settings",
+    label: "Learning Center Settings",
+    location: "Learning Center › Settings",
+    title: "Learning Center & Mentor Management Settings",
+    description: "Configure session categories, feedback rules, and active mentor roster.",
+    sections: [
+      {
+        title: "1. Module Settings",
+        color: "blue",
+        type: "text",
+        content:
+          "Manage global parameters for the Learning Center, including session categories, zoom integration keys, and mentor approval status.",
+      },
+      {
+        title: "2. Active Mentor Roster",
+        color: "purple",
+        type: "bullets",
+        items: [
+          { title: "Mentor Onboarding", text: "Approve newly added alumni mentors and assign topic expertise tags." },
+          { title: "Availability Limits", text: "Set maximum weekly session caps per mentor to prevent burnout." },
+        ],
+      },
+    ],
+  },
+
+  /* ──────────────────────── DATA MANAGEMENT ──────────────────────── */
+  {
+    id: "data_management.overview",
+    label: "Data Management Hub",
+    location: "Data Management › Hub Overview",
+    title: "Data Management & Ingestion Hub",
+    description: "Central command for data imports, Coursera syncing, audit trails, and data safety tools.",
+    sections: [
+      {
+        title: "1. What is Data Management?",
+        color: "blue",
+        type: "text",
+        content:
+          "The Data Management Hub is the core ingestion and data governance center of NGConnect. It supports uploading Excel spreadsheets, monitoring Coursera learning integrations, inspecting field-level change histories, and rolling back bad batch imports.",
+      },
+      {
+        title: "2. Ingestion Sub-modules",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Alumni Excel Import", text: "Upload and map raw alumni spreadsheets into verified DB records." },
+          { title: "Coursera Integration", text: "Track automated Coursera enrollment, learning hours, and course completions." },
+          { title: "Audit Logs & History", text: "Track who modified what data point, when, and from what IP address." },
+          { title: "Rollback Operations", text: "Revert batch imports safely without data corruption." },
+        ],
+      },
+      {
+        title: "3. Operational Rules",
+        color: "rose",
+        type: "bullets",
+        items: [
+          { title: "Primary Key Matching", text: "All imports use email address as the primary unique key." },
+          { title: "Server-side Re-validation", text: "All uploads undergo strict server-side schema and type validation." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "data_management.import",
+    label: "Excel Data Import",
+    location: "Data Management › Excel Import",
+    title: "Alumni Data Import Wizard",
+    description: "Upload Excel/CSV spreadsheets to import or update alumni records safely.",
+    sections: [
+      {
+        title: "1. How Data Import Works",
+        color: "blue",
+        type: "text",
+        content:
+          "The Import Wizard parses .xlsx or .csv files, allows interactive column mapping to NGConnect fields, performs pre-flight validation checks, and performs upserts (update existing / insert new) into the database.",
+      },
+      {
+        title: "2. Step-by-Step Instructions",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Step 1: File Upload", text: "Select a valid .xlsx or .csv spreadsheet (max 10MB)." },
+          { title: "Step 2: Column Mapping", text: "Map your spreadsheet columns to NGConnect standard fields (Email is mandatory)." },
+          { title: "Step 3: Preview & Validation", text: "Inspect valid rows, warning rows, and errors before committing to database." },
+          { title: "Step 4: Execute Import", text: "Click Import Data. A batch record ID will be generated for audit and rollback purposes." },
+        ],
+      },
+      {
+        title: "3. Import Rules & Safety",
+        color: "rose",
+        type: "bullets",
+        items: [
+          { title: "Primary Key", text: "Email is used to check for existing records. If email exists, record is updated." },
+          { title: "Atomic Batches", text: "Every import run creates a batch log entry in Import History so it can be rolled back if needed." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "data_management.import_history",
+    label: "Import History",
+    location: "Data Management › Import History",
+    title: "Data Import Audit History",
+    description: "Complete log of all bulk spreadsheet imports executed in NGConnect.",
+    sections: [
+      {
+        title: "1. Ingestion Audit Trail",
+        color: "blue",
+        type: "text",
+        content:
+          "This page records every spreadsheet import attempt, including total rows processed, successful upserts, skipped rows, errors, timestamp, and performing user.",
+      },
+      {
+        title: "2. Key Information",
+        color: "emerald",
+        type: "bullets",
+        items: [
+          { title: "Batch ID", text: "Unique tracking code assigned to every import execution." },
+          { title: "Inserted vs Updated", text: "Breakdown of new alumni profiles created versus existing profiles updated." },
+          { title: "Rollback Availability", text: "Batches that can be safely undone show an active 'Rollback' button." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "data_management.coursera",
+    label: "Coursera Integration Dashboard",
+    location: "Data Management › Coursera Integration",
+    title: "Coursera Analytics & Learning Performance Dashboard",
+    description: "Monitor alumni learning progress, course completion rates, and total learning hours synced from Coursera.",
+    sections: [
+      {
+        title: "1. Coursera Integration Overview",
+        color: "blue",
+        type: "text",
+        content:
+          "NGConnect automatically ingests Coursera learning telemetry for registered alumni. Use this dashboard to measure course engagement, skill acquisition, and platform adoption.",
+      },
+      {
+        title: "2. Key Metrics & Views",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Total Enrolled Learners", text: "Active alumni with registered Coursera licenses." },
+          { title: "Learning Hours Logged", text: "Cumulative video and assignment hours spent on Coursera." },
+          { title: "Course Completions", text: "Verified certificate awards earned across technical tracks." },
+          { title: "Learner Directory", text: "Search individual learners by email or campus location." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "data_management.coursera_learner",
+    label: "Coursera Learner Detail",
+    location: "Data Management › Learner Detail",
+    title: "Learner Performance & Course History",
+    description: "Detailed Coursera transcript and course activity log for an individual alumni.",
+    sections: [
+      {
+        title: "1. Individual Telemetry",
+        color: "blue",
+        type: "text",
+        content:
+          "Inspect an individual learner's complete Coursera profile — enrolled courses, module completion percentages, quiz scores, and certificate issuance dates.",
+      },
+      {
+        title: "2. Use Cases",
+        color: "emerald",
+        type: "bullets",
+        items: [
+          { title: "Placement Readiness", text: "Verify technical skills and course completions prior to job referral." },
+          { title: "Mentoring Match", text: "Identify high-performing learners who can become peer mentors." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "data_management.coursera_logs",
+    label: "Coursera Activity Logs",
+    location: "Data Management › Coursera Logs",
+    title: "Coursera Data Synchronization Logs",
+    description: "Audit trail of API sync runs, CSV ingestions, and Coursera webhook payloads.",
+    sections: [
+      {
+        title: "1. Sync Technical Audit",
+        color: "blue",
+        type: "text",
+        content:
+          "Logs every automated Coursera data sync event, API status, imported records count, and processing errors.",
+      },
+      {
+        title: "2. Troubleshooting",
+        color: "amber",
+        type: "bullets",
+        items: [
+          { title: "Failed Syncs", text: "Rows marked red indicate network timeouts or missing alumni email matches." },
+          { title: "Manual Sync Trigger", text: "Admins can trigger an immediate re-sync if data appears stale." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "data_management.audit_logs",
+    label: "System Security Audit Logs",
+    location: "Data Management › Audit Logs",
+    title: "Security & Operations Audit Trail",
+    description: "System-wide log tracking user logins, permission changes, exports, and sensitive data updates.",
+    sections: [
+      {
+        title: "1. Security Monitoring",
+        color: "blue",
+        type: "text",
+        content:
+          "The Audit Log records all security-sensitive actions across NGConnect to guarantee accountability, security compliance, and forensic traceability.",
+      },
+      {
+        title: "2. Logged Events",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Authentication", text: "User logins, password resets, and session terminations." },
+          { title: "RBAC & Role Edits", text: "Changes to user roles, pipeline access, or admin privileges." },
+          { title: "Data Exports", text: "Who exported alumni CSV/Excel workbooks and when." },
+          { title: "Bulk Updates", text: "Mass lead transfers, stage updates, or spreadsheet imports." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "data_management.record_history",
+    label: "Field-Level Record History",
+    location: "Data Management › Record History",
+    title: "Field-Level Change History",
+    description: "Inspect line-by-line field modifications made to any alumni record over time.",
+    sections: [
+      {
+        title: "1. Granular Field Auditing",
+        color: "blue",
+        type: "text",
+        content:
+          "Every field update (e.g. salary change from ₹30,000 to ₹45,000) stores the old value, new value, timestamp, and user ID responsible.",
+      },
+      {
+        title: "2. Searching History",
+        color: "emerald",
+        type: "bullets",
+        items: [
+          { title: "Search by Email", text: "Filter change logs for a specific alumni record." },
+          { title: "Search by Field Name", text: "Track changes specifically to salary, stage, or owner fields." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "data_management.rollback",
+    label: "Import Rollback & Undo",
+    location: "Data Management › Rollback",
+    title: "Import Batch Rollback Tool",
+    description: "Revert accidental or corrupt spreadsheet imports without damaging surrounding data.",
+    sections: [
+      {
+        title: "1. Batch Rollback System",
+        color: "blue",
+        type: "text",
+        content:
+          "If a faulty Excel file was imported, the Rollback tool restores affected alumni records to their state prior to the import batch.",
+      },
+      {
+        title: "2. Safety Warnings",
+        color: "rose",
+        type: "bullets",
+        items: [
+          { title: "Irreversible", text: "Rollback operations immediately alter active DB records. Execute with extreme caution." },
+          { title: "Admin Only", text: "Only users with Super Admin permissions can execute a batch rollback." },
+        ],
+      },
+    ],
+  },
+
+  /* ──────────────────────── SYSTEM ADMINISTRATION / MANAGE ──────────────────────── */
+  {
+    id: "manage.users",
+    label: "User Accounts Management",
+    location: "System Admin › User Management",
+    title: "User Accounts & Staff Administration",
+    description: "Create, invite, edit, and deactivate staff user accounts in NGConnect.",
+    sections: [
+      {
+        title: "1. User Account Control",
+        color: "blue",
+        type: "text",
+        content:
+          "Manage staff credentials, assigned roles, campus scopes, and active status. Only authorized administrators can add or deactivate user accounts.",
+      },
+      {
+        title: "2. Account Management Actions",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Invite New Staff", text: "Send an email invitation link to join the platform with pre-assigned permissions." },
+          { title: "Assign Roles", text: "Select RBAC roles (e.g. Admin, Pipeline Manager, Caller, Read Only)." },
+          { title: "Deactivate User", text: "Safely disable accounts for departed staff while preserving their interaction history." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "manage.rbac",
+    label: "RBAC Permissions Grid",
+    location: "System Admin › RBAC Permissions",
+    title: "Role-Based Access Control (RBAC) Matrix",
+    description: "Configure granular read, edit, delete, and admin permissions across all platform resources.",
+    sections: [
+      {
+        title: "1. RBAC Architecture",
+        color: "blue",
+        type: "text",
+        content:
+          "NGConnect utilizes a strict RBAC architecture governing resource-level access (e.g. crm.pipelines.mentoring, crm.settings.edit_log, learning.sessions). Roles define exact permissions for every screen and button.",
+      },
+      {
+        title: "2. Modifying Permissions",
+        color: "amber",
+        type: "bullets",
+        items: [
+          { title: "Permission Matrix", text: "Check or uncheck permission cells per role to grant or restrict capabilities." },
+          { title: "Immediate Effect", text: "Permission changes apply immediately upon saving across active user sessions." },
+          { title: "Audit Trail", text: "All RBAC changes are logged in the System Audit Logs." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "manage.master_data",
+    label: "Master Data Management",
+    location: "System Admin › Master Data",
+    title: "Master Data & Dropdown Taxonomies",
+    description: "Manage standard drop-down options: Campuses, Courses, Companies, Cities, and Tech Stacks.",
+    sections: [
+      {
+        title: "1. Taxonomy Management",
+        color: "blue",
+        type: "text",
+        content:
+          "Master Data controls the dropdown options used throughout NGConnect for alumni profiles, spreadsheet imports, and filter bars. Standardizing these values prevents data fragmentation.",
+      },
+      {
+        title: "2. Supported Taxonomies",
+        color: "emerald",
+        type: "bullets",
+        items: [
+          { title: "Campuses", text: "Official Navgurukul campus names (e.g. Dharamshala, Pune, Bengaluru, Amdavad)." },
+          { title: "Courses / Schools", text: "Academic tracks e.g. School of Programming, School of Finance." },
+          { title: "Technology Stacks", text: "Tech skill categories e.g. React, Node.js, Data Analytics, Python." },
+          { title: "Placement Companies", text: "Verified employer hiring partners." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "manage.alumni_network",
+    label: "Alumni Network Analytics",
+    location: "System Admin › Alumni Network",
+    title: "Alumni Network Demographics & Insights",
+    description: "Macro-level analytics on alumni geographic distribution, gender ratios, salary progression, and employment rates.",
+    sections: [
+      {
+        title: "1. Demographics & Impact Insights",
+        color: "blue",
+        type: "text",
+        content:
+          "Provides executive leadership with macro-level visualizations detailing the health, growth, and socioeconomic mobility of the alumni network.",
+      },
+      {
+        title: "2. Key Charts & Indicators",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Geographic Spread", text: "Heatmap of alumni work locations across cities and states." },
+          { title: "Salary Distribution", text: "Banded breakdown of monthly earning levels across graduation cohorts." },
+          { title: "Employment Rate", text: "Percentage of alumni currently employed in relevant technical roles." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "manage.help",
+    label: "Help & Documentation Control",
+    location: "System Admin › Help Management",
+    title: "Help & Tooltip Control Center",
+    description: "Enable or disable [i] information tooltips and manage global help entries.",
+    sections: [
+      {
+        title: "1. Central Help Governance",
+        color: "blue",
+        type: "text",
+        content:
+          "This admin page lists all registered help modals across NGConnect. Admins can toggle individual tooltips on or off to customize the interface for users.",
+      },
+      {
+        title: "2. Controls",
+        color: "emerald",
+        type: "bullets",
+        items: [
+          { title: "Visibility Switch", text: "Toggle off a tooltip to hide its [i] button on the target page immediately." },
+          { title: "Enable All", text: "Reset all tooltips to visible with a single click." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "greetings",
+    label: "Greetings & Announcements",
+    location: "Main Platform › Greetings",
+    title: "Special Greetings & Broadcast Announcements",
+    description: "Manage broadcast festival greetings, birthday messages, and network announcements.",
+    sections: [
+      {
+        title: "1. Broadcast Messaging",
+        color: "blue",
+        type: "text",
+        content:
+          "Send scheduled or automated broadcast messages (WhatsApp / Email) to alumni for festivals, work anniversaries, and community milestones.",
+      },
+      {
+        title: "2. Features",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Templates", text: "Pre-approved templates with dynamic merge tags (e.g. {{name}}, {{campus}})." },
+          { title: "Schedule Date", text: "Set dispatch date and time for campaign execution." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "profile",
+    label: "User Preferences & Profile",
+    location: "Main Platform › Profile",
+    title: "Staff Account & Profile Settings",
+    description: "Manage your account password, notification preferences, and display settings.",
+    sections: [
+      {
+        title: "1. Personal Account Control",
+        color: "blue",
+        type: "text",
+        content:
+          "Update your personal profile details, notification preferences, dark/light theme options, and security settings.",
       },
     ],
   },

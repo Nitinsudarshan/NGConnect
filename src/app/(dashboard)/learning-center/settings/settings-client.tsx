@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { Save, Video, Mail, Loader2, Link2, CheckCircle2, UserPlus, MoreVertical, Eye, Trash2, Settings2, Users, Network, MessageSquare, Target, ListVideo, Plus, Edit2, MapPin, Linkedin, Phone, History, FolderTree, ChevronRight, ChevronDown, AlertTriangle, FolderPlus, BookOpen, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PageBanner } from "@/components/shared/page-banner"
+import { HelpModal } from "@/components/shared/HelpModal"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -556,6 +557,7 @@ export function SettingsClient({
         title="Learning Center Settings"
         description="Manage integrations, audience segments, session categories, and mentor master database."
         icon={<Settings2 className="w-8 h-8 text-indigo-500" />}
+        actions={<HelpModal helpId="learning_center.settings" />}
       />
 
       {!canEdit && (
