@@ -1,6 +1,7 @@
 import React from "react"
 import { GraduationCap, Clock, Sparkles } from "lucide-react"
 import { PageBanner } from "@/components/shared/page-banner"
+import { HelpModal } from "@/components/shared/HelpModal"
 
 export const metadata = {
   title: "Learning Hub | Coming Soon",
@@ -13,6 +14,7 @@ export default function ContentHubPage() {
         title="Learning Hub"
         description="A curated space for courses, resources, and personalised learning paths."
         icon={<GraduationCap className="w-6 h-6 text-indigo-500" />}
+        actions={<HelpModal helpId="learning_center.content_hub" />}
       />
 
       {/* Centered Coming Soon Content */}

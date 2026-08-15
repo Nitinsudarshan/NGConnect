@@ -7,6 +7,8 @@ import { getUserRole, getSupabaseUserEmail } from '@/lib/roles';
 import { LogInteractionPayload, OutcomeMappingRow, PipelineSuggestion, PipelineStage } from '@/types/engagement';
 import { revalidatePath } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getTeamAlumni } from '@/lib/engagement/queries';
+
 
 /**
  * Writes an audit log entry to the shared learning_center_audit_logs table
@@ -1115,3 +1117,96 @@ export async function getPipelineListViewAction(
     return { success: false, error: error.message };
   }
 }
+
+export async function assignToMeAction(payload: {
+  alumni_email: string;
+  pipeline_code: string;
+  assigned_by: string;
+}) {
+  try {
+    const supabase = await createClient();
+
+    const targetPipelines = (payload.pipeline_code === 'career_support' || payload.pipeline_code === 'mentoring' || payload.pipeline_code === 'placement')
+      ? ['mentoring', 'placement']
+      : [payload.pipeline_code];
+
+    const { data: pipelines } = await supabase
+      .from('pipelines')
+      .select('id, code')
+      .in('code', targetPipelines);
+
+    if (!pipelines || pipelines.length === 0) {
+      return { success: false, error: 'Pipeline not found' };
+    }
+
+    const pipelineIds = pipelines.map(p => p.id);
+
+    // Fetch target memberships
+    const { data: memberships } = await supabase
+      .from('alumni_pipeline_membership')
+      .select('id, poc_email, pipeline_id')
+      .eq('alumni_email', payload.alumni_email)
+      .in('pipeline_id', pipelineIds)
+      .eq('is_active', true);
+
+    if (!memberships || memberships.length === 0) {
+      return { success: false, error: 'Alumnus has no active membership in this pipeline' };
+    }
+
+    // Check race condition: if any membership already has a non-null poc_email
+    const alreadyAssigned = memberships.find(m => m.poc_email !== null && m.poc_email !== '');
+    if (alreadyAssigned) {
+      return { success: false, error: `Already assigned to ${alreadyAssigned.poc_email}` };
+    }
+
+    const membershipIds = memberships.map(m => m.id);
+
+    const { data: updated, error: updateErr } = await supabase
+      .from('alumni_pipeline_membership')
+      .update({ poc_email: payload.assigned_by })
+      .in('id', membershipIds)
+      .is('poc_email', null)
+      .select('id');
+
+    if (updateErr) {
+      return { success: false, error: 'Failed to assign lead' };
+    }
+
+    if (!updated || updated.length < membershipIds.length) {
+      return { success: false, error: 'This lead was just claimed by someone else — refresh and try again' };
+    }
+
+
+    await supabase.from('audit_log').insert({
+      record_id: payload.alumni_email,
+      action_type: 'ASSIGN_POC',
+      field_name: payload.pipeline_code,
+      new_value: payload.assigned_by,
+      changed_by_user_id: payload.assigned_by,
+      changed_at: new Date().toISOString(),
+    });
+
+    revalidatePath(`/alumni-growth/workspace`);
+    revalidatePath(`/alumni-growth/alumni/${encodeURIComponent(payload.alumni_email)}`);
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Unexpected error' };
+  }
+}
+
+export async function getTeamAlumniAction(payload: { page: number; pageSize: number }) {
+  try {
+    const { userId } = await auth();
+    const canView = await checkAccess(userId, 'crm.all_data', 'view');
+    if (!canView) {
+      return { success: false, error: 'Unauthorized: crm.all_data view permission required' };
+    }
+    const res = await getTeamAlumni({ page: payload.page, pageSize: payload.pageSize });
+    return { success: true, ...res };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Unexpected error' };
+  }
+}
+
+

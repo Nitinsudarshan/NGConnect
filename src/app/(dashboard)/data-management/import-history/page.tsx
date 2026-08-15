@@ -19,6 +19,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
+import { HelpModal } from '@/components/shared/HelpModal';
+
 export default async function ImportHistoryPage() {
   const role = await getUserRole();
   if (role !== 'Super Admin' && role !== 'Admin' && role !== 'Manager') { // TODO(roles-refactor): confirm access level
@@ -52,6 +54,9 @@ export default async function ImportHistoryPage() {
               Review history logs and execution logs of all imported datasets.
             </p>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <HelpModal helpId="data_management.import_history" />
         </div>
       </div>
 

@@ -5,6 +5,7 @@ import { useUserContext } from "@/contexts/user-context"
 import { hourlyGreetings } from "@/components/greetings-data"
 import { ArrowLeft, Search, Sun, Moon, Sunrise, Sunset } from "lucide-react"
 import Link from "next/link"
+import { HelpModal } from "@/components/shared/HelpModal"
 
 export default function GreetingsPreviewPage() {
   const user = useUserContext()
@@ -52,6 +53,9 @@ export default function GreetingsPreviewPage() {
           <p className="text-slate-500 dark:text-zinc-400 mt-1">
             Displaying all 120 creative greetings (5 per hour) with active gradients, icons, and emojis.
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <HelpModal helpId="greetings" />
         </div>
       </div>
 

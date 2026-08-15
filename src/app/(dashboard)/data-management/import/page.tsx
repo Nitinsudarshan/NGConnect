@@ -27,6 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import type { GharColumnMap, ImportPreviewResult, ParsedImportRow } from '@/types/import';
+import { HelpModal } from '@/components/shared/HelpModal';
 
 const MAP_FIELDS = [
   { key: 'email', label: 'Email Address (Primary Key)', required: true },
@@ -229,7 +230,7 @@ export default function ImportAlumniDataPage() {
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <Button
             variant="outline"
             size="sm"
@@ -239,6 +240,7 @@ export default function ImportAlumniDataPage() {
             <Settings2 className="w-4 h-4" />
             {showMapping ? 'Hide Mapping Config' : 'Configure Column Map'}
           </Button>
+          <HelpModal helpId="data_management.import" />
         </div>
       </div>
 
