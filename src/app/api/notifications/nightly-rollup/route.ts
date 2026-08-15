@@ -10,14 +10,17 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleRollup(request: NextRequest) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    return NextResponse.json({ error: 'CRON_SECRET environment variable is not configured' }, { status: 401 });
+  }
+
   const authHeader = request.headers.get('authorization');
   const secretParam = new URL(request.url).searchParams.get('secret');
-  const cronSecret = process.env.CRON_SECRET || 'ngconnect-cron-secret-dev';
 
   const isAuthorized =
     authHeader === `Bearer ${cronSecret}` ||
-    secretParam === cronSecret ||
-    process.env.NODE_ENV === 'development';
+    secretParam === cronSecret;
 
   if (!isAuthorized) {
     return NextResponse.json({ error: 'Unauthorized cron trigger' }, { status: 401 });
@@ -43,12 +46,12 @@ async function handleRollup(request: NextRequest) {
       const email = item.email;
       if (!email) continue;
 
-      // 1. Email channel activity
+      // 1. Email channel activity: only judge on sends OLDER than 90 days (sent_at <= ninetyDaysAgo)
       const { data: emailSends } = await supabase
         .from('notification_sends')
         .select('opened_at')
         .eq('alumni_email', email)
-        .gte('sent_at', ninetyDaysAgo);
+        .lte('sent_at', ninetyDaysAgo);
 
       let emailStatus: 'active' | 'inactive' | 'unknown' = 'unknown';
       if (emailSends && emailSends.length > 0) {
@@ -66,12 +69,12 @@ async function handleRollup(request: NextRequest) {
         { onConflict: 'alumni_email,channel' }
       );
 
-      // 2. Call channel activity
+      // 2. Call channel activity: only judge on interactions OLDER than 90 days (created_at <= ninetyDaysAgo)
       const { data: callInteractions } = await supabase
         .from('alumni_interactions')
         .select('id, interaction_outcomes(is_substantive_conversation)')
         .eq('alumni_email', email)
-        .gte('created_at', ninetyDaysAgo);
+        .lte('created_at', ninetyDaysAgo);
 
       let callStatus: 'active' | 'inactive' | 'unknown' = 'unknown';
       if (callInteractions && callInteractions.length > 0) {

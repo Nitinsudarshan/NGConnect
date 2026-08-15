@@ -20,16 +20,33 @@ export async function GET(request: NextRequest) {
   const supabase = createAdminClient();
 
   try {
-    // Add to alumni_contact_suppression for email channel
-    await supabase.from('alumni_contact_suppression').upsert(
-      {
+    // Check if suppression row already exists to preserve channel = 'all'
+    const { data: existing } = await supabase
+      .from('alumni_contact_suppression')
+      .select('channel, reason')
+      .eq('alumni_email', normalizedEmail)
+      .maybeSingle();
+
+    if (existing) {
+      // If existing row has channel === 'all', do NOT downgrade to 'email'
+      const targetChannel = existing.channel === 'all' ? 'all' : 'email';
+      await supabase
+        .from('alumni_contact_suppression')
+        .update({
+          channel: targetChannel,
+          reason: existing.reason || 'unsubscribed',
+          suppressed_since: new Date().toISOString(),
+        })
+        .eq('alumni_email', normalizedEmail);
+    } else {
+      // Insert new suppression record for email channel
+      await supabase.from('alumni_contact_suppression').insert({
         alumni_email: normalizedEmail,
         channel: 'email',
         reason: 'unsubscribed',
         suppressed_since: new Date().toISOString(),
-      },
-      { onConflict: 'alumni_email' }
-    );
+      });
+    }
 
     const htmlResponse = `
       <!DOCTYPE html>

@@ -1445,13 +1445,13 @@
     "semantic_hash": ""
   },
   "src/app/api/notifications/nightly-rollup/route.ts": {
-    "mtime": 1786781716.2306194,
-    "ast_hash": "05bfbbe4d6a17588c7e13cad2b13a467",
+    "mtime": 1786786644.057714,
+    "ast_hash": "6616b1b5b6a868f5ce64d8fdcd1828b4",
     "semantic_hash": ""
   },
   "src/app/api/notifications/process-queue/route.ts": {
-    "mtime": 1786781711.4087143,
-    "ast_hash": "5e50b9c04a4f9a4d178eef875fba677d",
+    "mtime": 1786786648.8940456,
+    "ast_hash": "914e7f7a1ade3e3fd6d4b8a4b35e55c5",
     "semantic_hash": ""
   },
   "src/app/api/notifications/settings/route.ts": {
@@ -1470,8 +1470,8 @@
     "semantic_hash": ""
   },
   "src/app/api/notifications/unsubscribe/route.ts": {
-    "mtime": 1786781700.7421975,
-    "ast_hash": "19b1de7e4e6979d9feaa5abf50ae9b50",
+    "mtime": 1786786638.656464,
+    "ast_hash": "8221a896b2a7679959da3f9a474efd0d",
     "semantic_hash": ""
   },
   "src/lib/email/dispatcher.ts": {
@@ -1515,18 +1515,18 @@
     "semantic_hash": ""
   },
   "src/lib/notifications/pipeline.ts": {
-    "mtime": 1786781690.6712015,
-    "ast_hash": "0e69e65a5953e54faffe8fa425381aa9",
+    "mtime": 1786786664.4703665,
+    "ast_hash": "8e2f8f20ee9e2efe3640c186463724d4",
     "semantic_hash": ""
   },
   "src/lib/notifications/render.ts": {
-    "mtime": 1786781684.4595892,
-    "ast_hash": "61e0512ddd370ecba601f902ca5d7cca",
+    "mtime": 1786786658.6563828,
+    "ast_hash": "0f1af7f7b92a1299be2baa63b46a36b5",
     "semantic_hash": ""
   },
   "src/lib/notifications/tokens.ts": {
-    "mtime": 1786781674.8153436,
-    "ast_hash": "a1c187771ee2f7acb0d8ed0f95135015",
+    "mtime": 1786786653.6868694,
+    "ast_hash": "dbfe7289171e064138d0b00f521ad2b9",
     "semantic_hash": ""
   },
   "src/types/email-notifications.ts": {
@@ -1537,6 +1537,11 @@
   "supabase/migrations/20260813000002_email_notifications_system.sql": {
     "mtime": 1786781628.8471189,
     "ast_hash": "e9ead1ec253c7df4f7796812a59441f2",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260813000003_suppression_channel_fix.sql": {
+    "mtime": 1786786630.5590017,
+    "ast_hash": "83f227d82e8053448381bc56f8dc864c",
     "semantic_hash": ""
   }
 }

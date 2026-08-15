@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { checkSendEligibility } from './gate';
-import { renderEmailTemplate } from './render';
+import { renderEmailTemplate, MissingTemplateVariableError } from './render';
 import { sendEmailViaDispatcher } from '@/lib/email/dispatcher';
 import crypto from 'crypto';
 
@@ -113,15 +113,43 @@ export async function processQueueItem(queueItemId: string) {
 
   const trackingToken = crypto.randomUUID();
 
-  // Render email
-  const rendered = renderEmailTemplate({
-    subjectTemplate: template.subject_template,
-    bodyHtmlTemplate: template.body_html_template,
-    context: queueItem.context || {},
-    alumniEmail,
-    trackingToken,
-    module: template.module,
-  });
+  // Render email with error handling for missing template variables
+  let rendered: { subject: string; html: string };
+  try {
+    rendered = renderEmailTemplate({
+      subjectTemplate: template.subject_template,
+      bodyHtmlTemplate: template.body_html_template,
+      context: queueItem.context || {},
+      alumniEmail,
+      trackingToken,
+      module: template.module,
+    });
+  } catch (renderError: any) {
+    const errorMessage = renderError?.message || 'Template rendering failed due to missing variables';
+    console.error('[Notification Pipeline] Render failure:', errorMessage);
+
+    // Update queue item status to failed
+    await supabase.from('notification_queue').update({
+      status: 'failed',
+      processed_at: new Date().toISOString(),
+    }).eq('id', queueItemId);
+
+    // Record send failure in notification_sends log
+    await supabase.from('notification_sends').insert({
+      queue_id: queueItemId,
+      template_id: template.id,
+      trigger_id: trigger.id,
+      alumni_email: alumniEmail,
+      recipient_email: alumniEmail,
+      subject_rendered: template.subject_template,
+      status: 'failed',
+      error_message: errorMessage,
+      provider: settings?.active_provider || 'dry_run',
+      tracking_token: trackingToken,
+    });
+
+    return { success: false, error: errorMessage };
+  }
 
   // Handle sandbox mode redirect
   let finalRecipient = alumniEmail;
