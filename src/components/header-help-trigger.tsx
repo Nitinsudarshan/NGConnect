@@ -72,6 +72,10 @@ export function HeaderHelpTrigger() {
   const entry = getHelpEntry(helpId);
   if (!entry) return null;
 
+  const visibleSections = isMember
+    ? entry.sections.filter((s) => !s.staffOnly)
+    : entry.sections;
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -98,7 +102,7 @@ export function HeaderHelpTrigger() {
 
         <div className="flex-1 p-6 overflow-y-auto">
           <div className="space-y-8 text-sm max-w-5xl mx-auto">
-            {entry.sections.map((s, i) => (
+            {visibleSections.map((s, i) => (
               <HelpSectionRenderer key={i} section={s} index={i} />
             ))}
           </div>
