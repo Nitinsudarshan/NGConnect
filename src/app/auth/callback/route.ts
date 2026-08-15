@@ -29,6 +29,38 @@ export async function GET(request: Request) {
             console.error("Failed to assign default signup role/team:", adminErr)
           }
         }
+
+        // Log platform_login engagement event if account matches alumni_master
+        if (user.email) {
+          try {
+            const { createAdminClient } = await import("@/lib/supabase/admin")
+            const adminClient = createAdminClient()
+            const { data: alumni } = await adminClient
+              .from('alumni_master')
+              .select('email')
+              .eq('email', user.email)
+              .maybeSingle()
+
+            if (alumni) {
+              const { data: eventType } = await adminClient
+                .from('engagement_event_types')
+                .select('id')
+                .eq('code', 'platform_login')
+                .maybeSingle()
+
+              if (eventType) {
+                await adminClient.from('alumni_engagement_events').insert({
+                  alumni_email: alumni.email,
+                  channel: 'platform',
+                  event_type_id: eventType.id,
+                  occurred_at: new Date().toISOString(),
+                })
+              }
+            }
+          } catch (loginEventErr) {
+            console.error("Failed to log platform login engagement event:", loginEventErr)
+          }
+        }
       }
 
       const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer

@@ -19,11 +19,13 @@ export async function GET(
     try {
       const { data: sendRecord } = await supabase
         .from('notification_sends')
-        .select('id, open_count, opened_at')
+        .select('id, alumni_email, open_count, opened_at')
         .eq('tracking_token', token)
         .maybeSingle();
 
       if (sendRecord) {
+        const isFirstOpen = (sendRecord.open_count || 0) === 0;
+
         await supabase
           .from('notification_sends')
           .update({
@@ -31,6 +33,25 @@ export async function GET(
             open_count: (sendRecord.open_count || 0) + 1,
           })
           .eq('id', sendRecord.id);
+
+        if (isFirstOpen && sendRecord.alumni_email) {
+          const { data: eventType } = await supabase
+            .from('engagement_event_types')
+            .select('id')
+            .eq('code', 'email_opened')
+            .maybeSingle();
+
+          if (eventType) {
+            await supabase.from('alumni_engagement_events').insert({
+              alumni_email: sendRecord.alumni_email,
+              channel: 'email',
+              event_type_id: eventType.id,
+              related_entity_type: 'notification_sends',
+              related_entity_id: sendRecord.id,
+              occurred_at: new Date().toISOString(),
+            });
+          }
+        }
       }
     } catch (err) {
       console.error('[Tracking Pixel] Failed to update open count:', err);

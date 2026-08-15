@@ -235,6 +235,30 @@ export async function processQueueItem(queueItemId: string) {
     logged_interaction_id: loggedInteractionId,
   });
 
+  // Log email_sent engagement event if send succeeded
+  if (sendResult.success) {
+    try {
+      const { data: eventType } = await supabase
+        .from('engagement_event_types')
+        .select('id')
+        .eq('code', 'email_sent')
+        .maybeSingle();
+
+      if (eventType) {
+        await supabase.from('alumni_engagement_events').insert({
+          alumni_email: alumniEmail,
+          channel: 'email',
+          event_type_id: eventType.id,
+          related_entity_type: 'notification_sends',
+          related_entity_id: queueItemId,
+          occurred_at: new Date().toISOString(),
+        });
+      }
+    } catch (eventErr) {
+      console.error('[Notification Pipeline] Failed to log email_sent engagement event:', eventErr);
+    }
+  }
+
   return {
     success: sendResult.success,
     providerMessageId: sendResult.providerMessageId,

@@ -23,9 +23,45 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.04.15";
+export const CURRENT_VERSION = "1.04.16";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.04.16",
+    date: "2026-08-15",
+    title: "Unified Engagement Events Ledger & SQL Triggers",
+    type: "patch",
+    changes: [
+      {
+        category: "Features",
+        description: "Launched unified append-only engagement events ledger (alumni_engagement_events) with strict RLS policies.",
+      },
+      {
+        category: "Features",
+        description: "Implemented platform login engagement tracking in auth callback route for alumni accounts.",
+      },
+      {
+        category: "Improvements",
+        description: "Added SQL triggers for substantive call logging (alumni_interactions) and mentoring attendance logging (mentoring_attendance).",
+      },
+      {
+        category: "Improvements",
+        description: "Extended notification pipeline and tracking pixel to insert email_sent and deduplicated email_opened events.",
+      },
+      {
+        category: "Improvements",
+        description: "Hooked profile_updated engagement event into alumni profile update API route.",
+      },
+      {
+        category: "Improvements",
+        description: "Added mandatory versioning and changelog maintenance rule to project governance rules.",
+      },
+      {
+        category: "Improvements",
+        description: "Expanded platform version changelog modal dimensions to 90% viewport width and 90% height.",
+      },
+    ],
+  },
   {
     version: "1.04.15",
     date: "2026-08-15",
