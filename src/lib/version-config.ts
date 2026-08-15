@@ -23,9 +23,228 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.04.18";
+export const CURRENT_VERSION = "1.05.00";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.05.00",
+    date: "2026-08-16",
+    title: "Member Support Portal, Feedback Engine & Requests Management Suite",
+    type: "minor",
+    highlights: [
+      "Role-restricted sidebar navigation hiding system documentation from non-admin roles.",
+      "Dedicated Support Portal with helpline (9999999999), official email, and real-time IST active/offline status evaluator.",
+      "Contextual Feedback Engine with session topic requests and career placement support inputs.",
+      "In-app Member Request Workflow for Coursera Enterprise access and Pay-Forward engagements.",
+      "Staff Member Requests Management Workspace (/alumni-growth/requests) with PageBanner layout.",
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Created Support Portal (/support) with 9999999999 helpline, alumnigrowth@navgurukul.org contact, and dynamic IST working hours active/offline status.",
+      },
+      {
+        category: "Features",
+        description: "Created Member Feedback Hub (/feedback) with 4 contextual tracks, star ratings, session topic suggestions, and anonymous submission.",
+      },
+      {
+        category: "Features",
+        description: "Launched In-App Request Workflow for Coursera Enterprise access and Pay-Forward engagements replacing legacy mailto links.",
+      },
+      {
+        category: "Features",
+        description: "Built Staff Member Requests Workspace (/alumni-growth/requests) with access granting actions and PageBanner integration.",
+      },
+      {
+        category: "Security",
+        description: "Restricted sidebar Documentation link (/docs) to Super Admin/Admin roles and enforced server/client route guards on /alumni-growth/requests.",
+      },
+      {
+        category: "Improvements",
+        description: "Added Supabase SQL migration script (20260816000000_alumni_member_requests.sql) for alumni_member_requests table and RLS policies.",
+      },
+    ],
+  },
+  {
+    version: "1.04.29",
+    date: "2026-08-16",
+    title: "Coursera URL Direct Link & Staff Requests Route Access Guard",
+    type: "patch",
+    changes: [
+      {
+        category: "Fixes",
+        description: "Updated Coursera login link in CourseraSidebarBanner to target https://www.coursera.org/ directly.",
+      },
+      {
+        category: "Security",
+        description: "Added server-side and client-side role redirect guards on /alumni-growth/requests to redirect Member and Viewer roles to homepage.",
+      },
+    ],
+  },
+  {
+    version: "1.04.28",
+    date: "2026-08-16",
+    title: "SQL Migration Script & Typography Alignment for Member Requests",
+    type: "patch",
+    changes: [
+      {
+        category: "Features",
+        description: "Created Supabase SQL migration script (20260816000000_alumni_member_requests.sql) for alumni_member_requests table with RLS policies.",
+      },
+      {
+        category: "Improvements",
+        description: "Verified typography alignment and Noto Sans / Geist font hierarchy across Member Requests, Support, and Feedback pages.",
+      },
+    ],
+  },
+  {
+    version: "1.04.27",
+    date: "2026-08-16",
+    title: "PageBanner Integration & Compact Design for Member Requests Portal",
+    type: "patch",
+    changes: [
+      {
+        category: "Improvements",
+        description: "Integrated standard PageBanner component into /alumni-growth/requests matching overall platform theme.",
+      },
+      {
+        category: "Improvements",
+        description: "Redesigned request workspace with compact metric cards, minimal padding, and standard app card styles.",
+      },
+    ],
+  },
+  {
+    version: "1.04.26",
+    date: "2026-08-16",
+    title: "In-App Member Request Workflow & Staff Requests Portal",
+    type: "minor",
+    changes: [
+      {
+        category: "Features",
+        description: "Replaced static mailto links with in-app Request Access workflows for Coursera Enterprise licenses and Pay-Forward engagements.",
+      },
+      {
+        category: "Features",
+        description: "Created Staff Member Requests Portal (/alumni-growth/requests) allowing team members to grant Coursera access and process Pay-Forward requests.",
+      },
+      {
+        category: "Improvements",
+        description: "Updated Coursera and Pay-Forward sidebar banners to support Request Sent, Approved Access (with login link), and Received reset states.",
+      },
+    ],
+  },
+  {
+    version: "1.04.25",
+    date: "2026-08-16",
+    title: "Exact Hours/Minutes Countdown for Offline Support Helpline",
+    type: "patch",
+    changes: [
+      {
+        category: "Improvements",
+        description: "Formatted offline helpline badge text to exact countdown format 'Opens in XXh YYm' or 'Opens in XX hrs'.",
+      },
+    ],
+  },
+  {
+    version: "1.04.24",
+    date: "2026-08-16",
+    title: "Dynamic IST Working Hours Status Indicator for Support Helpline",
+    type: "patch",
+    changes: [
+      {
+        category: "Features",
+        description: "Added real-time IST working hours evaluator showing active green status during Mon-Fri 10:00 AM - 5:00 PM IST and red offline status with next opening countdown outside working hours.",
+      },
+    ],
+  },
+  {
+    version: "1.04.23",
+    date: "2026-08-16",
+    title: "Support Portal SLA Timelines, Official Email & Member Categories Alignment",
+    type: "patch",
+    changes: [
+      {
+        category: "Features",
+        description: "Updated support contact email to alumnigrowth@navgurukul.org and updated helpline SLAs (48hr general, 4hr quick response).",
+      },
+      {
+        category: "Improvements",
+        description: "Populated all support channels with member-specific information and dynamic member reference ticket IDs.",
+      },
+    ],
+  },
+  {
+    version: "1.04.22",
+    date: "2026-08-16",
+    title: "Member-Centric Feedback Category & Focus Area Refinement",
+    type: "patch",
+    changes: [
+      {
+        category: "Improvements",
+        description: "Replaced internal staff terms (Alumni Growth Board, Reports Export) with member-facing features (Learning Hub, Video Player, Support Portal).",
+      },
+      {
+        category: "Improvements",
+        description: "Updated Career & Placement focus areas to Mentoring & Peer Connect and Pay-Forward Program.",
+      },
+    ],
+  },
+  {
+    version: "1.04.21",
+    date: "2026-08-16",
+    title: "Contextual Feedback Fields for Sessions & Career Placement Tracks",
+    type: "patch",
+    changes: [
+      {
+        category: "Improvements",
+        description: "Scoped 'Suggest Upcoming Session Topics or Workshops' input dynamically under Sessions & Learning feedback category.",
+      },
+      {
+        category: "Features",
+        description: "Added dedicated Career & Placement support request field for mock technical interviews, resume audits, and job referrals.",
+      },
+      {
+        category: "Improvements",
+        description: "Added focus area sub-selectors across Sessions & Learning, Career & Placement, Platform UI/UX, and General feedback tracks.",
+      },
+    ],
+  },
+  {
+    version: "1.04.20",
+    date: "2026-08-16",
+    title: "SideNav Documentation Role Restriction & Dedicated Support/Feedback Hubs",
+    type: "patch",
+    changes: [
+      {
+        category: "Security",
+        description: "Restricted sidebar Documentation link (/docs) visibility strictly to Super Admin and Admin roles.",
+      },
+      {
+        category: "Features",
+        description: "Created dedicated Support Portal (/support) featuring telephone helpline (9999999999), ticket ID tracking, SLAs, and support FAQs.",
+      },
+      {
+        category: "Features",
+        description: "Launched interactive Member Feedback Hub (/feedback) supporting general, platform UI, session topic suggestions, and anonymous submission.",
+      },
+    ],
+  },
+  {
+    version: "1.04.19",
+    date: "2026-08-16",
+    title: ".gitignore UTF-16LE Encoding Fix & Untracked File Cleanup",
+    type: "patch",
+    changes: [
+      {
+        category: "Fixes",
+        description: "Repaired UTF-16LE corruption at .gitignore tail, converting graphify-out/ and security/ entries to plain UTF-8 with CRLF line endings.",
+      },
+      {
+        category: "Improvements",
+        description: "Removed graphify-out/ build cache (107 files) and security/ audit logs (2 files) from git tracking via git rm --cached.",
+      },
+    ],
+  },
   {
     version: "1.04.18",
     date: "2026-08-16",

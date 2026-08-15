@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   FileQuestion,
   Mail,
+  Inbox,
 } from "lucide-react"
 
 import { NavMain, NavItem } from "@/components/nav-main"
@@ -41,31 +42,35 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useUserContext } from "@/contexts/user-context"
 
-const data = {
-  navSecondary: [
-    {
-      title: "Documentation",
-      url: "/docs",
-      icon: BookOpen,
-    },
-    {
-      title: "Support",
-      url: "#",
-      icon: LifeBuoy,
-    },
-    {
-      title: "Feedback",
-      url: "#",
-      icon: Send,
-    },
-  ],
-}
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { setOpenMobile, isMobile } = useSidebar()
   const pathname = usePathname()
   const user = useUserContext()
   const isExcludedRole = user?.role === "Member" || user?.role === "Viewer"
+  const isSuperOrAdmin = user?.role === "Super Admin" || user?.role === "Admin"
+
+  const navSecondary = [
+    ...(isSuperOrAdmin ? [
+      {
+        title: "Documentation",
+        url: "/docs",
+        icon: BookOpen,
+        isActive: pathname.startsWith("/docs"),
+      },
+    ] : []),
+    {
+      title: "Support",
+      url: "/support",
+      icon: LifeBuoy,
+      isActive: pathname === "/support",
+    },
+    {
+      title: "Feedback",
+      url: "/feedback",
+      icon: Send,
+      isActive: pathname === "/feedback",
+    },
+  ]
 
   const navGeneral: NavItem[] = [
     {
@@ -191,6 +196,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           isActive: pathname === "/alumni-growth/workspace",
         },
         {
+          title: "Requests",
+          url: "/alumni-growth/requests",
+          icon: Inbox,
+          isActive: pathname === "/alumni-growth/requests",
+        },
+        {
           title: "Pay-Forward Board",
           url: "/alumni-growth/pipelines/pay-forward",
           icon: HeartHandshake,
@@ -266,7 +277,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           ...(!isExcludedRole ? navManage : []),
         ]} />
         <div className="mt-auto flex flex-col">
-          <NavSecondary items={data.navSecondary} />
+          <NavSecondary items={navSecondary} />
           {user?.role === "Member" && <CourseraSidebarBanner />}
           {user?.role === "Member" && <PayForwardSidebarBanner />}
         </div>
