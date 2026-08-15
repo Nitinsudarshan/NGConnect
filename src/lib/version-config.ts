@@ -23,9 +23,33 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.04.17";
+export const CURRENT_VERSION = "1.04.18";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.04.18",
+    date: "2026-08-16",
+    title: "Engagement Event Traceability Fixes & Changelog Governance Alignment",
+    type: "patch",
+    changes: [
+      {
+        category: "Fixes",
+        description: "Fixed email_sent engagement event traceability by capturing notification_sends ID instead of queue ID.",
+      },
+      {
+        category: "Fixes",
+        description: "Removed wrong-actor profile_updated engagement event firing from staff-facing alumni PATCH route.",
+      },
+      {
+        category: "Fixes",
+        description: "Corrected inaccurate route mapping descriptions in v1.04.17 changelog entry.",
+      },
+      {
+        category: "Improvements",
+        description: "Added mandatory git diff verification requirement to versioning and changelog governance rules.",
+      },
+    ],
+  },
   {
     version: "1.04.17",
     date: "2026-08-16",
@@ -34,7 +58,7 @@ export const VERSION_HISTORY: VersionEntry[] = [
     changes: [
       {
         category: "Fixes",
-        description: "Resolved broken route mappings for /alumni-growth/workspace and /manage/help/analytics.",
+        description: "Resolved broken route mappings for /alumni-growth/all-data and the Learning Center session feedback page.",
       },
       {
         category: "Features",

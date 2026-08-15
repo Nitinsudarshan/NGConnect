@@ -13,3 +13,5 @@ After every successful task execution (and before any push/commit), you **must**
    - **Major (`x+1.00.00`)**: System overhauls, major releases.
 3. Update `CURRENT_VERSION` in `src/lib/version-config.ts`.
 4. Prepend a new `VersionEntry` to `VERSION_HISTORY` in `src/lib/version-config.ts` summarizing the work done.
+5. **Verification**: Check every change-item description against the actual `git diff` (or file changes) of the commit/task it describes before finalizing the entry to ensure absolute accuracy.
+

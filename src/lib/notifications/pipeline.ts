@@ -220,23 +220,31 @@ export async function processQueueItem(queueItemId: string) {
     .eq('id', queueItemId);
 
   // Insert send log
-  await supabase.from('notification_sends').insert({
-    queue_id: queueItemId,
-    template_id: template.id,
-    trigger_id: trigger.id,
-    alumni_email: alumniEmail,
-    recipient_email: finalRecipient,
-    subject_rendered: rendered.subject,
-    status: sendResult.success ? 'sent' : 'failed',
-    error_message: sendResult.error || null,
-    provider: sendResult.providerUsed,
-    provider_message_id: sendResult.providerMessageId || null,
-    tracking_token: trackingToken,
-    logged_interaction_id: loggedInteractionId,
-  });
+  const { data: sendRecord, error: sendErr } = await supabase
+    .from('notification_sends')
+    .insert({
+      queue_id: queueItemId,
+      template_id: template.id,
+      trigger_id: trigger.id,
+      alumni_email: alumniEmail,
+      recipient_email: finalRecipient,
+      subject_rendered: rendered.subject,
+      status: sendResult.success ? 'sent' : 'failed',
+      error_message: sendResult.error || null,
+      provider: sendResult.providerUsed,
+      provider_message_id: sendResult.providerMessageId || null,
+      tracking_token: trackingToken,
+      logged_interaction_id: loggedInteractionId,
+    })
+    .select('id')
+    .single();
+
+  if (sendErr) {
+    console.error('[Notification Pipeline] Error inserting notification_sends log:', sendErr);
+  }
 
   // Log email_sent engagement event if send succeeded
-  if (sendResult.success) {
+  if (sendResult.success && sendRecord?.id) {
     try {
       const { data: eventType } = await supabase
         .from('engagement_event_types')
@@ -250,7 +258,7 @@ export async function processQueueItem(queueItemId: string) {
           channel: 'email',
           event_type_id: eventType.id,
           related_entity_type: 'notification_sends',
-          related_entity_id: queueItemId,
+          related_entity_id: sendRecord.id,
           occurred_at: new Date().toISOString(),
         });
       }

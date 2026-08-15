@@ -1,22 +1,22 @@
-# Graph Report - NGConnect  (2026-08-16)
+# Graph Report - NGConnect  (2026-08-15)
 
 ## Corpus Check
-- 312 files · ~189,779 words
+- 309 files · ~188,314 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1628 nodes · 4579 edges · 135 communities (90 shown, 45 thin omitted)
+- 1616 nodes · 4568 edges · 135 communities (92 shown, 43 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 3 edges (avg confidence: 0.7)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `074bb131`
+- Built from commit: `a175349a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- badge.tsx
-- users-table.tsx
+- schema.ts
+- learning-center/settings/page.tsx
 - sidebar.tsx
 - dependencies
 - devDependencies
@@ -27,21 +27,21 @@
 - dropdown-menu.tsx
 - card.tsx
 - Coursera Dashboard — Complete Build Instructions
-- WorkspaceClient.tsx
+- alumni-growth/alumni/[id]/AlumniDetailClient.tsx
 - NGConnect Web Application Documentation (Comprehensive)
 - import.ts
 - alumni-growth/pipelines/mentoring/MentoringClient.tsx
-- roles.ts
+- auth
 - components.json
-- HelpDocsClient.tsx
+- help-registry.ts
 - engagement/queries.ts
 - cn
-- alumni-growth/settings/SettingsClient.tsx
+- badge.tsx
 - Greetings Banner Component
 - chart.tsx
 - createClient
-- createClient
-- accessibility.md
+- app/layout.tsx
+- AGENTS.md
 - Created Tables Log
 - Charts, Graphs, and Data Visualizations
 - dispatcher.ts
@@ -63,24 +63,24 @@
 - engagement/alumni/[id]/page.tsx
 - Input.tsx
 - Critical Severity
-- form.tsx
-- getSupabaseUserEmail
+- mentor-form.tsx
+- roles.ts
 - update-licenses.ts
 - next.config.ts
 - postcss.config.mjs
 - globals.d.ts
 - NGConnect
 - UI Component Rules
-- sidebar-version-footer.tsx
+- version-config.ts
 - component-architecture.md
 - data-access.md
 - rollback.ts
 - documentation.md
-- rbac-grid.tsx
-- (dashboard)/page.tsx
-- AGENTS.md
+- components/page.tsx
+- alumni-growth/settings/SettingsClient.tsx
+- responsive-design.md
 - security.md
-- 20260813000004_engagement_events.sql
+- server-client-boundary.md
 - 20260812191509_supabase_schema.sql
 - rules/graphify.md
 - workflows/graphify.md
@@ -90,15 +90,15 @@
 - 20260812191505_learning_center_schema_part2.sql
 - 20260812191507_pipeline_stages_upgrade.sql
 - package.json
-- alumni-growth/reports/page.tsx
+- alumni/[email]/route.ts
 - 20260812191504_learning_center_schema.sql
-- types/audit.ts
+- api-conventions.md
 - Add User Autocomplete to RBAC Grid
 - clsx
 - 20260813000001_channel_specific_outcomes.sql
 - FollowupDateSelector.tsx
 - engagement.ts
-- components/page.tsx
+- sheet.tsx
 - template/route.ts
 - public.pipeline_poc_eligibility
 - forms-and-validation.md
@@ -123,7 +123,7 @@
 - alumni_pipeline_membership
 - recalculate/route.ts
 - useUserContext
-- nightly-rollup/route.ts
+- react
 - 20260813000002_email_notifications_system.sql
 - InteractionOutcome
 - data-import.md
@@ -131,12 +131,12 @@
 - @hookform/resolvers
 - public.alumni_contact_suppression
 - public.apply_do_not_contact
-- classifyFollowup
-- Versioning and Changelog Maintenance
-- design-system.md
-- testing.md
-- rules/version-and-changelog.md
-- @dnd-kit/sortable
+- activity-logs/page.tsx
+- import-coursera/page.tsx
+- video-player.tsx
+- class-variance-authority
+- settings-layout.tsx
+- getKanbanBoardCardsAction
 - project-structure.md
 
 ## God Nodes (most connected - your core abstractions)
@@ -166,23 +166,23 @@
 ## Import Cycles
 - None detected.
 
-## Communities (135 total, 45 thin omitted)
+## Communities (135 total, 43 thin omitted)
 
-### Community 0 - "badge.tsx"
-Cohesion: 0.14
-Nodes (12): FollowUpsClient(), FollowUpsClientProps, MentoringClientProps, STAGES, PlacementClientProps, STAGES, QueueClient(), OwnershipTags() (+4 more)
+### Community 0 - "schema.ts"
+Cohesion: 0.22
+Nodes (8): CategoryFormSchema, CategoryFormValues, MentorFormSchema, MentorFormValues, SessionFormSchema, SessionFormValues, SubcategoryFormSchema, SubcategoryFormValues
 
-### Community 1 - "users-table.tsx"
-Cohesion: 0.17
-Nodes (13): AlumniNetworkStatsCards(), AlumniNetworkStatsCharts(), AlumniNetworkPage(), SUPER_ADMINS, updateUserRoleAndTeam(), ManageUsersPage(), UsersStatsCards(), UsersStatsCharts() (+5 more)
+### Community 1 - "learning-center/settings/page.tsx"
+Cohesion: 0.26
+Nodes (14): CreateSessionPage(), metadata, metadata, SessionsPage(), metadata, SettingsPage(), enrichSessionsWithCategoryNames(), getAudiences() (+6 more)
 
 ### Community 2 - "sidebar.tsx"
-Cohesion: 0.10
-Nodes (37): react, react, data, CourseraSidebarBanner(), NavItem, NavMain(), NavSecondary(), NavUser() (+29 more)
+Cohesion: 0.12
+Nodes (29): data, CourseraSidebarBanner(), NavSecondary(), NavUser(), PayForwardSidebarBanner(), Sidebar(), SidebarContent(), SidebarContext (+21 more)
 
 ### Community 3 - "dependencies"
 Cohesion: 0.10
-Nodes (21): class-variance-authority, @dnd-kit/core, exceljs, isomorphic-dompurify, lucide-react, mermaid, next-themes, dependencies (+13 more)
+Nodes (21): @dnd-kit/core, @dnd-kit/sortable, exceljs, isomorphic-dompurify, lucide-react, mermaid, next-themes, dependencies (+13 more)
 
 ### Community 4 - "devDependencies"
 Cohesion: 0.08
@@ -193,12 +193,12 @@ Cohesion: 0.15
 Nodes (16): AppSidebar(), ModeToggle(), HeaderUserMenu, SiteHeader(), Breadcrumb(), BreadcrumbEllipsis(), BreadcrumbItem(), BreadcrumbLink() (+8 more)
 
 ### Community 6 - "button.tsx"
-Cohesion: 0.18
-Nodes (19): CATEGORY_STYLES, FollowUpCategory, FollowUpsClientProps, DEFAULT_SETTINGS, TransferLeadModalProps, isDriveUrl(), normalizeDriveUrl(), SessionMediaModal() (+11 more)
+Cohesion: 0.15
+Nodes (25): DEFAULT_SETTINGS, isDriveUrl(), normalizeDriveUrl(), SessionMediaModal(), ConfirmDeleteDialogProps, HelpSectionRenderer(), AVATAR_COLORS, ChatEntry (+17 more)
 
 ### Community 7 - "createAdminClient"
-Cohesion: 0.11
-Nodes (22): POST(), GET(), GET(), GET(), GET(), DELETE(), firstDayOfMonth(), GET() (+14 more)
+Cohesion: 0.07
+Nodes (38): POST(), GET(), GET(), GET(), GET(), DELETE(), firstDayOfMonth(), GET() (+30 more)
 
 ### Community 8 - "compilerOptions"
 Cohesion: 0.07
@@ -209,52 +209,52 @@ Cohesion: 0.23
 Nodes (13): ROLES, HeaderUserMenu(), toTitleCase(), Avatar(), AvatarFallback(), AvatarImage(), DropdownMenu(), DropdownMenuContent() (+5 more)
 
 ### Community 10 - "card.tsx"
-Cohesion: 0.13
-Nodes (22): MAP_FIELDS, PayForwardClientProps, STAGES, AuditLog, UsersStatsProps, chartConfig, CourseraChartsProps, CourseraMonthlyMetric (+14 more)
+Cohesion: 0.09
+Nodes (37): AuditLogsPage(), MAP_FIELDS, RecordHistoryContent(), RollbackCenterPage(), FollowUpsClientProps, MentoringClientProps, STAGES, PayForwardClientProps (+29 more)
 
 ### Community 11 - "Coursera Dashboard — Complete Build Instructions"
 Cohesion: 0.06
 Nodes (30): Architecture Overview, Complete Algorithm (implement exactly in this order), Coursera Dashboard — Complete Build Instructions, Dashboard layout, `GET /api/coursera/learner/[email]`, `GET /api/coursera/metrics/available-months`, `GET /api/coursera/metrics?month=2026-03-01`, `GET /api/coursera/metrics/trend?months=6` (+22 more)
 
-### Community 12 - "WorkspaceClient.tsx"
-Cohesion: 0.31
-Nodes (11): AlumniNetworkStatsProps, LoadingView(), AlumniDetailsModule(), CardFooter(), Input(), Select(), SelectContent(), SelectItem() (+3 more)
+### Community 12 - "alumni-growth/alumni/[id]/AlumniDetailClient.tsx"
+Cohesion: 0.24
+Nodes (14): AlumniNetworkStatsProps, BANNER_THEMES, ProfilePage(), LogInteractionModal(), TransferLeadModalProps, AlumniDetailsModule(), DialogFooter(), Select() (+6 more)
 
 ### Community 13 - "NGConnect Web Application Documentation (Comprehensive)"
 Cohesion: 0.10
 Nodes (20): 1. Overview, 2.1 Framework & Core Libraries, 2.2 Styling & UI Components, 2.3 Backend & Infrastructure, 2. Technology Stack & Core Tooling, 3.1 Routing & Middleware, 3.2 Utilities & State Management, 3. Application Architecture (+12 more)
 
 ### Community 14 - "import.ts"
-Cohesion: 0.09
-Nodes (31): GET(), Params, PATCH(), POST(), POST(), defaultColumnMap, parseImportFile(), processImportRows() (+23 more)
+Cohesion: 0.15
+Nodes (18): PATCH(), POST(), POST(), defaultColumnMap, parseImportFile(), processImportRows(), VALID_STATUSES, validateImportRow() (+10 more)
 
 ### Community 15 - "alumni-growth/pipelines/mentoring/MentoringClient.tsx"
-Cohesion: 0.10
-Nodes (34): AlumniDetailClient(), FollowUpCard(), DEFAULT_STAGES, MentoringClientProps, MentoringColumn(), DEFAULT_STAGES, PayForwardClientProps, PayForwardColumn() (+26 more)
+Cohesion: 0.08
+Nodes (41): AlumniDetailClient(), CalendarStrip(), CATEGORY_STYLES, classifyFollowup(), FollowUpCard(), FollowUpCategory, FollowUpsClient(), startOf() (+33 more)
 
-### Community 16 - "roles.ts"
-Cohesion: 0.21
-Nodes (18): DataManagementLayout(), COURSERA_CATEGORY, DATA_MANAGEMENT_CATEGORIES, DataManagementPage(), DashboardLayout(), ManageAlumniNetworkLayout(), ManageMasterDataLayout(), ManageUsersLayout() (+10 more)
+### Community 16 - "auth"
+Cohesion: 0.20
+Nodes (16): DataManagementLayout(), COURSERA_CATEGORY, DATA_MANAGEMENT_CATEGORIES, DataManagementPage(), ManageAlumniNetworkLayout(), HelpDocsPage(), metadata, ManageMasterDataLayout() (+8 more)
 
 ### Community 17 - "components.json"
 Cohesion: 0.10
 Nodes (19): aliases, components, hooks, lib, ui, utils, iconLibrary, registries (+11 more)
 
-### Community 18 - "HelpDocsClient.tsx"
-Cohesion: 0.18
-Nodes (14): getSetFromLS(), HelpDocsClient(), saveSetToLS(), HelpDocsPage(), metadata, getSetFromLS(), HeaderHelpTrigger(), COLOR_DOT (+6 more)
+### Community 18 - "help-registry.ts"
+Cohesion: 0.19
+Nodes (11): getSetFromLS(), HelpDocsClient(), saveSetToLS(), getSetFromLS(), HeaderHelpTrigger(), COLOR_DOT, getHelpEntry(), getHelpIdForRoute() (+3 more)
 
 ### Community 19 - "engagement/queries.ts"
-Cohesion: 0.19
-Nodes (23): AlumniDetailPage(), PageProps, FollowUpsPage(), WorkspacePage(), DEFAULT_PIPELINE_STAGES, enrichAlumniList(), enrichFollowUpsWithOwnership(), getAlumnusEngagementDetails() (+15 more)
+Cohesion: 0.15
+Nodes (27): AlumniDetailPage(), PageProps, FollowUpsPage(), ReportsPage(), ReportsClient(), WorkspacePage(), DEFAULT_PIPELINE_STAGES, enrichAlumniList() (+19 more)
 
 ### Community 20 - "cn"
-Cohesion: 0.09
-Nodes (30): AvatarBadge(), AvatarGroup(), AvatarGroupCount(), CardAction(), DialogOverlay(), DropdownMenuCheckboxItem(), DropdownMenuRadioItem(), DropdownMenuShortcut() (+22 more)
+Cohesion: 0.07
+Nodes (36): Accordion(), AccordionContent(), AccordionItem(), AccordionTrigger(), AvatarBadge(), AvatarGroup(), AvatarGroupCount(), CardAction() (+28 more)
 
-### Community 21 - "alumni-growth/settings/SettingsClient.tsx"
-Cohesion: 0.15
-Nodes (27): NAV_ITEMS, OUTCOME_MAPPING_ROWS, MentorDetailsPage(), DrillDownDialog(), DrillDownDialogProps, NotificationTrendChart(), TrendChartProps, TrendDataPoint (+19 more)
+### Community 21 - "badge.tsx"
+Cohesion: 0.22
+Nodes (20): SessionsClient(), MentorDetailsPage(), DrillDownDialog(), NotificationDashboardClient(), NotificationTrendChart(), TrendChartProps, TrendDataPoint, UsersTableProps (+12 more)
 
 ### Community 22 - "Greetings Banner Component"
 Cohesion: 0.18
@@ -262,15 +262,19 @@ Nodes (10): 1. Component Location & Overview, 2. Component Design & Aesthetics, 
 
 ### Community 23 - "chart.tsx"
 Cohesion: 0.06
-Nodes (38): chartConfig, CourseraDashboardClient(), delta(), fmt(), formatMonth(), formatMonthShort(), getDistColorVar(), KpiCard() (+30 more)
+Nodes (43): chartConfig, CourseraDashboardClient(), delta(), fmt(), formatMonth(), formatMonthShort(), getDistColorVar(), KpiCard() (+35 more)
 
 ### Community 24 - "createClient"
-Cohesion: 0.12
-Nodes (19): GET(), MAPPING_FILE_PATH, POST(), ActivityLogsPage(), formatMonth(), SearchParams, ImportHistoryPage(), CreateSessionClient() (+11 more)
+Cohesion: 0.26
+Nodes (14): GET(), MAPPING_FILE_PATH, POST(), GET(), LearningCenterDashboard(), metadata, saveWatchProgressAction(), checkCourseraApiUserActive() (+6 more)
 
-### Community 25 - "createClient"
-Cohesion: 0.06
-Nodes (33): AuditLogsPage(), AvailableMonth, formatDuration(), formatMonth(), formatRows(), generateAvailableMonthOptions(), ImportCourseraPage(), ImportLogRow (+25 more)
+### Community 25 - "app/layout.tsx"
+Cohesion: 0.23
+Nodes (6): geistMono, geistSans, metadata, LoginForm(), ThemeProvider(), Toaster()
+
+### Community 26 - "AGENTS.md"
+Cohesion: 0.20
+Nodes (6): Accessibility Rules, Rules, Design System Rules, Rules, Rules, Testing Rules
 
 ### Community 27 - "Created Tables Log"
 Cohesion: 0.20
@@ -281,12 +285,12 @@ Cohesion: 0.20
 Nodes (9): 1 Color (`--color-chart-primary` only), 2 Colors (`--color-chart-primary` + `--color-chart-accent-1`), 3 Colors (`--color-chart-primary` + `--color-chart-accent-1` + `--color-chart-accent-2`), 4+ Colors, Charts, Graphs, and Data Visualizations, Color Tokens, Hard Rules, How Many Colors to Use (+1 more)
 
 ### Community 29 - "dispatcher.ts"
-Cohesion: 0.07
-Nodes (43): GET(), GET(), handleAuthAndProcess(), POST(), GET(), DashboardClientProps, SettingsClientProps, getProvider() (+35 more)
+Cohesion: 0.06
+Nodes (45): GET(), GET(), handleAuthAndProcess(), POST(), GET(), DrillDownDialogProps, DashboardClientProps, SettingsClientProps (+37 more)
 
 ### Community 30 - "settings-client.tsx"
-Cohesion: 0.29
-Nodes (19): SettingsClient(), ConfirmDeleteDialog(), archiveMentorAction(), createMentor(), deleteAudienceAction(), deleteCategoryAction(), deleteSessionTypeAction(), deleteSubcategoryAction() (+11 more)
+Cohesion: 0.20
+Nodes (24): CreateSessionClient(), SettingsClient(), EditSessionModal(), createGoogleMeetLink(), archiveMentorAction(), createMentor(), createSessionAction(), deleteAudienceAction() (+16 more)
 
 ### Community 31 - "NGConnect AI Agent Guidelines"
 Cohesion: 0.33
@@ -321,8 +325,8 @@ Cohesion: 0.33
 Nodes (5): content, fs, path, startIdx1, startIdx2
 
 ### Community 39 - "engagement/actions.ts"
-Cohesion: 0.20
-Nodes (22): SettingsClient(), SettingsClient(), LearningCenterLayout(), assignToMeAction(), getKanbanColumnCardsAction(), getPipelineEligibleStaffAction(), getPipelineListViewAction(), logAlumniGrowthAudit() (+14 more)
+Cohesion: 0.15
+Nodes (25): SettingsClient(), LearnerDetailPage(), PageProps, CourseraDashboardPage(), SearchParams, ImportHistoryPage(), SettingsClient(), LearningCenterLayout() (+17 more)
 
 ### Community 40 - "zoom.ts"
 Cohesion: 0.60
@@ -348,13 +352,13 @@ Nodes (33): C1: `src/lib/auth.ts`, C2: `src/lib/roles.ts` / `dev-role-toggle.tsx
 Cohesion: 0.07
 Nodes (29): C1: `src/lib/auth.ts` Stub, C2: Dev Role Toggle (`src/lib/roles.ts` & `dev-role-toggle.tsx`), C3: `src/app/api/coursera/*` Routes IDOR, C4: Google OAuth Callback IDOR, C5: Pay-forward Cap Logic, C7, C8, C9: Database Schema Drift & RLS, Critical Severity, H1: `alumni/[email]` GET IDOR (+21 more)
 
-### Community 48 - "form.tsx"
-Cohesion: 0.17
-Nodes (12): FormControl(), FormDescription(), FormField(), FormFieldContext, FormFieldContextValue, FormItemContext, FormItemContextValue, FormLabel() (+4 more)
+### Community 48 - "mentor-form.tsx"
+Cohesion: 0.24
+Nodes (13): MentorFormProps, FormControl(), FormDescription(), FormField(), FormFieldContext, FormFieldContextValue, FormItem(), FormItemContext (+5 more)
 
-### Community 49 - "getSupabaseUserEmail"
-Cohesion: 0.19
-Nodes (18): GranularPermissionInput, RolePermissionData, rollbackGranularRbac(), saveGranularRbacChanges(), saveRbacChanges(), MentoringClient(), MentoringPage(), PayForwardPage() (+10 more)
+### Community 49 - "roles.ts"
+Cohesion: 0.17
+Nodes (21): GranularPermissionInput, RolePermissionData, rollbackGranularRbac(), saveGranularRbacChanges(), saveRbacChanges(), MentoringPage(), PayForwardPage(), PlacementPage() (+13 more)
 
 ### Community 63 - "NGConnect"
 Cohesion: 0.20
@@ -364,37 +368,29 @@ Nodes (9): 🏗 Architecture & Code Standards, 🗄️ Database Schema, 📦 Get
 Cohesion: 0.50
 Nodes (3): Known drift to clean up, Rules, UI Component Rules
 
-### Community 65 - "sidebar-version-footer.tsx"
-Cohesion: 0.31
-Nodes (7): CATEGORY_BADGE_STYLE, TYPE_BADGE_STYLE, ChangeType, CURRENT_VERSION, VERSION_HISTORY, VersionChangeItem, VersionEntry
+### Community 65 - "version-config.ts"
+Cohesion: 0.33
+Nodes (5): ChangeType, CURRENT_VERSION, VERSION_HISTORY, VersionChangeItem, VersionEntry
 
 ### Community 68 - "rollback.ts"
 Cohesion: 0.36
 Nodes (6): POST(), POST(), AdminUser, rollbackImportBatch(), rollbackRecord(), RollbackTable
 
-### Community 70 - "rbac-grid.tsx"
-Cohesion: 0.14
-Nodes (20): AVAILABLE_FIELDS, PRESETS, ReportsClientProps, AVAILABLE_FIELDS, PRESETS, ReportsClientProps, CourseraAlumniStats(), ROLES (+12 more)
+### Community 70 - "components/page.tsx"
+Cohesion: 0.11
+Nodes (23): AVAILABLE_FIELDS, PRESETS, ReportsClientProps, MOCK_TEXT, SCROLLBAR_OPTIONS, FollowUpsClient(), QueueClient(), AVAILABLE_FIELDS (+15 more)
 
-### Community 71 - "(dashboard)/page.tsx"
-Cohesion: 0.29
-Nodes (6): DashboardPage(), CourseraCharts(), CourseraMetrics, CourseraStats(), CourseraStatsProps, DashboardStats()
-
-### Community 72 - "AGENTS.md"
-Cohesion: 0.20
-Nodes (6): API Route Conventions, Rules, Responsive Design Rules, Rules, Rules, Server / Client Component Boundary
-
-### Community 74 - "20260813000004_engagement_events.sql"
-Cohesion: 0.40
-Nodes (3): public.alumni_engagement_events, public.engagement_event_types, public.alumni_master
+### Community 71 - "alumni-growth/settings/SettingsClient.tsx"
+Cohesion: 0.16
+Nodes (16): NAV_ITEMS, OUTCOME_MAPPING_ROWS, SettingsClientProps, ConfirmDeleteDialog(), EditLogTab(), EditLogTabProps, LC_ENTITY_TYPES, MentorForm() (+8 more)
 
 ### Community 75 - "20260812191509_supabase_schema.sql"
 Cohesion: 0.18
 Nodes (6): public.alumni_master, public.highest_education, public.import_batches, public.ng_campuses, public.ng_courses, auth.users
 
 ### Community 79 - "learning-center/queries.ts"
-Cohesion: 0.07
-Nodes (57): GET(), LearningCenterDashboardClient(), LearningCenterDashboard(), metadata, metadata, RecordingsPage(), RecordingsClient(), CreateSessionPage() (+49 more)
+Cohesion: 0.10
+Nodes (26): LearningCenterDashboardClient(), metadata, RecordingsPage(), RecordingsClient(), ContinueWatchingCardProps, EditSessionModalProps, PastSessionCard(), PastSessionCardProps (+18 more)
 
 ### Community 80 - "20260812191501_alumni_engagement_crm_schema.sql"
 Cohesion: 0.19
@@ -412,17 +408,13 @@ Nodes (11): alumni_interactions, alumni_master, org_settings, alumni_contact_sup
 Cohesion: 0.22
 Nodes (8): name, private, scripts, build, dev, lint, start, version
 
-### Community 84 - "alumni-growth/reports/page.tsx"
-Cohesion: 0.60
-Nodes (4): ReportsPage(), ReportsClient(), getEngagementQueue(), getTeamActivity()
+### Community 84 - "alumni/[email]/route.ts"
+Cohesion: 0.20
+Nodes (13): GET(), Params, mergeAlumniProfile(), overridable, AlumniMaster, AlumniProfile, AlumniStatus, CareerEntry (+5 more)
 
 ### Community 85 - "20260812191504_learning_center_schema.sql"
 Cohesion: 0.47
 Nodes (8): public.learning_audiences, public.learning_course_progress, public.learning_courses, public.learning_session_types, public.learning_sessions, public.mentors, public.user_integrations, auth.users
-
-### Community 86 - "types/audit.ts"
-Cohesion: 0.40
-Nodes (4): ActionType, AuditableTable, AuditLog, RecordSnapshot
 
 ### Community 87 - "Add User Autocomplete to RBAC Grid"
 Cohesion: 0.25
@@ -437,16 +429,16 @@ Cohesion: 0.43
 Nodes (7): addDays(), FollowupDateSelector(), FollowupDateSelectorProps, formatDateTimeLocal(), isSunday(), isValid(), setTime()
 
 ### Community 91 - "engagement.ts"
-Cohesion: 0.11
-Nodes (20): SettingsClientProps, LogInteractionModalProps, AlumniInteraction, AlumniPipelineMembership, AlumniSalaryRecord, CallReason, ContributionType, DEFAULT_OUTCOME_MAPPINGS (+12 more)
+Cohesion: 0.14
+Nodes (13): OwnershipTags(), PipelineOwnerTag(), AlumniInteraction, AlumniPipelineMembership, AlumniSalaryRecord, LogInteractionPayload, Mentor, MentoringSession (+5 more)
 
-### Community 92 - "components/page.tsx"
-Cohesion: 0.09
-Nodes (24): MOCK_TEXT, SCROLLBAR_OPTIONS, SettingsLayout(), SettingsLayoutProps, SettingsNavItem, Accordion(), AccordionContent(), AccordionItem() (+16 more)
+### Community 92 - "sheet.tsx"
+Cohesion: 0.18
+Nodes (8): Sheet(), SheetContent(), SheetDescription(), SheetFooter(), SheetHeader(), SheetOverlay(), SheetTitle(), SheetTrigger()
 
 ### Community 102 - "resource-tree.ts"
-Cohesion: 0.29
-Nodes (7): RbacGrid(), RESOURCES_BY_CLUSTER, ActionType, getResource(), PERMISSION_RESOURCES, PermissionResource, RESOURCE_CLUSTERS
+Cohesion: 0.25
+Nodes (8): RbacGrid(), RESOURCES_BY_CLUSTER, ActionType, getResource(), getResourcesByCluster(), PERMISSION_RESOURCES, PermissionResource, RESOURCE_CLUSTERS
 
 ### Community 108 - "import/route.ts"
 Cohesion: 0.60
@@ -457,12 +449,12 @@ Cohesion: 0.70
 Nodes (4): fetchAllSupabase(), firstDayOfMonth(), POST(), upsertInBatches()
 
 ### Community 119 - "useUserContext"
-Cohesion: 0.16
-Nodes (14): GreetingsPreviewPage(), BANNER_THEMES, ProfilePage(), dailyVariantIndex(), DashboardGreeting(), DevRoleToggle(), GreetingEntry, hourlyGreetings (+6 more)
+Cohesion: 0.18
+Nodes (13): GreetingsPreviewPage(), dailyVariantIndex(), DashboardGreeting(), DevRoleToggle(), GreetingEntry, hourlyGreetings, ICONS, SidebarVersionFooter() (+5 more)
 
-### Community 120 - "nightly-rollup/route.ts"
-Cohesion: 0.83
-Nodes (3): GET(), handleRollup(), POST()
+### Community 120 - "react"
+Cohesion: 0.22
+Nodes (8): react, react, NavItem, NavMain(), SidebarMenuSkeleton(), SidebarProvider(), Slider(), useIsMobile()
 
 ### Community 121 - "20260813000002_email_notifications_system.sql"
 Cohesion: 0.42
@@ -470,35 +462,51 @@ Nodes (8): public.alumni_channel_activity, public.notification_provider_settings
 
 ### Community 122 - "InteractionOutcome"
 Cohesion: 0.29
-Nodes (9): AlumniDetailClientProps, WorkspaceClientProps, AlumniDetailClientProps, QueueClientProps, SettingsClientProps, LogInteractionModal(), getCallReasonsAction(), InteractionOutcome (+1 more)
+Nodes (10): AlumniDetailClientProps, FollowUpsClientProps, WorkspaceClientProps, AlumniDetailClientProps, QueueClientProps, SettingsClientProps, LogInteractionModalProps, InteractionOutcome (+2 more)
 
 ### Community 124 - "alumni-growth/settings/page.tsx"
 Cohesion: 0.36
 Nodes (9): metadata, SettingsPage(), getAllPipelinePocEligibility(), getCallReasons(), getContributionTypes(), getOutcomeMapping(), getPipelines(), getPipelineStages() (+1 more)
 
-### Community 128 - "classifyFollowup"
-Cohesion: 0.83
-Nodes (4): CalendarStrip(), classifyFollowup(), FollowUpsClient(), startOf()
+### Community 128 - "activity-logs/page.tsx"
+Cohesion: 0.67
+Nodes (3): ActivityLogsPage(), formatMonth(), SearchParams
+
+### Community 129 - "import-coursera/page.tsx"
+Cohesion: 0.33
+Nodes (8): AvailableMonth, formatDuration(), formatMonth(), formatRows(), generateAvailableMonthOptions(), ImportCourseraPage(), ImportLogRow, UploadResult
+
+### Community 130 - "video-player.tsx"
+Cohesion: 0.33
+Nodes (6): buildEmbedUrl(), detectEmbed(), formatTime(), VideoPlayer(), VideoPlayerProps, syncSessionDurationAction()
+
+### Community 132 - "settings-layout.tsx"
+Cohesion: 0.36
+Nodes (6): SettingsLayout(), SettingsLayoutProps, SettingsNavItem, Collapsible(), CollapsibleContent(), CollapsibleTrigger()
+
+### Community 133 - "getKanbanBoardCardsAction"
+Cohesion: 0.40
+Nodes (5): MentoringClient(), PayForwardClient(), PlacementClient(), getKanbanBoardCardsAction(), getKanbanBoardCards()
 
 ## Knowledge Gaps
-- **437 isolated node(s):** `$schema`, `style`, `rsc`, `tsx`, `config` (+432 more)
+- **435 isolated node(s):** `$schema`, `style`, `rsc`, `tsx`, `config` (+430 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **45 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **43 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `createClient()` connect `createClient` to `badge.tsx`, `users-table.tsx`, `site-header.tsx`, `createAdminClient`, `card.tsx`, `import.ts`, `alumni-growth/pipelines/mentoring/MentoringClient.tsx`, `roles.ts`, `HelpDocsClient.tsx`, `engagement/queries.ts`, `alumni-growth/settings/SettingsClient.tsx`, `chart.tsx`, `dispatcher.ts`, `settings-client.tsx`, `engagement/actions.ts`, `getSupabaseUserEmail`, `rollback.ts`, `(dashboard)/page.tsx`, `learning-center/queries.ts`, `alumni-growth/reports/page.tsx`, `import/route.ts`, `recalculate/route.ts`, `alumni-growth/settings/page.tsx`?**
+- **Why does `createClient()` connect `createClient` to `activity-logs/page.tsx`, `learning-center/settings/page.tsx`, `site-header.tsx`, `getKanbanBoardCardsAction`, `createAdminClient`, `card.tsx`, `import.ts`, `alumni-growth/pipelines/mentoring/MentoringClient.tsx`, `auth`, `engagement/queries.ts`, `badge.tsx`, `dispatcher.ts`, `settings-client.tsx`, `engagement/actions.ts`, `roles.ts`, `rollback.ts`, `components/page.tsx`, `learning-center/queries.ts`, `alumni/[email]/route.ts`, `import/route.ts`, `recalculate/route.ts`, `alumni-growth/settings/page.tsx`?**
   _High betweenness centrality (0.075) - this node is a cross-community bridge._
-- **Why does `react` connect `sidebar.tsx` to `dependencies`, `card.tsx`, `form.tsx`, `cn`, `alumni-growth/settings/SettingsClient.tsx`, `chart.tsx`, `InteractionOutcome`, `settings-client.tsx`?**
+- **Why does `react` connect `react` to `sidebar.tsx`, `dependencies`, `alumni-growth/settings/SettingsClient.tsx`, `alumni-growth/alumni/[id]/AlumniDetailClient.tsx`, `mentor-form.tsx`, `chart.tsx`, `settings-client.tsx`?**
   _High betweenness centrality (0.070) - this node is a cross-community bridge._
-- **Why does `dependencies` connect `dependencies` to `sidebar.tsx`, `@dnd-kit/utilities`, `@dnd-kit/sortable`, `recharts`, `@supabase/ssr`, `zod`, `next`, `nodemailer`, `radix-ui`, `read-excel-file`, `@supabase/supabase-js`, `tailwind-merge`, `package.json`, `clsx`, `@hookform/resolvers`?**
+- **Why does `dependencies` connect `dependencies` to `class-variance-authority`, `@dnd-kit/utilities`, `recharts`, `@supabase/ssr`, `zod`, `next`, `nodemailer`, `radix-ui`, `read-excel-file`, `@supabase/supabase-js`, `tailwind-merge`, `package.json`, `clsx`, `react`, `@hookform/resolvers`?**
   _High betweenness centrality (0.063) - this node is a cross-community bridge._
 - **What connects `$schema`, `style`, `rsc` to the rest of the system?**
-  _437 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `badge.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.14210526315789473 - nodes in this community are weakly interconnected._
+  _435 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `sidebar.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.09696969696969697 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.11711711711711711 - nodes in this community are weakly interconnected._
 - **Should `dependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.09523809523809523 - nodes in this community are weakly interconnected._
+- **Should `devDependencies` be split into smaller, more focused modules?**
+  _Cohesion score 0.08 - nodes in this community are weakly interconnected._

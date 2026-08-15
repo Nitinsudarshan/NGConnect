@@ -23,3 +23,5 @@ After every successful task execution (and before any push/commit), you **must**
    - `title`: Short descriptive title of the update
    - `type`: `"patch"` | `"minor"` | `"major"`
    - `changes`: Array of items with `category` (`"Features"` | `"Improvements"` | `"Fixes"` | `"Security"`) and concise `description`.
+5. **Verification**: Check every change-item description against the actual `git diff` (or file changes) of the commit/task it describes before finalizing the entry to ensure absolute accuracy.
+

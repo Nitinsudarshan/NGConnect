@@ -88,25 +88,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  try {
-    const { data: eventType } = await supabaseAdmin
-      .from('engagement_event_types')
-      .select('id')
-      .eq('code', 'profile_updated')
-      .maybeSingle();
-
-    if (eventType) {
-      await supabaseAdmin.from('alumni_engagement_events').insert({
-        alumni_email: decodedEmail,
-        channel: 'platform',
-        event_type_id: eventType.id,
-        related_entity_type: 'alumni_profile',
-        occurred_at: new Date().toISOString(),
-      });
-    }
-  } catch (eventErr) {
-    console.error('Failed to log profile_updated engagement event:', eventErr);
-  }
+  // Note: profile_updated engagement event is not fired here because this route is only called from
+  // staff-facing data-management tools. Firing an alumni-engagement event here would attribute staff
+  // edits to the alumnus as if they were the one engaging with the platform.
 
   return NextResponse.json({ success: true });
 }
