@@ -600,8 +600,8 @@
     "semantic_hash": "524c5fdbaf6fb64ba133607b3ad9d12c"
   },
   "src/components/app-sidebar.tsx": {
-    "mtime": 1786781773.153437,
-    "ast_hash": "5ddea522aba5aac4b2b16066046c15d0",
+    "mtime": 1786812356.5563352,
+    "ast_hash": "c5ae986f79a31b3c81fa7c6b2bb98335",
     "semantic_hash": ""
   },
   "src/components/coursera-charts.tsx": {
@@ -1552,6 +1552,16 @@
   "src/components/shared/help-section-renderer.tsx": {
     "mtime": 1786796769.4165561,
     "ast_hash": "de252c31e496ab6892c8ccf444da2af5",
+    "semantic_hash": ""
+  },
+  "src/components/sidebar-version-footer.tsx": {
+    "mtime": 1786812313.8135276,
+    "ast_hash": "3c8fdd3dbb6cabc2e447ec0c040039e5",
+    "semantic_hash": ""
+  },
+  "src/lib/version-config.ts": {
+    "mtime": 1786812306.5190785,
+    "ast_hash": "ddca4eff6083fc2b1cbea552f42c1dc1",
     "semantic_hash": ""
   }
 }

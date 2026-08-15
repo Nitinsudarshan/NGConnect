@@ -15,6 +15,7 @@ export interface HelpSection {
   type?: "text" | "bullets" | "cards" | "steps" | "diagram" | "mermaid";
   mermaid?: string;
   items?: { title?: string; text: string; badge?: string }[];
+  staffOnly?: boolean;
 }
 
 export interface HelpEntry {
@@ -93,45 +94,44 @@ export const HELP_REGISTRY: HelpEntry[] = [
     label: "Global Report Exporter",
     location: "Main Platform › Reports",
     title: "Global Custom Report Exporter",
-    description: "Generate, filter, and export comprehensive cross-module analytical reports.",
+    description: "Generate, analyze, and export Coursera learning analytics and operational reports.",
     sections: [
       {
-        title: "1. Executive Export Suite",
+        title: "1. Learning Analytics Exporter",
         color: "blue",
         type: "text",
         content:
-          "The Global Report Exporter allows administrators and program leads to assemble custom data extractions combining demographic data, placement outcomes, Pay-Forward records, and Coursera learning progress into formatted Excel workbooks.",
+          "The Report Generator enables administrators and program leads to export Coursera Learning Analytics data containing active learner metrics, monthly study hours, course completions, and license compliance stats.",
       },
       {
         title: "2. Export Workflow Steps",
         color: "purple",
         type: "steps",
         items: [
-          { title: "Select Data Scope", text: "Choose between full alumni export, pipeline-specific status reports, or learning progress summaries." },
-          { title: "Apply Date & Campus Filters", text: "Narrow down records by cohort graduation year, campus location, or placement cycle." },
-          { title: "Choose Output Format", text: "Export as structured CSV or multi-tab Excel workbooks (.xlsx)." },
-          { title: "Download & Audit", text: "File is generated client-side and logged in System Audit Trail." },
+          { title: "Select Module Domain", text: "Currently active: Coursera Learning Analytics. (Alumni Network, CRM, and Pay-Forward exports are coming soon)." },
+          { title: "Set Periodicity & Date", text: "Select Monthly, Quarterly, or Yearly reporting frequencies and pick target periods." },
+          { title: "Export CSV Report", text: "Click 'Export CSV Report' to generate and download a structured CSV file." },
+          { title: "Print Summary", text: "Use 'Print Report' to output clean executive analytics summaries." },
         ],
       },
       {
         title: "3. Report Generation Process Flow",
         color: "amber",
         type: "mermaid",
-        content: "Step-by-step pipeline for exporting system analytics:",
+        content: "Step-by-step pipeline for exporting Coursera analytics data:",
         mermaid: `graph TD
-          A[Configure Filter Parameters] --> B[Fetch Supabase Database Records]
-          B --> C[Format Fields & Group Datasets]
-          C --> D[ExcelJS / CSV File Stream Generation]
-          D --> E[Log Export Event in System Audit Log]
-          E --> F[Trigger Direct Browser Download]`,
+          A[Select Coursera Domain & Periodicity] --> B[Aggregate Monthly Learning Telemetry]
+          B --> C[Compute Compliant Learners & License Usage]
+          C --> D[Generate Structured CSV Report]
+          D --> E[Trigger Direct Browser Download]`,
       },
       {
         title: "4. Data Safety & Privacy",
         color: "rose",
         type: "bullets",
         items: [
-          { title: "Privacy Compliance", text: "Exports contain personal identifying information (PII). Handle strictly in accordance with Navgurukul data protection policies." },
-          { title: "Audit Trail", text: "All export operations are logged in the System Audit Logs for security monitoring." },
+          { title: "Privacy Compliance", text: "Exports contain student email and learning progress metrics. Handle strictly in accordance with Navgurukul data protection policies." },
+          { title: "Roadmap Modules", text: "Exports for Alumni Network, CRM, and Pay-Forward pipelines will be enabled in upcoming releases." },
         ],
       },
     ],
@@ -593,6 +593,20 @@ export const HELP_REGISTRY: HelpEntry[] = [
         content:
           "After a 'No Answer' is logged, the alumni disappears from the workspace queue for this many days. This prevents over-calling and ensures alumni aren't harassed. Typical value: 7–14 days.",
       },
+      {
+        title: "Pay-Forward Contribution & Cool-down Workflow",
+        color: "purple",
+        type: "mermaid",
+        content: "How logged interaction outcomes move alumni through contribution caps and cool-down windows:",
+        mermaid: `graph TD
+          A[Call Logged in Workspace] --> B{Interaction Outcome}
+          B -->|No Answer / Callback| C[Enter Cool-down Window e.g. 7-14 Days]
+          B -->|Pledge Received| D[Record Financial Contribution]
+          C --> E[Re-appear in Workspace Queue After Cool-down]
+          D --> F{Cumulative Contribution >= Cap?}
+          F -->|Below Cap e.g. < 1.2L| E
+          F -->|Reached Cap e.g. >= 1.2L| G[Mark Lifetime Completed & Exclude from Future Pitches]`,
+      },
     ],
   },
   {
@@ -603,18 +617,22 @@ export const HELP_REGISTRY: HelpEntry[] = [
     description: "Rules that determine who counts as an 'Active' alumni.",
     sections: [
       {
-        title: "What are Active Members?",
+        title: "1. Active Member Thresholds",
         color: "blue",
-        type: "text",
-        content:
-          "Active Members are alumni who meet a minimum engagement threshold — typically having been contacted within a recent window. This status influences which alumni appear in automated queues and pipeline eligibility checks.",
+        type: "cards",
+        items: [
+          { title: "Queue Eligibility Effect", text: "Alumni meeting the contact window threshold automatically enter the daily active outreach queue." },
+          { title: "Cohort Health Metrics", text: "Directly determines the percentage of active alumni reported in executive dashboards." },
+        ],
       },
       {
-        title: "Modifying Criteria",
+        title: "2. Modifying Criteria Effects",
         color: "amber",
-        type: "text",
-        content:
-          "Changes to active member criteria may immediately affect the size of your engagement queues. Always inform the team before changing these values. Coordinate with the Programme Director.",
+        type: "bullets",
+        items: [
+          { title: "Immediate Queue Resizing", text: "Tightening criteria immediately shrinks workspace call queues; loosening expands queue volume." },
+          { title: "Admin Coordination", text: "Changes alter cross-team workload metrics. Coordinate with the Program Lead before saving." },
+        ],
       },
     ],
   },
@@ -626,21 +644,23 @@ export const HELP_REGISTRY: HelpEntry[] = [
     description: "How the profile completeness score is calculated.",
     sections: [
       {
-        title: "What is Profile Scoring?",
+        title: "1. What is Profile Scoring?",
         color: "blue",
         type: "text",
         content:
           "Each alumni record is assigned a completeness score (0–100%) based on how many key fields are filled in. This score appears on alumni cards and helps prioritize data collection during calls.",
       },
       {
-        title: "Score Weights",
+        title: "2. Score Weight Effects",
         color: "purple",
-        type: "text",
-        content:
-          "Different fields carry different weights. For example, a missing phone number may count for more than a missing LinkedIn URL. The weights defined here directly affect every alumni's displayed score.",
+        type: "cards",
+        items: [
+          { title: "Weighted Field Impact", text: "Higher weight on phone/email increases urgency of data collection during calls." },
+          { title: "Targeting & Eligibility", text: "Directly determines salary eligibility scoring and placement readiness calculations." },
+        ],
       },
       {
-        title: "Why it matters",
+        title: "3. Operational Value",
         color: "emerald",
         type: "text",
         content:
@@ -656,18 +676,20 @@ export const HELP_REGISTRY: HelpEntry[] = [
     description: "Manage the top-level pipeline definitions.",
     sections: [
       {
-        title: "What are Pipelines?",
+        title: "1. What are Pipelines?",
         color: "blue",
         type: "text",
         content:
           "Pipelines are the top-level engagement tracks (Pay-Forward, Mentoring, Placement). Each pipeline has its own set of stages, outcomes, and POC eligibility rules.",
       },
       {
-        title: "Caution",
+        title: "2. Pipeline Configuration Impact",
         color: "rose",
-        type: "text",
-        content:
-          "Modifying pipeline names or codes can break references in reports and existing membership records. Only change pipeline definitions if you are absolutely certain of the downstream impact. Consult an Admin before making changes.",
+        type: "cards",
+        items: [
+          { title: "Board Structure", text: "Defines top-level engagement tracks (Pay-Forward, Mentoring, Placement)." },
+          { title: "Reporting Risk", text: "Modifying pipeline codes breaks existing board memberships and analytics charts." },
+        ],
       },
     ],
   },
@@ -694,6 +716,17 @@ export const HELP_REGISTRY: HelpEntry[] = [
           { title: "Do not delete active stages", text: "Deleting a stage that has alumni cards in it will orphan those records. Archive or merge instead." },
           { title: "Labels", text: "Stage labels appear on the board columns and in all interaction logs. Keep them concise and clear." },
         ],
+      },
+      {
+        title: "Pipeline Stage Transition Sequence",
+        color: "amber",
+        type: "mermaid",
+        content: "How stage transitions update membership records and audit logs:",
+        mermaid: `graph TD
+          A[Alumnus Card Dragged / Updated] --> B[Validate Target Stage & RBAC Edit Rights]
+          B --> C[Update alumni_pipeline_membership Stage Code]
+          C --> D[Log Stage Transition Event in Engagement History]
+          D --> E[Re-render Kanban Board Column & Update Workspace Counters]`,
       },
     ],
   },
@@ -722,11 +755,13 @@ export const HELP_REGISTRY: HelpEntry[] = [
         ],
       },
       {
-        title: "Adding New Outcomes",
+        title: "3. Adding & Managing Outcomes",
         color: "purple",
-        type: "text",
-        content:
-          "New outcomes are available immediately in the Log Interaction modal. Make sure the code is lowercase with underscores. Update Outcome Mapping if legacy data needs to map to the new code.",
+        type: "cards",
+        items: [
+          { title: "Modal Dropdown Availability", text: "New outcome codes immediately appear in the Log Interaction modal for callers." },
+          { title: "Cool-down & DNC Trigger", text: "Codes like no_answer trigger cool-down delays, while do_not_contact permanently opts out leads." },
+        ],
       },
     ],
   },
@@ -738,14 +773,16 @@ export const HELP_REGISTRY: HelpEntry[] = [
     description: "The call reason categories shown in the Log Interaction modal.",
     sections: [
       {
-        title: "What are Call Reasons?",
+        title: "1. Call Reason Categories",
         color: "blue",
-        type: "text",
-        content:
-          "Call Reasons categorize why you contacted an alumni — e.g. 'Pay-Forward Pitch', 'Career Check-in', 'Mentoring Invite'. They appear in the dropdown when logging an interaction and are used in team activity reports.",
+        type: "cards",
+        items: [
+          { title: "Log Interaction Integration", text: "Defines the exact options shown to callers when categorizing call purpose." },
+          { title: "Activity Analytics", text: "Aggregated in team productivity reports to track pitch vs check-in ratios." },
+        ],
       },
       {
-        title: "Best Practices",
+        title: "2. Best Practices",
         color: "emerald",
         type: "bullets",
         items: [
@@ -763,18 +800,20 @@ export const HELP_REGISTRY: HelpEntry[] = [
     description: "Which staff members can be assigned as POC on each pipeline.",
     sections: [
       {
-        title: "What is POC Eligibility?",
+        title: "1. What is POC Eligibility?",
         color: "blue",
         type: "text",
         content:
           "Not all staff can own leads on all pipelines. This table defines which users are eligible to be assigned as Point of Contact (POC) on each pipeline. Only eligible users appear in the 'Transfer Lead' dropdown.",
       },
       {
-        title: "How it is enforced",
+        title: "2. Enforcement Mechanism",
         color: "purple",
-        type: "text",
-        content:
-          "Eligibility is now automatically derived from RBAC permissions. Users with 'edit' access to a pipeline resource (e.g. crm.pipelines.mentoring) are automatically eligible. This table reflects the current state.",
+        type: "cards",
+        items: [
+          { title: "Transfer Lead Dropdown", text: "Only users with active POC eligibility appear as target owners in lead transfers." },
+          { title: "RBAC Derived Access", text: "Eligibility is automatically granted to staff with 'edit' access to the pipeline resource." },
+        ],
       },
     ],
   },
@@ -786,18 +825,20 @@ export const HELP_REGISTRY: HelpEntry[] = [
     description: "The categories of Pay-Forward contributions.",
     sections: [
       {
-        title: "What are Contribution Types?",
+        title: "1. What are Contribution Types?",
         color: "blue",
         type: "text",
         content:
           "Contribution types classify how an alumni is paying forward — e.g. 'Monthly EMI', 'One-time Lump Sum', 'Skills Contribution'. These are selected when recording a donation.",
       },
       {
-        title: "Impact on Reporting",
+        title: "2. Impact on Reporting & Receipts",
         color: "amber",
-        type: "text",
-        content:
-          "Contribution type breakdown is visible in the Reports page. Ensure new types are named clearly so they can be filtered and aggregated meaningfully.",
+        type: "cards",
+        items: [
+          { title: "Financial Ledger Classification", text: "Classifies payments as EMI, Lump Sum, or Skills contributions in financial reports." },
+          { title: "Cap Progress Calculations", text: "Monetary contributions automatically count towards the alumni's lifetime completion cap." },
+        ],
       },
     ],
   },
@@ -809,18 +850,20 @@ export const HELP_REGISTRY: HelpEntry[] = [
     description: "Maps old data source values to current outcome codes.",
     sections: [
       {
-        title: "What is Outcome Mapping?",
+        title: "1. What is Outcome Mapping?",
         color: "blue",
         type: "text",
         content:
           "During legacy data import (from Google Sheets, old dashboards etc.), interaction statuses were recorded in non-standard text. Outcome Mapping translates those old strings to standardized outcome codes used by the current system.",
       },
       {
-        title: "When to Update",
+        title: "2. Ingestion Impact",
         color: "amber",
-        type: "text",
-        content:
-          "Only update mappings when importing a new historical dataset that uses terminology not already covered. Test on a small batch before a full import.",
+        type: "cards",
+        items: [
+          { title: "Spreadsheet Import Translation", text: "Translates legacy non-standard text (e.g. 'No Response') into standardized outcome codes." },
+          { title: "Data Normalization", text: "Prevents orphaned interaction logs during historical spreadsheet imports." },
+        ],
       },
     ],
   },
@@ -832,18 +875,20 @@ export const HELP_REGISTRY: HelpEntry[] = [
     description: "The shared database of registered Navgurukul mentors.",
     sections: [
       {
-        title: "What is the Mentors Directory?",
+        title: "1. What is the Mentors Directory?",
         color: "blue",
         type: "text",
         content:
           "This is the shared master list of all confirmed mentors. It is the same data used by the Learning Center. Adding a mentor here makes them available for session scheduling in the Learning Center module.",
       },
       {
-        title: "Data Ownership",
+        title: "2. Cross-Module Sync",
         color: "amber",
-        type: "text",
-        content:
-          "The Alumni Growth team owns the sourcing and onboarding. The Learning Center team manages active session assignments. Changes made here sync instantly to the Learning Center.",
+        type: "cards",
+        items: [
+          { title: "Learning Center Integration", text: "Onboarded mentors listed here are immediately available for Learning Center session scheduling." },
+          { title: "CRM Profile Visibility", text: "Links mentor topic expertise directly to alumni profiles for mentoring pipeline matching." },
+        ],
       },
     ],
   },
@@ -911,12 +956,22 @@ export const HELP_REGISTRY: HelpEntry[] = [
           E --> F[Upload Recording Link & Collect Student Ratings]`,
       },
       {
-        title: "4. Best Practices",
+        title: "4. Staff Operations & Best Practices",
         color: "purple",
         type: "cards",
+        staffOnly: true,
         items: [
           { title: "Schedule Ahead", text: "Create sessions at least 48 hours prior to allow student notification." },
           { title: "Collect Feedback", text: "Ensure post-session attendance and feedback forms are filled promptly." },
+        ],
+      },
+      {
+        title: "4. Learning Resources for Students",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Explore Past Recordings", text: "Stream recorded mentoring classes and review lecture materials anytime." },
+          { title: "Browse Learning Hub", text: "Follow course tracks in the Learning Hub and complete lesson assignments." },
         ],
       },
     ],
@@ -945,6 +1000,17 @@ export const HELP_REGISTRY: HelpEntry[] = [
           { title: "Upload Recording Link", text: "Attach Zoom/Google Meet recording URLs to completed sessions for archive." },
         ],
       },
+      {
+        title: "3. Session Lifecycle Flowchart",
+        color: "amber",
+        type: "mermaid",
+        content: "Lifecycle stages of a mentoring session from creation to archiving:",
+        mermaid: `graph TD
+          A[Scheduled Session] --> B[Live Session Started]
+          B --> C[Attendance Logged & Meeting Ended]
+          C --> D[Collect Student Feedback Ratings]
+          D --> E[Upload Recording Link & Archive to Video Library]`,
+      },
     ],
   },
   {
@@ -972,6 +1038,18 @@ export const HELP_REGISTRY: HelpEntry[] = [
           { title: "Meeting Link", text: "Provide a valid Zoom, Google Meet, or MS Teams link." },
         ],
       },
+      {
+        title: "3. Session Scheduling Wizard Flowchart",
+        color: "emerald",
+        type: "mermaid",
+        content: "Complete step-by-step workflow for creating and publishing mentoring sessions:",
+        mermaid: `graph TD
+          A[Enter Session Title & Topic] --> B[Assign Onboarded Mentor & Target Campus]
+          B --> C[Set Session Date, Time & Meeting Room URL]
+          C --> D[Validate Required Fields & Form Payload]
+          D --> E[Save Session Record in Database]
+          E --> F[Publish to Upcoming Sessions Directory & Notify Students]`,
+      },
     ],
   },
   {
@@ -997,6 +1075,18 @@ export const HELP_REGISTRY: HelpEntry[] = [
           { title: "Punctuality & Clarity", text: "Metrics evaluating mentor presentation and time management." },
           { title: "Flagged Issues", text: "Submissions with ratings under 3 stars are flagged for team review." },
         ],
+      },
+      {
+        title: "3. Feedback & Low-Rating Flagging Flowchart",
+        color: "amber",
+        type: "mermaid",
+        content: "How student feedback submissions are processed and flagged for quality review:",
+        mermaid: `graph TD
+          A[Student Submits Post-Session Feedback] --> B[Calculate Session Average Rating]
+          B --> C{Rating < 3 Stars?}
+          C -->|Yes| D[Flag Session & Notify Program Lead]
+          C -->|No| E[Log Positive Feedback & Update Mentor Aggregate Score]
+          D --> F[Program Lead Conducts Review & Follows Up With Mentor]`,
       },
     ],
   },
@@ -1040,7 +1130,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
         color: "blue",
         type: "text",
         content:
-          "The Content Hub organizes Navgurukul's learning material into structured courses and modules. Manage course titles, descriptions, prerequisites, and resource links.",
+          "The Content Hub organizes Navgurukul's learning material into structured courses and modules. Browse course syllabus tracks, prerequisites, and resource links.",
       },
       {
         title: "2. Structuring Courses",
@@ -1049,6 +1139,16 @@ export const HELP_REGISTRY: HelpEntry[] = [
         items: [
           { title: "Modules & Lessons", text: "Courses are subdivided into ordered modules and lesson topics." },
           { title: "Attached Resources", text: "Include GitHub links, Google Docs, slides, and code sandboxes." },
+        ],
+      },
+      {
+        title: "3. Content Management (Staff Only)",
+        color: "emerald",
+        type: "cards",
+        staffOnly: true,
+        items: [
+          { title: "Manage Courses", text: "Create and update course titles, descriptions, prerequisites, and resource links." },
+          { title: "Curriculum Structure", text: "Organize lessons into ordered learning modules and track student completion." },
         ],
       },
     ],
@@ -1069,12 +1169,22 @@ export const HELP_REGISTRY: HelpEntry[] = [
           "View the full lesson hierarchy for a specific course, including completion stats and upcoming scheduled sessions.",
       },
       {
-        title: "2. Actions",
+        title: "2. Staff Management Actions",
         color: "emerald",
         type: "cards",
+        staffOnly: true,
         items: [
           { title: "Edit Curriculum", text: "Update module order, lesson titles, or linked assignments." },
           { title: "Link Mentoring Session", text: "Attach a live mentoring session directly to a lesson topic." },
+        ],
+      },
+      {
+        title: "2. Student Resources",
+        color: "emerald",
+        type: "cards",
+        items: [
+          { title: "Study Syllabus", text: "Review lessons, prerequisites, and recommended reading materials." },
+          { title: "Access Class Materials", text: "Open attached GitHub repositories, code sandboxes, and slides." },
         ],
       },
     ],
@@ -1569,15 +1679,44 @@ export const HELP_REGISTRY: HelpEntry[] = [
     id: "profile",
     label: "User Preferences & Profile",
     location: "Main Platform › Profile",
-    title: "Staff Account & Profile Settings",
-    description: "Manage your account password, notification preferences, and display settings.",
+    title: "User Profile & Account Settings",
+    description: "Manage your personal profile details, campus affiliation, skills, and card appearance.",
+    memberAccessible: true,
     sections: [
       {
-        title: "1. Personal Account Control",
+        title: "1. Profile Details & Identity",
         color: "blue",
         type: "text",
         content:
-          "Update your personal profile details, notification preferences, dark/light theme options, and security settings.",
+          "Configure your display name, avatar photo, phone number, gender, and location (city and state). Your registered account email is securely locked.",
+      },
+      {
+        title: "2. Campus & Education Affiliation",
+        color: "emerald",
+        type: "bullets",
+        items: [
+          { title: "NavGurukul Campus", text: "Select your primary home campus location." },
+          { title: "Highest Education & Course", text: "Specify your highest academic qualification and enrolled course track." },
+          { title: "Batch Year", text: "Select your graduation or joining batch year." },
+        ],
+      },
+      {
+        title: "3. Professional Presence & Customization",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Biography Summary", text: "Share a concise professional summary highlighting your background and achievements." },
+          { title: "Skills Tags", text: "Add up to 3 core technical or professional skill badges (e.g. Python, SQL, React)." },
+          { title: "Social Links", text: "Connect your GitHub and LinkedIn profile URLs for network discovery." },
+          { title: "Gradient Theme Banner", text: "Select a custom preview card banner (Midnight Lavender, Ocean Breeze, Sunset Glow, Emerald Forest)." },
+        ],
+      },
+      {
+        title: "4. Profile Completion Meter",
+        color: "amber",
+        type: "text",
+        content:
+          "The Profile Strength progress meter calculates your profile completion rate based on filled fields, helping you build a complete profile on the NGConnect network.",
       },
     ],
   },
@@ -1621,6 +1760,7 @@ export function getHelpIdForRoute(
   // Learning Center Cluster
   if (cleanPath === "/learning-center" || cleanPath === "/learning-center/dashboard") return "learning_center.dashboard";
   if (cleanPath === "/learning-center/sessions/create") return "learning_center.create_session";
+  if (cleanPath.startsWith("/learning-center/sessions/") && cleanPath.endsWith("/feedback")) return "learning_center.session_feedback";
   if (cleanPath === "/learning-center/sessions") return "learning_center.sessions";
   if (cleanPath === "/learning-center/recordings") return "learning_center.recordings";
   if (cleanPath === "/learning-center/settings") return "learning_center.settings";
@@ -1668,7 +1808,7 @@ export function getHelpIdForRoute(
   if (cleanPath.startsWith("/alumni-growth/alumni/") && cleanPath !== "/alumni-growth/alumni") {
     return "alumni.detail";
   }
-  if (cleanPath === "/alumni-growth/alumni") return "alumni.all_data";
+  if (cleanPath === "/alumni-growth/all-data") return "alumni.all_data";
 
   return undefined;
 }
