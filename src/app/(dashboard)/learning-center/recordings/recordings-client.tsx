@@ -4,7 +4,6 @@ import React, { useState, useMemo } from "react"
 import { Clock, Video, ChevronLeft, ChevronRight, ArrowUpDown, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PageBanner } from "@/components/shared/page-banner"
-import { HelpModal } from "@/components/shared/HelpModal"
 import { SessionPlaybackModal } from "@/components/shared/session-playback-modal"
 import { PastSessionCard } from "@/components/learning-center/past-session-card"
 import { LearningSession } from "@/lib/learning-center/queries"
@@ -124,7 +123,6 @@ export function RecordingsClient({ sessions, progressMap = new Map() }: { sessio
         title="Past Sessions"
         description="Watch past recorded sessions and access transcripts & chat logs."
         icon={<Clock className="w-6 h-6 text-indigo-500" />}
-        actions={<HelpModal helpId="learning_center.recordings" />}
       />
 
       {/* Filter and Sort Toolbar */}

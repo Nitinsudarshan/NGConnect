@@ -24,7 +24,6 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import LoadingView from '@/components/loading-view';
-import { HelpModal } from '@/components/shared/HelpModal';
 
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -102,7 +101,6 @@ export default function AuditLogsPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh Audit Trail
           </Button>
-          <HelpModal helpId="data_management.audit_logs" />
         </div>
       </div>
 

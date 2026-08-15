@@ -12,8 +12,9 @@ export interface HelpSection {
   title: string;
   color: string; // Tailwind color name e.g. "blue", "emerald", "purple", "amber", "rose", "sky"
   content?: React.ReactNode | string;
-  type?: "text" | "bullets" | "cards";
-  items?: { title?: string; text: string }[];
+  type?: "text" | "bullets" | "cards" | "steps" | "diagram" | "mermaid";
+  mermaid?: string;
+  items?: { title?: string; text: string; badge?: string }[];
 }
 
 export interface HelpEntry {
@@ -24,6 +25,8 @@ export interface HelpEntry {
   location: string;
   title: string;
   description: string;
+  /** Whether regular member role users have access to this page/context */
+  memberAccessible?: boolean;
   sections: HelpSection[];
 }
 
@@ -35,6 +38,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
     location: "Main Platform › Dashboard",
     title: "NGConnect Main Executive Dashboard",
     description: "Your operational command center for alumni engagement, learning progress, and platform performance.",
+    memberAccessible: true,
     sections: [
       {
         title: "1. What is the Main Dashboard?",
@@ -65,6 +69,23 @@ export const HELP_REGISTRY: HelpEntry[] = [
           { title: "System Manage", text: "Manage user permissions (RBAC), user accounts, or master data options." },
         ],
       },
+      {
+        title: "4. Platform Operational Flowchart",
+        color: "amber",
+        type: "mermaid",
+        content: "High-level architectural flow showing how alumni data flows through NGConnect:",
+        mermaid: `graph TD
+          A[Alumni Excel Ingestion] --> B[Alumni Master Record]
+          B --> C{Eligibility Assessment}
+          C -->|Salary Threshold Met| D[Pay-Forward Pipeline]
+          C -->|Mentoring Skill Matched| E[Mentoring Pipeline]
+          C -->|Career Support Needed| F[Placement Support]
+          D --> G[Daily Workspace Queue]
+          E --> G
+          F --> G
+          G --> H[Outreach & Interaction Log]
+          H --> I[Analytics & Executive Reports]`,
+      },
     ],
   },
   {
@@ -82,17 +103,30 @@ export const HELP_REGISTRY: HelpEntry[] = [
           "The Global Report Exporter allows administrators and program leads to assemble custom data extractions combining demographic data, placement outcomes, Pay-Forward records, and Coursera learning progress into formatted Excel workbooks.",
       },
       {
-        title: "2. Export Workflow",
+        title: "2. Export Workflow Steps",
         color: "purple",
-        type: "cards",
+        type: "steps",
         items: [
           { title: "Select Data Scope", text: "Choose between full alumni export, pipeline-specific status reports, or learning progress summaries." },
           { title: "Apply Date & Campus Filters", text: "Narrow down records by cohort graduation year, campus location, or placement cycle." },
           { title: "Choose Output Format", text: "Export as structured CSV or multi-tab Excel workbooks (.xlsx)." },
+          { title: "Download & Audit", text: "File is generated client-side and logged in System Audit Trail." },
         ],
       },
       {
-        title: "3. Data Safety",
+        title: "3. Report Generation Process Flow",
+        color: "amber",
+        type: "mermaid",
+        content: "Step-by-step pipeline for exporting system analytics:",
+        mermaid: `graph TD
+          A[Configure Filter Parameters] --> B[Fetch Supabase Database Records]
+          B --> C[Format Fields & Group Datasets]
+          C --> D[ExcelJS / CSV File Stream Generation]
+          D --> E[Log Export Event in System Audit Log]
+          E --> F[Trigger Direct Browser Download]`,
+      },
+      {
+        title: "4. Data Safety & Privacy",
         color: "rose",
         type: "bullets",
         items: [
@@ -152,7 +186,19 @@ export const HELP_REGISTRY: HelpEntry[] = [
         ],
       },
       {
-        title: "5. Filters",
+        title: "5. Mentoring Process Flowchart",
+        color: "emerald",
+        type: "mermaid",
+        content: "Lifecycle of an alumnus moving through the Mentoring pipeline:",
+        mermaid: `graph TD
+          A[Identified Candidate] -->|First Outreach Call| B[Contacted]
+          B -->|Agrees to Mentor| C[Interested]
+          C -->|Orientation & Schedule Set| D[Onboarded]
+          D -->|First Session Conducted| E[Active Mentor]
+          B -->|Declined / Unresponsive| F[Dropped Lead]`,
+      },
+      {
+        title: "6. Filters & Segmentation",
         color: "rose",
         type: "bullets",
         items: [
@@ -188,8 +234,22 @@ export const HELP_REGISTRY: HelpEntry[] = [
         ],
       },
       {
-        title: "3. Owners vs Supporters",
+        title: "3. Pay-Forward Lifecycle Flowchart",
         color: "emerald",
+        type: "mermaid",
+        content: "Detailed process flow from eligibility check to completed contributions:",
+        mermaid: `graph TD
+          A[Eligible Uncontacted] -->|Outreach Call| B[Pitched]
+          B -->|Alumni Agrees| C[Agreed]
+          C -->|First EMI Contribution Received| D[Active Contributor]
+          D -->|Cumulative Paid = ₹1,20,000 Cap| E[Completed]
+          B -->|No Answer / Unreachable| F[Enforce Cool-down Days]
+          F -->|Cool-down Expires| A
+          B -->|Explicit Rejection| G[Declined / Dropped]`,
+      },
+      {
+        title: "4. Owners vs Supporters",
+        color: "purple",
         type: "bullets",
         items: [
           { title: "Owner (POC)", text: "The staff member currently managing this lead. Responsible for pitching and collecting contributions." },
@@ -197,36 +257,13 @@ export const HELP_REGISTRY: HelpEntry[] = [
         ],
       },
       {
-        title: "4. Core Actions",
-        color: "purple",
+        title: "5. Core Actions",
+        color: "amber",
         type: "cards",
         items: [
           { title: "Log Interaction", text: "Always log every call or message. Select outcomes carefully — 'Discussed' means you had a full conversation, 'Callback Requested' means they asked you to call later." },
           { title: "Transfer Lead", text: "Reassign to another eligible staff member. Use sparingly — consistency of contact builds trust with the alumni." },
           { title: "Move Stage", text: "Drag cards to progress through stages. Moving to 'Active Contributor' should only happen once the first payment is confirmed." },
-        ],
-      },
-      {
-        title: "5. Pipeline Stages",
-        color: "amber",
-        type: "bullets",
-        items: [
-          { title: "Eligible / Uncontacted", text: "Passed eligibility filter but no outreach made yet. First call within 48 hours." },
-          { title: "Pitched", text: "Pay-Forward concept has been explained. Awaiting decision." },
-          { title: "Agreed", text: "Alumni has committed to contributing. Set up payment reminder follow-up." },
-          { title: "Active Contributor", text: "First payment confirmed. Maintain relationship for ongoing contributions." },
-          { title: "Completed", text: "Lifetime cap reached. Mark as complete — no further pitching." },
-          { title: "Declined / Dropped", text: "Alumni has said no, or is unresponsive after multiple attempts." },
-        ],
-      },
-      {
-        title: "6. Filters",
-        color: "rose",
-        type: "bullets",
-        items: [
-          { title: "Owner", text: "Your queue vs team-wide view." },
-          { title: "Supporter", text: "Who sourced the lead." },
-          { title: "Campus & Year", text: "Target specific batches for campaigns." },
         ],
       },
     ],
@@ -244,6 +281,19 @@ export const HELP_REGISTRY: HelpEntry[] = [
         type: "text",
         content:
           "The Placement Board tracks alumni who need career support — mock interviews, referrals, job leads, or resume help. The goal is to help every eligible alumni reach stable, quality employment. Leads are managed through stages from identification to successful placement.",
+      },
+      {
+        title: "2. Placement Support Process Flowchart",
+        color: "emerald",
+        type: "mermaid",
+        content: "Career support pipeline from candidate identification to confirmed placement:",
+        mermaid: `graph TD
+          A[Identified Candidate] -->|Skills & Resume Audit| B[Assessment / Resume Ready]
+          B -->|Mock Interviews & Referrals| C[Active Job Outreach]
+          C -->|Employer Shortlist| D[Interview Stage]
+          D -->|Offer Letter Handed| E[Offer Received]
+          E -->|Employment Confirmed| F[Placed Alumni]
+          C -->|Not Looking / Opted Out| G[Dropped]`,
       },
       {
         title: "2. Owners vs Supporters",
@@ -329,8 +379,24 @@ export const HELP_REGISTRY: HelpEntry[] = [
         ],
       },
       {
-        title: "4. Cool-down Period",
+        title: "4. Daily Queue Prioritization Engine",
         color: "amber",
+        type: "mermaid",
+        content: "How the Workspace queue evaluates and sorts daily alumni contacts:",
+        mermaid: `graph TD
+          A[Raw Assigned Alumni List] --> B{Check Call Cooldown}
+          B -->|Cooldown Active| C[Hidden from Workspace Queue]
+          B -->|Cooldown Expired| D[Calculate Queue Priority]
+          D -->|Overdue Scheduled Callback| E[Priority 1: Overdue Callbacks]
+          D -->|Uncontacted Lead < 48h| F[Priority 2: New Uncontacted]
+          D -->|Regular Cadence Outreach| G[Priority 3: Standard Outreach]
+          E --> H[Action Call / Log Interaction]
+          F --> H
+          G --> H`,
+      },
+      {
+        title: "5. Cool-down Period Governance",
+        color: "rose",
         type: "text",
         content:
           "After a 'No Answer' is logged, an alumni will temporarily disappear from the Workspace queue until the cool-down period expires (configured in Settings › Pay-Forward Rules). This prevents over-calling. They will reappear automatically when the period ends.",
@@ -352,8 +418,22 @@ export const HELP_REGISTRY: HelpEntry[] = [
           "When you log an interaction and select 'Callback Requested' or set a future follow-up date, a scheduled reminder is created. This page shows all pending reminders across the entire team, sorted by due date.",
       },
       {
-        title: "2. Statuses",
+        title: "2. Follow-up Lifecycle Flowchart",
         color: "emerald",
+        type: "mermaid",
+        content: "Scheduled callback lifecycle from creation to completion:",
+        mermaid: `graph TD
+          A[Log Interaction & Set Next Action Date] --> B{Check Scheduled Date vs Today}
+          B -->|Date in Future| C[Upcoming Reminders List]
+          B -->|Date is Today| D[Due Today Alert]
+          B -->|Date is Past| E[Overdue Action Required]
+          D --> F[Place Callback / WhatsApp Outreach]
+          E --> F
+          F --> G[Mark Completed & Log New Interaction Outcome]`,
+      },
+      {
+        title: "3. Statuses",
+        color: "sky",
         type: "bullets",
         items: [
           { title: "Overdue (Red)", text: "The follow-up date has passed and it has not been marked complete. These should be actioned immediately." },
@@ -362,7 +442,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
         ],
       },
       {
-        title: "3. Completing a Follow-up",
+        title: "4. Completing a Follow-up",
         color: "purple",
         type: "text",
         content:
@@ -798,6 +878,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
     location: "Learning Center › Dashboard",
     title: "Learning Center & Mentoring Hub Guide",
     description: "Overview of student learning sessions, mentor scheduling, course materials, and recording archives.",
+    memberAccessible: true,
     sections: [
       {
         title: "1. What is the Learning Center?",
@@ -818,8 +899,20 @@ export const HELP_REGISTRY: HelpEntry[] = [
         ],
       },
       {
-        title: "3. Best Practices",
+        title: "3. Learning Center Operations Flowchart",
         color: "amber",
+        type: "mermaid",
+        content: "Complete workflow from mentor session creation to student learning archiving:",
+        mermaid: `graph TD
+          A[Schedule Mentoring Session] --> B[Assign Onboarded Mentor & Campus Target]
+          B --> C[Generate Zoom / Meet Meeting Link]
+          C --> D[Notify Students & Publish on Schedule]
+          D --> E[Deliver Live Session]
+          E --> F[Upload Recording Link & Collect Student Ratings]`,
+      },
+      {
+        title: "4. Best Practices",
+        color: "purple",
         type: "cards",
         items: [
           { title: "Schedule Ahead", text: "Create sessions at least 48 hours prior to allow student notification." },
@@ -913,6 +1006,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
     location: "Learning Center › Recordings",
     title: "Video & Audio Recordings Archive",
     description: "Browse, search, and stream recorded mentoring sessions and masterclasses.",
+    memberAccessible: true,
     sections: [
       {
         title: "1. Recordings Library",
@@ -939,6 +1033,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
     location: "Learning Center › Content Hub",
     title: "Curriculum Content Hub",
     description: "Central repository of courses, learning paths, and technical modules.",
+    memberAccessible: true,
     sections: [
       {
         title: "1. Course Repository",
@@ -964,6 +1059,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
     location: "Learning Center › Course Detail",
     title: "Course Curriculum & Lesson Plan",
     description: "Detailed view of course syllabus, enrolled students, and associated sessions.",
+    memberAccessible: true,
     sections: [
       {
         title: "1. Syllabus Overview",
@@ -1025,7 +1121,21 @@ export const HELP_REGISTRY: HelpEntry[] = [
           "The Data Management Hub is the core ingestion and data governance center of NGConnect. It supports uploading Excel spreadsheets, monitoring Coursera learning integrations, inspecting field-level change histories, and rolling back bad batch imports.",
       },
       {
-        title: "2. Ingestion Sub-modules",
+        title: "2. Data Ingestion Architecture",
+        color: "emerald",
+        type: "mermaid",
+        content: "How external data feeds into NGConnect master database records:",
+        mermaid: `graph TD
+          A[Raw Alumni Excel File] --> B[Spreadsheet Import Wizard]
+          C[Coursera API Data Feed] --> D[Coursera Ingestion Pipeline]
+          B --> E{Primary Key Match: Email}
+          D --> E
+          E --> F[Atomic Database Upsert]
+          F --> G[System Audit Logs & Field Edit History]
+          F --> H[Batch Record Logged for Rollback]`,
+      },
+      {
+        title: "3. Ingestion Sub-modules",
         color: "purple",
         type: "cards",
         items: [
@@ -1036,7 +1146,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
         ],
       },
       {
-        title: "3. Operational Rules",
+        title: "4. Operational Rules",
         color: "rose",
         type: "bullets",
         items: [
@@ -1061,7 +1171,20 @@ export const HELP_REGISTRY: HelpEntry[] = [
           "The Import Wizard parses .xlsx or .csv files, allows interactive column mapping to NGConnect fields, performs pre-flight validation checks, and performs upserts (update existing / insert new) into the database.",
       },
       {
-        title: "2. Step-by-Step Instructions",
+        title: "2. Bulk Import Workflow Flowchart",
+        color: "amber",
+        type: "mermaid",
+        content: "Step-by-step ingestion process for spreadsheet imports:",
+        mermaid: `graph TD
+          A[Select .xlsx / .csv File] --> B[Interactive Column Mapping]
+          B --> C[Pre-flight Validation Run]
+          C -->|Errors / Warnings Detected| D[Inspect Preview Table & Fix]
+          C -->|Valid Rows Confirmed| E[Execute Atomic Database Import]
+          E --> F[Generate Unique Batch Audit ID]
+          F --> G[View Import Summary & History Log]`,
+      },
+      {
+        title: "3. Step-by-Step Instructions",
         color: "purple",
         type: "cards",
         items: [
@@ -1252,7 +1375,19 @@ export const HELP_REGISTRY: HelpEntry[] = [
           "If a faulty Excel file was imported, the Rollback tool restores affected alumni records to their state prior to the import batch.",
       },
       {
-        title: "2. Safety Warnings",
+        title: "2. Batch Rollback Process Flowchart",
+        color: "emerald",
+        type: "mermaid",
+        content: "Safely reversing a bulk spreadsheet import:",
+        mermaid: `graph TD
+          A[Select Import Batch ID] --> B[Retrieve Pre-import Record Snapshots]
+          B --> C[Admin Safety Confirmation Dialog]
+          C --> D[Execute Atomic DB Restore]
+          D --> E[Restore Original Alumni Field Values]
+          E --> F[Log Rollback Event in System Audit Logs]`,
+      },
+      {
+        title: "3. Safety Warnings",
         color: "rose",
         type: "bullets",
         items: [
@@ -1305,8 +1440,19 @@ export const HELP_REGISTRY: HelpEntry[] = [
           "NGConnect utilizes a strict RBAC architecture governing resource-level access (e.g. crm.pipelines.mentoring, crm.settings.edit_log, learning.sessions). Roles define exact permissions for every screen and button.",
       },
       {
-        title: "2. Modifying Permissions",
+        title: "2. RBAC Permission Resolution Flowchart",
         color: "amber",
+        type: "mermaid",
+        content: "How permissions are evaluated when a user interacts with the app:",
+        mermaid: `graph TD
+          A[User Navigates or Clicks Action] --> B[Fetch User Role: Super Admin / Admin / Manager / Member]
+          B --> C[Lookup Resource Permission Matrix]
+          C -->|Has Capability Permission| D[Grant Access / Render Action Control]
+          C -->|Permission Missing| E[Deny Access / Hide Trigger Button]`,
+      },
+      {
+        title: "3. Modifying Permissions",
+        color: "purple",
         type: "bullets",
         items: [
           { title: "Permission Matrix", text: "Check or uncheck permission cells per role to grant or restrict capabilities." },
@@ -1443,3 +1589,87 @@ export const HELP_REGISTRY: HelpEntry[] = [
 export function getHelpEntry(id: string): HelpEntry | undefined {
   return HELP_REGISTRY.find((e) => e.id === id);
 }
+
+/**
+ * Map a route pathname and optional searchParams to a corresponding HelpEntry ID.
+ */
+export function getHelpIdForRoute(
+  pathname: string,
+  searchParams?: { get: (key: string) => string | null } | null
+): string | undefined {
+  if (!pathname) return undefined;
+
+  // Clean trailing slashes except root
+  const cleanPath =
+    pathname.length > 1 && pathname.endsWith("/")
+      ? pathname.slice(0, -1)
+      : pathname;
+
+  // Exact & Prefix Mappings
+  if (cleanPath === "/" || cleanPath === "/dashboard") return "dashboard.overview";
+  if (cleanPath === "/reports") return "reports.generator";
+  if (cleanPath === "/profile") return "profile";
+  if (cleanPath === "/greetings") return "greetings";
+
+  // Manage Cluster
+  if (cleanPath === "/manage/help") return "manage.help";
+  if (cleanPath === "/manage/users") return "manage.users";
+  if (cleanPath === "/manage/rbac") return "manage.rbac";
+  if (cleanPath === "/manage/master-data") return "manage.master_data";
+  if (cleanPath === "/manage/alumni-network") return "manage.alumni_network";
+
+  // Learning Center Cluster
+  if (cleanPath === "/learning-center" || cleanPath === "/learning-center/dashboard") return "learning_center.dashboard";
+  if (cleanPath === "/learning-center/sessions/create") return "learning_center.create_session";
+  if (cleanPath === "/learning-center/sessions") return "learning_center.sessions";
+  if (cleanPath === "/learning-center/recordings") return "learning_center.recordings";
+  if (cleanPath === "/learning-center/settings") return "learning_center.settings";
+  if (cleanPath === "/learning-center/content-hub") return "learning_center.content_hub";
+  if (cleanPath.startsWith("/learning-center/content-hub/courses/")) return "learning_center.course_detail";
+
+  // Data Management Cluster
+  if (cleanPath === "/data-management") return "data_management.overview";
+  if (cleanPath === "/data-management/import") return "data_management.import";
+  if (cleanPath === "/data-management/import-history") return "data_management.import_history";
+  if (cleanPath === "/data-management/record-history") return "data_management.record_history";
+  if (cleanPath === "/data-management/rollback") return "data_management.rollback";
+  if (cleanPath === "/data-management/audit-logs") return "data_management.audit_logs";
+  if (cleanPath === "/data-management/coursera/activity-logs") return "data_management.coursera_logs";
+  if (cleanPath.startsWith("/data-management/coursera/learner/")) return "data_management.coursera_learner";
+  if (cleanPath === "/data-management/coursera") return "data_management.coursera";
+
+  // Alumni Growth Cluster
+  if (cleanPath === "/alumni-growth/workspace") return "workspace";
+  if (cleanPath === "/alumni-growth/follow-ups") return "follow_ups";
+  if (cleanPath === "/alumni-growth/reports") return "reports";
+  if (cleanPath === "/alumni-growth/pipelines/placement") return "boards.placement";
+  if (cleanPath === "/alumni-growth/pipelines/pay-forward") return "boards.pay_forward";
+  if (cleanPath === "/alumni-growth/pipelines/mentoring") return "boards.mentoring";
+
+  if (cleanPath === "/alumni-growth/settings") {
+    const tab = searchParams?.get("tab") || "pay_forward";
+    const tabMap: Record<string, string> = {
+      pay_forward: "settings.pay_forward",
+      active_member: "settings.active_member",
+      profile_scoring: "settings.profile_scoring",
+      pipelines: "settings.pipelines",
+      pipeline_stages: "settings.pipeline_stages",
+      outcomes: "settings.outcomes",
+      call_reasons: "settings.call_reasons",
+      pipeline_pocs: "settings.pipeline_pocs",
+      contributions: "settings.contributions",
+      outcome_mapping: "settings.outcome_mapping",
+      mentors: "settings.mentors",
+      edit_log: "settings.edit_log",
+    };
+    return tabMap[tab] || "settings.pay_forward";
+  }
+
+  if (cleanPath.startsWith("/alumni-growth/alumni/") && cleanPath !== "/alumni-growth/alumni") {
+    return "alumni.detail";
+  }
+  if (cleanPath === "/alumni-growth/alumni") return "alumni.all_data";
+
+  return undefined;
+}
+

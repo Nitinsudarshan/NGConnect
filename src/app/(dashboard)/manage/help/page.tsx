@@ -2,14 +2,26 @@ import React from "react";
 import { PageBanner } from "@/components/shared/page-banner";
 import { BookOpen } from "lucide-react";
 import HelpDocsClient from "./HelpDocsClient";
-import { HelpModal } from "@/components/shared/HelpModal";
+import { createClient } from "@/lib/supabase/server";
+import { checkAccess } from "@/lib/permissions";
+import { redirect } from "next/navigation";
 
 export const metadata = {
   title: "Help Docs | Manage | NGConnect",
   description: "Control the visibility of in-app help tooltips across all pages.",
 };
 
-export default function HelpDocsPage() {
+export default async function HelpDocsPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const canView = await checkAccess(user?.id ?? null, "manage.help", "view");
+  if (!canView) {
+    redirect("/");
+  }
+
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-20">
       <PageBanner
@@ -21,7 +33,6 @@ export default function HelpDocsPage() {
           </p>
         }
         icon={<BookOpen className="h-8 w-8 text-amber-500" />}
-        actions={<HelpModal helpId="manage.help" />}
       />
       <HelpDocsClient />
     </div>

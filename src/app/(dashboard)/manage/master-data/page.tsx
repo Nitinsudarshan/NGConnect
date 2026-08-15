@@ -25,7 +25,6 @@ import { useUserContext } from '@/contexts/user-context';
 import type { AlumniMaster } from '@/types/alumni';
 import AlumniDetailsModule from '@/components/shared/alumni-details-module';
 import { PageBanner } from '@/components/shared/page-banner';
-import { HelpModal } from '@/components/shared/HelpModal';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -208,7 +207,6 @@ export default function MasterDataPage() {
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               Reload Data
             </Button>
-            <HelpModal helpId="manage.master_data" />
           </div>
         }
       />

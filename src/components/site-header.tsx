@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useSidebar } from "@/components/ui/sidebar"
 import { ModeToggle } from "@/components/mode-toggle"
+import { HeaderHelpTrigger } from "@/components/header-help-trigger"
 import { DevRoleToggle } from "@/components/dev-role-toggle"
 import dynamic from "next/dynamic"
 import { useBreadcrumb } from "@/contexts/breadcrumb-context"
@@ -72,6 +73,7 @@ export function SiteHeader({
         </Breadcrumb>
         <div className="ml-auto flex items-center gap-2">
           <DevRoleToggle isSuperAdmin={isSuperAdmin} />
+          <HeaderHelpTrigger />
           <ModeToggle />
           <HeaderUserMenu />
         </div>

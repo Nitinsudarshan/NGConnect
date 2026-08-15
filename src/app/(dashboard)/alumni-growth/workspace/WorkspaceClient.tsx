@@ -40,7 +40,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageBanner } from "@/components/shared/page-banner";
 import LogInteractionModal from "@/components/engagement/LogInteractionModal";
 import AlumniDetailsModule from "@/components/shared/alumni-details-module";
-import { HelpModal } from "@/components/shared/HelpModal";
 import { InteractionOutcome, OrgSettings, PipelineOwnership } from "@/types/engagement";
 import { assignToMeAction, getTeamAlumniAction } from "@/lib/engagement/actions";
 import { calculateProfileScore } from "@/lib/engagement/utils";
@@ -320,7 +319,6 @@ export default function WorkspaceClient({
             >
               <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Cool-down: {settings.followup_cooldown_days} days
             </Badge>
-            <HelpModal helpId="workspace" />
           </div>
         }
       />

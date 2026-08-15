@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { getUserRole } from '@/lib/roles';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { HelpModal } from '@/components/shared/HelpModal';
 
 interface SearchParams {
   month?: string;
@@ -98,9 +97,6 @@ export default async function ActivityLogsPage({
           <p className="text-muted-foreground text-sm mt-0.5">
             {selectedMonth ? formatMonth(selectedMonth, firstImportMonth) : 'All months'} · {(count ?? 0).toLocaleString()} learners
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <HelpModal helpId="data_management.coursera_logs" />
         </div>
       </div>
 

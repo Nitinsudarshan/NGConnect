@@ -6,7 +6,6 @@ import { ChevronLeft, PlayCircle, FileText, FileDown, HelpCircle, CheckCircle2 }
 import DOMPurify from 'isomorphic-dompurify'
 import { Button } from "@/components/ui/button"
 import { VideoPlayer } from "@/components/shared/video-player"
-import { HelpModal } from "@/components/shared/HelpModal"
 import { toast } from "sonner"
 
 export default function CourseViewerPage({ params }: { params: Promise<{ courseId: string }> }) {
@@ -128,7 +127,6 @@ export default function CourseViewerPage({ params }: { params: Promise<{ courseI
                 <ChevronLeft className="w-4 h-4 mr-1" /> Back to Library
               </Link>
             </Button>
-            <HelpModal helpId="learning_center.course_detail" />
           </div>
           <h2 className="font-bold line-clamp-2">{course.title}</h2>
           <div className="mt-2 text-xs font-medium text-muted-foreground">

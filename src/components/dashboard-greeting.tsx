@@ -3,7 +3,6 @@
 import React, { useEffect, useMemo, useState } from "react"
 import { useUserContext } from "@/contexts/user-context"
 import { PageBanner } from "@/components/shared/page-banner"
-import { HelpModal } from "@/components/shared/HelpModal"
 import { hourlyGreetings } from "./greetings-data"
 
 /**
@@ -72,7 +71,6 @@ export function DashboardGreeting() {
       title={greetingText}
       description={subtextText}
       icon={<Icon className={`h-8 w-8 ${activeTemplate.iconClass}`} />}
-      actions={<HelpModal helpId="dashboard.overview" />}
     />
   )
 }

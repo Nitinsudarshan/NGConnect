@@ -119,7 +119,6 @@ const COURSERA_CATEGORY = {
 
 import { auth } from '@/lib/auth';
 import { checkClusterAccess } from '@/lib/permissions';
-import { HelpModal } from '@/components/shared/HelpModal';
 
 export default async function DataManagementPage() {
   const { userId } = await auth();
@@ -146,9 +145,6 @@ export default async function DataManagementPage() {
               System administration utilities for imports, records lifecycle, audit tracking, and database integrity.
             </p>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <HelpModal helpId="data_management.overview" />
         </div>
       </div>
 

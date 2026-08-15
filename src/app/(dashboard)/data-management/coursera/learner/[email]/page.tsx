@@ -3,7 +3,6 @@ import { redirect, notFound } from 'next/navigation';
 import { getUserRole } from '@/lib/roles';
 import Link from 'next/link';
 import LearnerDetailClient from './_components/LearnerDetailClient';
-import { HelpModal } from '@/components/shared/HelpModal';
 
 interface PageProps {
   params: Promise<{ email: string }>;
@@ -89,7 +88,6 @@ export default async function LearnerDetailPage({ params }: PageProps) {
             <div className="text-xl font-bold">{coursesCompleted}</div>
             <div className="text-xs text-muted-foreground">Completed</div>
           </div>
-          <HelpModal helpId="data_management.coursera_learner" />
         </div>
       </div>
 
