@@ -23,9 +23,37 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.05.00";
+export const CURRENT_VERSION = "1.05.01";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.05.01",
+    date: "2026-08-16",
+    title: "Member Requests Security Hardening & Feedback DB Persistence",
+    type: "patch",
+    changes: [
+      {
+        category: "Security",
+        description: "Enforced 401 Unauthorized authentication guards on all /api/member-requests routes and session-only email identity binding on POST requests.",
+      },
+      {
+        category: "Security",
+        description: "Enforced app_metadata role check (Admin/Super Admin) on /api/member-requests PATCH handlers and updated RLS policies (20260816000001_member_requests_rls_fix.sql).",
+      },
+      {
+        category: "Improvements",
+        description: "Replaced member request ID generation with crypto.randomUUID() and removed in-memory store fallbacks.",
+      },
+      {
+        category: "Features",
+        description: "Created public.alumni_member_feedback database table (20260816000002_member_feedback.sql) with RLS policies.",
+      },
+      {
+        category: "Features",
+        description: "Wired /feedback page to real server-authenticated /api/feedback API route with server-side comments validation.",
+      },
+    ],
+  },
   {
     version: "1.05.00",
     date: "2026-08-16",

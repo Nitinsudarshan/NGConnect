@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Send,
   Star,
@@ -55,6 +55,27 @@ export default function FeedbackPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [history, setHistory] = useState<SubmittedFeedback[]>([]);
+
+  useEffect(() => {
+    fetch("/api/feedback")
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData.success && Array.isArray(resData.data)) {
+          const formatted: SubmittedFeedback[] = resData.data.map((item: any) => ({
+            id: item.id,
+            category: item.category as FeedbackCategory,
+            focusArea: item.focus_area || undefined,
+            rating: item.rating,
+            comments: item.comments,
+            categorySpecificSuggestion: item.category_specific_suggestion || undefined,
+            isAnonymous: item.is_anonymous,
+            timestamp: new Date(item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          }));
+          setHistory(formatted);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const categoryConfigs: Record<
     FeedbackCategory,
@@ -155,7 +176,7 @@ export default function FeedbackPage() {
     setCategorySpecificSuggestion("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!comments.trim()) {
@@ -165,23 +186,45 @@ export default function FeedbackPage() {
 
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      const newEntry: SubmittedFeedback = {
-        id: `FB-${Date.now().toString().slice(-4)}`,
-        category,
-        focusArea: focusArea || undefined,
-        rating,
-        comments: comments.trim(),
-        categorySpecificSuggestion: categorySpecificSuggestion.trim() || undefined,
-        isAnonymous,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      };
+    try {
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category,
+          focusArea: focusArea || null,
+          rating,
+          comments: comments.trim(),
+          categorySpecificSuggestion: categorySpecificSuggestion.trim() || null,
+          isAnonymous,
+        }),
+      });
 
-      setHistory((prev) => [newEntry, ...prev]);
+      const data = await res.json();
+
+      if (data.success && data.data) {
+        const newEntry: SubmittedFeedback = {
+          id: data.data.id,
+          category: data.data.category as FeedbackCategory,
+          focusArea: data.data.focus_area || undefined,
+          rating: data.data.rating,
+          comments: data.data.comments,
+          categorySpecificSuggestion: data.data.category_specific_suggestion || undefined,
+          isAnonymous: data.data.is_anonymous,
+          timestamp: new Date(data.data.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        };
+
+        setHistory((prev) => [newEntry, ...prev]);
+        setIsSubmitted(true);
+        toast.success("Thank you! Your feedback has been recorded.");
+      } else {
+        toast.error(data.error || "Failed to submit feedback.");
+      }
+    } catch (e: any) {
+      toast.error("Error submitting feedback. Please try again.");
+    } finally {
       setIsSubmitting(false);
-      setIsSubmitted(true);
-      toast.success("Thank you! Your feedback has been recorded.");
-    }, 600);
+    }
   };
 
   const handleReset = () => {

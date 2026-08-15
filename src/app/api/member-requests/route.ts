@@ -11,17 +11,22 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
+    if (!user) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") as "coursera" | "pay_forward" | null;
     const userEmailFilter = searchParams.get("user_email");
     const statusFilter = searchParams.get("status");
 
-    // If user is a Member and asking for their own status, filter by user email
-    let filterEmail = userEmailFilter;
-    if (user?.user_metadata?.role === "Member" || !userEmailFilter) {
-      if (user?.email) {
-        filterEmail = user.email;
-      }
+    const userRole = user.app_metadata?.role;
+    const isStaff = userRole === "Admin" || userRole === "Super Admin";
+
+    // Non-staff users can strictly view only their own requests
+    let filterEmail: string | undefined = userEmailFilter || undefined;
+    if (!isStaff) {
+      filterEmail = user.email || undefined;
     }
 
     const requests = await getMemberRequests({
@@ -44,6 +49,10 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
+    if (!user || !user.email) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { type } = body;
 
@@ -54,9 +63,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const userEmail = user?.email || body.email || "alumni.member@navgurukul.org";
-    const userName = user?.user_metadata?.name || user?.user_metadata?.full_name || userEmail.split("@")[0];
-    const userId = user?.id || "user_demo_1";
+    // Always enforce authenticated session identity - no body email overrides or fallbacks
+    const userEmail = user.email;
+    const userName = user.user_metadata?.name || user.user_metadata?.full_name || userEmail.split("@")[0];
+    const userId = user.id;
 
     const memberReq = await createMemberRequest({
       type,
@@ -79,12 +89,25 @@ export async function PATCH(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
+    if (!user || !user.email) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Role check via app_metadata
+    const userRole = user.app_metadata?.role;
+    if (userRole !== "Admin" && userRole !== "Super Admin") {
+      return NextResponse.json(
+        { success: false, error: "Forbidden: Staff role required" },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { requestId, status } = body;
 
-    if (!requestId || !status) {
+    if (!requestId || !status || (status !== "approved" && status !== "received" && status !== "rejected")) {
       return NextResponse.json(
-        { success: false, error: "Missing requestId or status" },
+        { success: false, error: "Missing or invalid requestId or status" },
         { status: 400 }
       );
     }
@@ -92,12 +115,12 @@ export async function PATCH(request: Request) {
     const updated = await updateMemberRequestStatus(
       requestId,
       status,
-      user?.email || "staff@navgurukul.org"
+      user.email
     );
 
     if (!updated) {
       return NextResponse.json(
-        { success: false, error: "Request not found" },
+        { success: false, error: "Request not found or failed to update" },
         { status: 404 }
       );
     }
