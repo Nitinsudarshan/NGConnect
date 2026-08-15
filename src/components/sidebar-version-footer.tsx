@@ -64,7 +64,7 @@ export function SidebarVersionFooter() {
       {/* Changelog Modal (Non-Members only) */}
       {canViewChangelog && (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogContent className="w-[90vw] max-w-[90vw] sm:max-w-3xl max-h-[85vh] rounded-2xl border border-border/80 shadow-2xl p-0 overflow-hidden flex flex-col">
+          <DialogContent className="w-[90vw] max-w-[90vw] sm:max-w-[90vw] h-[90vh] max-h-[90vh] rounded-2xl border border-border/80 shadow-2xl p-0 overflow-hidden flex flex-col">
             <DialogHeader className="p-6 pb-4 border-b border-border/40 bg-muted/20 shrink-0">
               <div className="flex items-center justify-between">
                 <DialogTitle className="text-lg font-bold flex items-center gap-2 text-foreground">

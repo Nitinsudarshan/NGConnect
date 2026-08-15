@@ -31,6 +31,7 @@ to the task at hand.
 | `api-conventions.md` | Route handler response shape, validation, error handling |
 | `performance.md` | Bundle size, lazy loading, memoization basics |
 | `rbac-settings.md` | RBAC system architecture and SQL configuration |
+| `version-and-changelog.md` | Automatic versioning and changelog maintenance requirement |
 
 ## Precedence
 
