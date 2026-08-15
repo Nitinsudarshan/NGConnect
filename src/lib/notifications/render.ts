@@ -1,5 +1,15 @@
 import { generateUnsubscribeToken } from './tokens';
 
+export class MissingTemplateVariableError extends Error {
+  missingVariables: string[];
+
+  constructor(missingVariables: string[]) {
+    super(`Missing template variables: ${missingVariables.join(', ')}`);
+    this.name = 'MissingTemplateVariableError';
+    this.missingVariables = missingVariables;
+  }
+}
+
 export interface RenderOptions {
   subjectTemplate: string;
   bodyHtmlTemplate: string;
@@ -35,6 +45,23 @@ export function renderEmailTemplate({
     subject = subject.replace(regex, val);
     html = html.replace(regex, val);
   });
+
+  // Scan for any leftover {{...}} template tokens
+  const tokenRegex = /\{\{\s*([\w.]+)\s*\}\}/g;
+  const missingVars = new Set<string>();
+
+  let match: RegExpExecArray | null;
+  while ((match = tokenRegex.exec(subject)) !== null) {
+    missingVars.add(match[1]);
+  }
+  tokenRegex.lastIndex = 0;
+  while ((match = tokenRegex.exec(html)) !== null) {
+    missingVars.add(match[1]);
+  }
+
+  if (missingVars.size > 0) {
+    throw new MissingTemplateVariableError(Array.from(missingVars));
+  }
 
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
 

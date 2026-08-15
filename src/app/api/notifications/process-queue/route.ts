@@ -10,14 +10,17 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleAuthAndProcess(request: NextRequest) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    return NextResponse.json({ error: 'CRON_SECRET environment variable is not configured' }, { status: 401 });
+  }
+
   const authHeader = request.headers.get('authorization');
   const secretParam = new URL(request.url).searchParams.get('secret');
-  const cronSecret = process.env.CRON_SECRET || 'ngconnect-cron-secret-dev';
 
   const isAuthorized =
     authHeader === `Bearer ${cronSecret}` ||
-    secretParam === cronSecret ||
-    process.env.NODE_ENV === 'development';
+    secretParam === cronSecret;
 
   if (!isAuthorized) {
     return NextResponse.json({ error: 'Unauthorized cron trigger' }, { status: 401 });
