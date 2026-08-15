@@ -58,7 +58,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PageBanner } from "@/components/shared/page-banner";
-import { HelpModal } from "@/components/shared/HelpModal";
 import CourseraAlumniStats from "@/app/(dashboard)/manage/master-data/_components/CourseraAlumniStats";
 import LogInteractionModal from "@/components/engagement/LogInteractionModal";
 import TransferLeadModal from "@/components/engagement/TransferLeadModal";
@@ -239,7 +238,6 @@ export default function AlumniDetailClient({
             <Button onClick={() => setIsLogModalOpen(true)} className="gap-1.5 rounded-xl h-8 text-xs font-semibold shadow-xs bg-indigo-600 hover:bg-indigo-500 text-white">
               <PhoneCall className="w-3.5 h-3.5" /> Log Interaction
             </Button>
-            <HelpModal helpId="alumni.detail" />
           </div>
         }
       />

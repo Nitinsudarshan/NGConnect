@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageBanner } from "@/components/shared/page-banner";
-import { HelpModal } from "@/components/shared/HelpModal";
 import { ChartContainer } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import ExcelJS from "exceljs";
@@ -193,12 +192,9 @@ export default function ReportsClient({ sampleData, teamActivity }: ReportsClien
         description={<p>Field-picker driven custom report generator with standard presets & export options.</p>}
         icon={<BarChart3 className="h-8 w-8 text-primary" />}
         actions={
-          <div className="flex items-center gap-2">
-            <Button onClick={handleExportXLSX} className="gap-2 rounded-xl text-xs font-semibold shadow-xs">
-              <FileSpreadsheet className="w-4 h-4" /> Export XLSX
-            </Button>
-            <HelpModal helpId="reports" />
-          </div>
+          <Button onClick={handleExportXLSX} className="gap-2 rounded-xl text-xs font-semibold shadow-xs">
+            <FileSpreadsheet className="w-4 h-4" /> Export XLSX
+          </Button>
         }
       />
 

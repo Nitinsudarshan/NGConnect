@@ -26,9 +26,11 @@ import { NavMain, NavItem } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { CourseraSidebarBanner } from "@/components/learning-center/coursera-sidebar-banner"
 import { PayForwardSidebarBanner } from "@/components/pay-forward-sidebar-banner"
+import { SidebarVersionFooter } from "@/components/sidebar-version-footer"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -269,6 +271,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {user?.role === "Member" && <PayForwardSidebarBanner />}
         </div>
       </SidebarContent>
+      <SidebarFooter className="p-0 border-t-0">
+        <SidebarVersionFooter />
+      </SidebarFooter>
     </Sidebar>
   )
 }

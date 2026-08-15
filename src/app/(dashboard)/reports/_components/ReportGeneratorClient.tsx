@@ -15,7 +15,6 @@ import {
   TrendingUp, Award, Search, ArrowRight, BookOpen, Layers
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { HelpModal } from '@/components/shared/HelpModal';
 
 interface MetricRow {
   month: string;
@@ -237,9 +236,6 @@ export default function ReportGeneratorClient({ metricsData, availableMonths }: 
               Configure parameters to generate, analyze, and export custom operational and learning analytics reports.
             </p>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <HelpModal helpId="reports.generator" />
         </div>
       </div>
 

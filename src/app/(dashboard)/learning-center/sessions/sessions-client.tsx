@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { PageBanner } from "@/components/shared/page-banner"
-import { HelpModal } from "@/components/shared/HelpModal"
 import { SessionPlaybackModal } from "@/components/shared/session-playback-modal"
 import { SessionMediaModal } from "@/components/learning-center/session-media-modal"
 import { EditSessionModal } from "@/components/learning-center/edit-session-modal"
@@ -67,7 +66,6 @@ export function SessionsClient({
                 New Session
               </Link>
             </Button>
-            <HelpModal helpId="learning_center.sessions" />
           </div>
         }
       />

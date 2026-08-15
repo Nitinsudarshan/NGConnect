@@ -20,7 +20,6 @@ import TransferLeadModal from "@/components/engagement/TransferLeadModal";
 import { calculateProfileScore, getStageBadgeVariant } from "@/lib/engagement/utils";
 import { PipelineListView } from "@/components/engagement/PipelineListView";
 import { AlumniKanbanCard } from "@/components/engagement/AlumniKanbanCard";
-import { HelpModal } from "@/components/shared/HelpModal";
 
 interface MentoringClientProps {
   pipeline: any;
@@ -391,10 +390,6 @@ export default function MentoringClient({
             </Button>
           </div>
         )}
-        
-        <div className={!isFilterActive ? "ml-auto" : ""}>
-          <HelpModal helpId="boards.mentoring" />
-        </div>
       </div>
 
       {!isFilterActive ? (

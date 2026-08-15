@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { toast } from "sonner"
 import { Mentor, LearningAudience, LearningSessionType, LearningCategory } from "@/lib/learning-center/queries"
 import { createSessionAction, generateGoogleMeetLinkAction } from "@/lib/learning-center/actions"
-import { HelpModal } from "@/components/shared/HelpModal"
 
 export function CreateSessionClient({ 
   mentors, 
@@ -127,7 +126,6 @@ export function CreateSessionClient({
           <h1 className="text-2xl font-bold tracking-tight">Create Session</h1>
           <p className="text-muted-foreground">Schedule a new mentorship session and optionally generate a Zoom link.</p>
         </div>
-        <HelpModal helpId="learning_center.create_session" />
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">

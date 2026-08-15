@@ -29,7 +29,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageBanner } from "@/components/shared/page-banner";
-import { HelpModal } from "@/components/shared/HelpModal";
 import LogInteractionModal from "@/components/engagement/LogInteractionModal";
 import { OwnershipTags } from "@/components/engagement/OwnershipTags";
 import { InteractionOutcome } from "@/types/engagement";
@@ -498,7 +497,6 @@ export default function FollowUpsClient({
                 className="h-10 rounded-xl bg-white/80 dark:bg-zinc-900/80 border-slate-200 dark:border-zinc-800 text-xs"
               />
             </div>
-            <HelpModal helpId="follow_ups" />
           </div>
         }
       />

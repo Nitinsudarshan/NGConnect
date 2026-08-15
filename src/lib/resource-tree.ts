@@ -62,6 +62,7 @@ export const PERMISSION_RESOURCES: PermissionResource[] = [
   { id: 'manage.alumni_network', label: 'Manage Alumni Network', cluster: 'manage', actions: ['view', 'edit', 'delete'] },
   { id: 'manage.master_data', label: 'Master Data', cluster: 'manage', actions: ['view', 'edit', 'delete'] },
   { id: 'manage.rbac', label: 'RBAC', cluster: 'manage', actions: ['view', 'edit'] },
+  { id: 'manage.help', label: 'Help Docs Hub', cluster: 'manage', actions: ['view', 'edit'] },
 ];
 
 export const RESOURCE_CLUSTERS = [

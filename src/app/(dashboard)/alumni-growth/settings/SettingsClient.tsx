@@ -56,7 +56,6 @@ import { Switch } from "@/components/ui/switch";
 import { PageBanner } from "@/components/shared/page-banner";
 import { SettingsLayout, SettingsNavItem } from "@/components/settings/settings-layout";
 import { EditLogTab } from "@/components/settings/edit-log-tab";
-import { HelpModal } from "@/components/shared/HelpModal";
 import { MentorStatsModalContent } from "@/components/settings/mentor-stats-modal";
 import { MentorForm } from "@/components/settings/mentor-form";
 import { ConfirmDeleteDialog } from "@/components/settings/confirm-delete-dialog";
@@ -572,7 +571,6 @@ export default function SettingsClient({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-foreground">Pay-Forward Rules &amp; Thresholds</h2>
-                <HelpModal helpId="settings.pay_forward" />
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Set lifetime completion cap, pitch salary floor, and call cooldown periods.
@@ -611,7 +609,6 @@ export default function SettingsClient({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-foreground">Active Member Criteria</h2>
-                <HelpModal helpId="settings.active_member" />
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Select which criteria tag an alumnus as an "Active Member" in the Learning Center.
@@ -647,8 +644,7 @@ export default function SettingsClient({
           <div className="space-y-6">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-foreground">Profile Scoring &amp; Weightages</h2>
-                <HelpModal helpId="settings.profile_scoring" />
+                <h2 className="text-lg font-bold text-foreground">Profile Completeness Scoring</h2>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Assign weightage points to all 12 profile parameters and set Red / Amber / Green thresholds.
@@ -727,8 +723,7 @@ export default function SettingsClient({
           <div className="space-y-6">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-foreground">Pipelines</h2>
-                <HelpModal helpId="settings.pipelines" />
+                <h2 className="text-lg font-bold text-foreground">Pipelines Definition</h2>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 The three engagement pipelines that alumni can be enrolled into.
@@ -772,8 +767,7 @@ export default function SettingsClient({
           <div className="space-y-6">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-foreground">Pipeline Stages</h2>
-                <HelpModal helpId="settings.pipeline_stages" />
+                <h2 className="text-lg font-bold text-foreground">Pipeline Stages Definition</h2>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Admin-configurable stages for Pay-Forward, Mentoring, and Placement pipelines.
@@ -925,7 +919,6 @@ export default function SettingsClient({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-foreground">Interaction Outcomes</h2>
-                <HelpModal helpId="settings.outcomes" />
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Outcome codes available when logging calls or outreach attempts.
@@ -1059,7 +1052,6 @@ export default function SettingsClient({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-foreground">Call Reasons</h2>
-                <HelpModal helpId="settings.call_reasons" />
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Reasons available when logging calls or outreach attempts.
@@ -1171,7 +1163,6 @@ export default function SettingsClient({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-foreground">Pipeline POC Eligibility</h2>
-                <HelpModal helpId="settings.pipeline_pocs" />
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Manage which staff members can be assigned as POCs for each pipeline.
@@ -1273,7 +1264,6 @@ export default function SettingsClient({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-foreground">Contribution Types</h2>
-                <HelpModal helpId="settings.contributions" />
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Monetary and non-monetary contribution types for Pay-Forward tracking.
@@ -1384,8 +1374,7 @@ export default function SettingsClient({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-foreground">Outcome Mapping Reference</h2>
-                  <HelpModal helpId="settings.outcome_mapping" />
+                  <h2 className="text-lg font-bold text-foreground">Legacy Outcome Code Mapping</h2>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Mapping rules from legacy source values to current <code className="bg-muted px-1 rounded text-[10px]">interaction_outcomes.code</code> values. Fully editable for system updates.
@@ -1484,7 +1473,6 @@ export default function SettingsClient({
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-bold text-foreground">Mentors Directory</h2>
-                  <HelpModal helpId="settings.mentors" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Shared mentor database — same data as Learning Center › Manage Mentors.
@@ -1584,8 +1572,7 @@ export default function SettingsClient({
         {activeTab === "edit_log" && (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-foreground">Edit Log</h2>
-              <HelpModal helpId="settings.edit_log" />
+              <h2 className="text-lg font-bold text-foreground">System Audit Log &amp; Edits</h2>
             </div>
             <EditLogTab logs={auditLogs} sourceFilter="alumni_growth" />
           </div>

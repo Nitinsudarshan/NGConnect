@@ -14,7 +14,6 @@ import {
   AlertTriangle, UserX, Zap, Shield,
 } from 'lucide-react';
 import Link from 'next/link';
-import { HelpModal } from '@/components/shared/HelpModal';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -143,7 +142,6 @@ export default function CourseraDashboardClient({ metrics, trend, selectedMonth,
           <Link href="/data-management/import-coursera" className="text-sm px-4 py-2 rounded-lg border border-border/80 hover:bg-accent transition-colors">
             Import Reports
           </Link>
-          <HelpModal helpId="data_management.coursera" />
         </div>
       </div>
 

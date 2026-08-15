@@ -6,7 +6,6 @@ import { checkAccess } from '@/lib/permissions';
 import { RbacGrid } from './_components/rbac-grid';
 import { RbacAuditLog } from './_components/rbac-audit-log';
 import { ShieldAlert } from 'lucide-react';
-import { HelpModal } from '@/components/shared/HelpModal';
 
 export default async function RbacPage() {
   const supabase = await createClient();
@@ -58,9 +57,6 @@ export default async function RbacPage() {
               Configure which page clusters each user role can access.
             </p>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <HelpModal helpId="manage.rbac" />
         </div>
       </div>
 

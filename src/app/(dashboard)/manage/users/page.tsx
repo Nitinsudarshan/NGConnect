@@ -5,7 +5,6 @@ import { UsersTable } from "./users-table";
 import { UsersStatsCards, UsersStatsCharts } from "./users-stats";
 
 import { checkAccess } from "@/lib/permissions";
-import { HelpModal } from "@/components/shared/HelpModal";
 
 export default async function ManageUsersPage() {
   const clientSupabase = await createClient();
@@ -52,9 +51,6 @@ export default async function ManageUsersPage() {
           <p className="text-muted-foreground mt-1 text-sm font-medium">
             Allocate Teams and Roles for your application users to enforce proper access control.
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <HelpModal helpId="manage.users" />
         </div>
       </div>
 
