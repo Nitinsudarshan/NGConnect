@@ -23,9 +23,37 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.04.16";
+export const CURRENT_VERSION = "1.04.17";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.04.17",
+    date: "2026-08-16",
+    title: "Help System Post-Merge Audit & Section Numbering Alignment",
+    type: "patch",
+    changes: [
+      {
+        category: "Fixes",
+        description: "Resolved broken route mappings for /alumni-growth/workspace and /manage/help/analytics.",
+      },
+      {
+        category: "Features",
+        description: "Added staffOnly section filtering in HeaderHelpTrigger for contextual member vs. staff guidance.",
+      },
+      {
+        category: "Improvements",
+        description: "Replaced duplicate numeric section prefixes in Learning Center help entries with descriptive role labels (Staff Notes / Student Guidance).",
+      },
+      {
+        category: "Improvements",
+        description: "Expanded profile settings help guide and aligned reports generator documentation with live CSV/Print exports.",
+      },
+      {
+        category: "Fixes",
+        description: "Cleaned up deprecated HelpModal and BoardHelpModal components across dashboard routes.",
+      },
+    ],
+  },
   {
     version: "1.04.16",
     date: "2026-08-15",

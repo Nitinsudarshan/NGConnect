@@ -296,7 +296,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
           C -->|Not Looking / Opted Out| G[Dropped]`,
       },
       {
-        title: "2. Owners vs Supporters",
+        title: "3. Owners vs Supporters",
         color: "emerald",
         type: "bullets",
         items: [
@@ -305,7 +305,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
         ],
       },
       {
-        title: "3. Core Actions",
+        title: "4. Core Actions",
         color: "purple",
         type: "cards",
         items: [
@@ -315,7 +315,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
         ],
       },
       {
-        title: "4. Pipeline Stages",
+        title: "5. Pipeline Stages",
         color: "amber",
         type: "bullets",
         items: [
@@ -329,7 +329,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
         ],
       },
       {
-        title: "5. Filters",
+        title: "6. Filters",
         color: "rose",
         type: "bullets",
         items: [
@@ -449,7 +449,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
           "Click the green checkmark on a follow-up row to mark it as done. This will clear it from this list. You should then log a new interaction on the alumni's card to record what happened in the call.",
       },
       {
-        title: "4. Best Practices",
+        title: "5. Best Practices",
         color: "amber",
         type: "bullets",
         items: [
@@ -956,7 +956,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
           E --> F[Upload Recording Link & Collect Student Ratings]`,
       },
       {
-        title: "4. Staff Operations & Best Practices",
+        title: "Staff Notes: Staff Operations & Best Practices",
         color: "purple",
         type: "cards",
         staffOnly: true,
@@ -966,7 +966,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
         ],
       },
       {
-        title: "4. Learning Resources for Students",
+        title: "Student Guidance: Learning Resources for Students",
         color: "purple",
         type: "cards",
         items: [
@@ -1169,7 +1169,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
           "View the full lesson hierarchy for a specific course, including completion stats and upcoming scheduled sessions.",
       },
       {
-        title: "2. Staff Management Actions",
+        title: "Staff Notes: Staff Management Actions",
         color: "emerald",
         type: "cards",
         staffOnly: true,
@@ -1179,7 +1179,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
         ],
       },
       {
-        title: "2. Student Resources",
+        title: "Student Guidance: Student Resources",
         color: "emerald",
         type: "cards",
         items: [
@@ -1305,7 +1305,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
         ],
       },
       {
-        title: "3. Import Rules & Safety",
+        title: "4. Import Rules & Safety",
         color: "rose",
         type: "bullets",
         items: [
