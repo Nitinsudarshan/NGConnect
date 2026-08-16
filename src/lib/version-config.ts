@@ -23,9 +23,21 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.05.01";
+export const CURRENT_VERSION = "1.05.02";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.05.02",
+    date: "2026-08-16",
+    title: "PostgREST No-Rows Error (PGRST116) 404 Handling Fix",
+    type: "patch",
+    changes: [
+      {
+        category: "Fixes",
+        description: "Updated updateMemberRequestStatus in requests-store.ts to return null on PostgREST error code PGRST116 (no row matched), allowing PATCH /api/member-requests to return a clean 404 response.",
+      },
+    ],
+  },
   {
     version: "1.05.01",
     date: "2026-08-16",

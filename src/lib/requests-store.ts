@@ -108,6 +108,9 @@ export async function updateMemberRequestStatus(
     .single();
 
   if (error) {
+    if (error.code === "PGRST116") {
+      return null;
+    }
     console.error("[updateMemberRequestStatus] Supabase update error:", error);
     throw new Error(`Failed to update member request status: ${error.message}`);
   }
