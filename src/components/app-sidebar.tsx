@@ -110,6 +110,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         },
         ...(!isExcludedRole ? [
           {
+            title: "Reports",
+            url: "/learning-center/reports",
+            isActive: pathname === "/learning-center/reports",
+          },
+          {
             title: "Settings",
             url: "/learning-center/settings",
             isActive: pathname.startsWith("/learning-center/settings"),
@@ -117,20 +122,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ] : []),
       ],
     },
-    ...(isExcludedRole ? [] : [
-      {
-        title: "Reports",
-        url: "/reports",
-        icon: BarChart,
-        isActive: pathname.startsWith("/reports"),
-      }
-    ]),
   ];
 
   const navManage: NavItem[] = [
     {
       title: "Manage",
-      url: "#",
+      url: "/manage",
       icon: Settings,
       isActive: pathname.startsWith("/manage") || pathname.startsWith("/data-management"),
       items: [
@@ -145,6 +142,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           url: "/manage/alumni-network",
           icon: GraduationCap,
           isActive: pathname === "/manage/alumni-network",
+        },
+        {
+          title: "Reports",
+          url: "/manage/reports",
+          icon: BarChart,
+          isActive: pathname === "/manage/reports",
         },
         {
           title: "Data Management",
@@ -185,7 +188,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navAlumniGrowth: NavItem[] = [
     {
       title: "Alumni Growth",
-      url: "#",
+      url: "/alumni-growth/workspace",
       icon: TrendingUp,
       isActive: pathname.startsWith("/alumni-growth"),
       items: [

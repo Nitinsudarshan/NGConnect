@@ -644,23 +644,6 @@ export async function getUserCourseraData(email: string): Promise<UserCourseraDa
     }
   }
 
-  // DEV TEST: Simulate a matched DB user for testing purposes
-  // TODO: Remove before production or when real data is imported
-  if (email.toLowerCase() === "nitinsudarshan@gmail.com") {
-    return {
-      found_in_db: true,
-      has_active_subscription: true,
-      show_contact_banner: false,
-      total_learning_hours: 42.5,
-      total_hours_formatted: "42.5 hrs",
-      hours_last_month: 8.3,
-      hours_last_month_formatted: "8.3 hrs",
-      completed_courses_count: 7,
-      enrolled_courses_count: 9,
-      program_name: "NavGurukul Enterprise Learning"
-    }
-  }
-
   const supabase = await createClient()
   const lowerEmail = email.toLowerCase()
 
@@ -859,3 +842,104 @@ export async function getGoogleMeetIntegrationStatus(): Promise<{ connected: boo
     return { connected: false }
   }
 }
+
+export async function getLearningCenterReportData() {
+  try {
+    const supabase = await createClient();
+
+    // 1. Fetch Coursera Learner Snapshots
+    const { data: snapshots } = await supabase
+      .from('coursera_snapshots')
+      .select('*')
+      .order('snapshot_month', { ascending: false })
+      .limit(500);
+
+    // 2. Fetch Learning Sessions
+    const { data: sessions } = await supabase
+      .from('learning_sessions')
+      .select('*, mentors(name)')
+      .order('session_date', { ascending: false })
+      .limit(200);
+
+    // 3. Fetch Mentors Directory
+    const { data: mentors } = await supabase
+      .from('mentors')
+      .select('*')
+      .order('name', { ascending: true });
+
+    // Map records into a unified dataset for report selection
+    const reportRows: Record<string, any>[] = [];
+
+    if (snapshots && snapshots.length > 0) {
+      for (const s of snapshots) {
+        reportRows.push({
+          id: s.id || `coursera-${s.email}`,
+          record_type: 'Coursera Learner',
+          email: s.email || 'N/A',
+          name: s.name || s.email?.split('@')[0] || 'Learner',
+          program_name: s.program_name || 'NavGurukul Learning Hub',
+          learning_hours: s.learning_hours != null ? Number(s.learning_hours).toFixed(1) : '0.0',
+          completed_courses: s.completed_courses || 0,
+          enrolled_courses: s.enrolled_courses || 0,
+          compliance_status: (s.learning_hours || 0) >= 20 ? 'COMPLIANT (≥20h)' : 'AT RISK (<20h)',
+          session_title: 'N/A',
+          session_date: 'N/A',
+          mentor_name: 'N/A',
+          audience: 'N/A',
+          session_status: 'N/A',
+          snapshot_month: s.snapshot_month || 'N/A'
+        });
+      }
+    }
+
+    if (sessions && sessions.length > 0) {
+      for (const sess of sessions) {
+        reportRows.push({
+          id: sess.id,
+          record_type: 'Learning Session',
+          email: 'N/A',
+          name: 'N/A',
+          program_name: 'Live Session Program',
+          learning_hours: 'N/A',
+          completed_courses: 0,
+          enrolled_courses: 0,
+          compliance_status: 'N/A',
+          session_title: sess.title || 'Untitled Session',
+          session_date: sess.session_date ? new Date(sess.session_date).toISOString().split('T')[0] : 'N/A',
+          mentor_name: (sess as any).mentors?.name || sess.mentor_name || 'Unassigned',
+          audience: sess.audience || 'All Campuses',
+          session_status: sess.status || 'Scheduled',
+          snapshot_month: 'N/A'
+        });
+      }
+    }
+
+    if (reportRows.length === 0 && mentors) {
+      for (const m of mentors) {
+        reportRows.push({
+          id: m.id,
+          record_type: 'Mentor',
+          email: m.email || 'N/A',
+          name: m.name,
+          program_name: 'Mentorship Network',
+          learning_hours: 'N/A',
+          completed_courses: 0,
+          enrolled_courses: 0,
+          compliance_status: 'Active Mentor',
+          session_title: 'N/A',
+          session_date: 'N/A',
+          mentor_name: m.name,
+          audience: 'N/A',
+          session_status: m.is_active ? 'Active' : 'Inactive',
+          snapshot_month: 'N/A'
+        });
+      }
+    }
+
+    return reportRows;
+  } catch (err) {
+    console.error('Error fetching learning center report data:', err);
+    return [];
+  }
+}
+

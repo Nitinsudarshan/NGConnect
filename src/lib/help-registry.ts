@@ -1513,7 +1513,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
     id: "manage.users",
     label: "User Accounts Management",
     location: "System Admin › User Management",
-    title: "User Accounts & Staff Administration",
+    title: "User Accounts & Staff Administration Guide",
     description: "Create, invite, edit, and deactivate staff user accounts in NGConnect.",
     sections: [
       {
@@ -1521,7 +1521,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
         color: "blue",
         type: "text",
         content:
-          "Manage staff credentials, assigned roles, campus scopes, and active status. Only authorized administrators can add or deactivate user accounts.",
+          "Manage staff credentials, assigned roles, team affiliations, campus scopes, and active status. Only authorized administrators can add, edit, or deactivate user accounts.",
       },
       {
         title: "2. Account Management Actions",
@@ -1529,9 +1529,21 @@ export const HELP_REGISTRY: HelpEntry[] = [
         type: "cards",
         items: [
           { title: "Invite New Staff", text: "Send an email invitation link to join the platform with pre-assigned permissions." },
-          { title: "Assign Roles", text: "Select RBAC roles (e.g. Admin, Pipeline Manager, Caller, Read Only)." },
-          { title: "Deactivate User", text: "Safely disable accounts for departed staff while preserving their interaction history." },
+          { title: "Assign Roles & Teams", text: "Select RBAC roles (Super Admin, Admin, Manager, Program, Operations) and teams (CEO's Office, Alumni Growth, PNC, Finance)." },
+          { title: "Deactivate User", text: "Safely disable accounts for departed staff while preserving their interaction history and audit logs." },
         ],
+      },
+      {
+        title: "3. User Account Lifecycle Workflow",
+        color: "amber",
+        type: "mermaid",
+        content: "Lifecycle of user creation, role assignment, and permission checking:",
+        mermaid: `graph TD
+          A[Admin Triggers User Invite] --> B[Enter Email & Select Role/Team]
+          B --> C[Send Authentication Email Invite]
+          C --> D[User Accepts Invite & Sets Password]
+          D --> E[Assign Role Permissions Matrix]
+          E --> F[Grant Module Access in App Sidebar]`,
       },
     ],
   },
@@ -1576,7 +1588,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
     id: "manage.master_data",
     label: "Master Data Management",
     location: "System Admin › Master Data",
-    title: "Master Data & Dropdown Taxonomies",
+    title: "Master Data & Dropdown Taxonomies Guide",
     description: "Manage standard drop-down options: Campuses, Courses, Companies, Cities, and Tech Stacks.",
     sections: [
       {
@@ -1597,13 +1609,24 @@ export const HELP_REGISTRY: HelpEntry[] = [
           { title: "Placement Companies", text: "Verified employer hiring partners." },
         ],
       },
+      {
+        title: "3. Master Data Processing Flow",
+        color: "amber",
+        type: "mermaid",
+        content: "How Master Data feeds into alumni profiles and import validation:",
+        mermaid: `graph TD
+          A[Admin Adds/Edits Campus or Course] --> B[Save to Public Master Data Table]
+          B --> C[Update Dynamic Form Pickers]
+          C --> D[Validate Excel Import Mappings]
+          D --> E[Standardize Alumni Records]`,
+      },
     ],
   },
   {
     id: "manage.alumni_network",
     label: "Alumni Network Analytics",
     location: "System Admin › Alumni Network",
-    title: "Alumni Network Demographics & Insights",
+    title: "Alumni Network Demographics & Insights Guide",
     description: "Macro-level analytics on alumni geographic distribution, gender ratios, salary progression, and employment rates.",
     sections: [
       {
@@ -1623,13 +1646,24 @@ export const HELP_REGISTRY: HelpEntry[] = [
           { title: "Employment Rate", text: "Percentage of alumni currently employed in relevant technical roles." },
         ],
       },
+      {
+        title: "3. Member Verification & Rollup Pipeline",
+        color: "emerald",
+        type: "mermaid",
+        content: "Verification and analytics rollup for external alumni network members:",
+        mermaid: `graph TD
+          A[Alumnus Profile Registered] --> B[Match Against Alumni Master Record]
+          B -->|Email Matched| C[Verify Member Active Status]
+          C --> D[Roll Up Employment & Salary Stats]
+          D --> E[Render Network Analytics Charts]`,
+      },
     ],
   },
   {
     id: "manage.help",
     label: "Help & Documentation Control",
     location: "System Admin › Help Management",
-    title: "Help & Tooltip Control Center",
+    title: "Help & Tooltip Control Center Guide",
     description: "Enable or disable [i] information tooltips and manage global help entries.",
     sections: [
       {
@@ -1640,13 +1674,27 @@ export const HELP_REGISTRY: HelpEntry[] = [
           "This admin page lists all registered help modals across NGConnect. Admins can toggle individual tooltips on or off to customize the interface for users.",
       },
       {
-        title: "2. Controls",
+        title: "2. Governance Controls",
         color: "emerald",
         type: "bullets",
         items: [
-          { title: "Visibility Switch", text: "Toggle off a tooltip to hide its [i] button on the target page immediately." },
+          { title: "Global Visibility Switch", text: "Toggle off a tooltip to hide its [i] button on the target page immediately for all users." },
+          { title: "Hide for Members", text: "Hide staff-oriented operational guides from users logged in under the Member role." },
           { title: "Enable All", text: "Reset all tooltips to visible with a single click." },
         ],
+      },
+      {
+        title: "3. Help Visibility Resolution Flowchart",
+        color: "amber",
+        type: "mermaid",
+        content: "How the header eye button evaluates visibility settings:",
+        mermaid: `graph TD
+          A[Page Loads & Header Renders] --> B[Lookup Route Help ID in Registry]
+          B --> C{Hidden Globally in LocalStorage?}
+          C -->|Yes| D[Hide Eye Trigger Button]
+          C -->|No| E{Is Member Role & Hidden for Members?}
+          E -->|Yes| D
+          E -->|No| F[Render Eye Help Trigger Button]`,
       },
     ],
   },
@@ -1654,24 +1702,36 @@ export const HELP_REGISTRY: HelpEntry[] = [
     id: "greetings",
     label: "Greetings & Announcements",
     location: "Main Platform › Greetings",
-    title: "Special Greetings & Broadcast Announcements",
+    title: "Special Greetings & Broadcast Announcements Guide",
     description: "Manage broadcast festival greetings, birthday messages, and network announcements.",
     sections: [
       {
-        title: "1. Broadcast Messaging",
+        title: "1. Broadcast Messaging Engine",
         color: "blue",
         type: "text",
         content:
           "Send scheduled or automated broadcast messages (WhatsApp / Email) to alumni for festivals, work anniversaries, and community milestones.",
       },
       {
-        title: "2. Features",
+        title: "2. Template & Campaign Controls",
         color: "purple",
         type: "cards",
         items: [
-          { title: "Templates", text: "Pre-approved templates with dynamic merge tags (e.g. {{name}}, {{campus}})." },
-          { title: "Schedule Date", text: "Set dispatch date and time for campaign execution." },
+          { title: "Message Templates", text: "Pre-approved templates with dynamic merge tags (e.g. {{name}}, {{campus}})." },
+          { title: "Schedule Dispatch", text: "Set target dispatch date and time for campaign execution." },
+          { title: "Audience Filter", text: "Target specific campuses, graduation cohorts, or pipeline segments." },
         ],
+      },
+      {
+        title: "3. Scheduled Dispatch Flowchart",
+        color: "emerald",
+        type: "mermaid",
+        content: "Automated campaign execution pipeline:",
+        mermaid: `graph TD
+          A[Create Greeting Campaign & Template] --> B[Select Target Alumni Audience Segment]
+          B --> C[Schedule Dispatch Date & Time]
+          C --> D[Cron Job Executes Batch Broadcast]
+          D --> E[Log Dispatch Delivery Status]`,
       },
     ],
   },
@@ -1679,7 +1739,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
     id: "profile",
     label: "User Preferences & Profile",
     location: "Main Platform › Profile",
-    title: "User Profile & Account Settings",
+    title: "User Profile & Account Settings Guide",
     description: "Manage your personal profile details, campus affiliation, skills, and card appearance.",
     memberAccessible: true,
     sections: [
@@ -1706,7 +1766,7 @@ export const HELP_REGISTRY: HelpEntry[] = [
         type: "cards",
         items: [
           { title: "Biography Summary", text: "Share a concise professional summary highlighting your background and achievements." },
-          { title: "Skills Tags", text: "Add up to 3 core technical or professional skill badges (e.g. Python, SQL, React)." },
+          { title: "Skills Badges", text: "Add core technical or professional skill badges (e.g. Python, SQL, React)." },
           { title: "Social Links", text: "Connect your GitHub and LinkedIn profile URLs for network discovery." },
           { title: "Gradient Theme Banner", text: "Select a custom preview card banner (Midnight Lavender, Ocean Breeze, Sunset Glow, Emerald Forest)." },
         ],
@@ -1717,6 +1777,372 @@ export const HELP_REGISTRY: HelpEntry[] = [
         type: "text",
         content:
           "The Profile Strength progress meter calculates your profile completion rate based on filled fields, helping you build a complete profile on the NGConnect network.",
+      },
+    ],
+  },
+  /* ──────────────────────── NEWER PAGES & MODULES ──────────────────────── */
+  {
+    id: "manage.overview",
+    label: "Management Administration Hub",
+    location: "System Manage › Overview",
+    title: "Management & System Administration Hub Guide",
+    description: "Overview of platform administrative utilities, user access management, data rules, and notification systems.",
+    sections: [
+      {
+        title: "1. What is the Management Hub?",
+        color: "blue",
+        type: "text",
+        content:
+          "The Management Hub (/manage) serves as the central operational control center for system administrators, team managers, and staff leads. It categorizes administrative tools into User & Network Management and System Governance & Diagnostics.",
+      },
+      {
+        title: "2. Key Administrative Modules",
+        color: "emerald",
+        type: "bullets",
+        items: [
+          { title: "Users Directory", text: "Manage internal staff and user accounts, auth metadata, and role assignments." },
+          { title: "Alumni Network", text: "Review registered external alumni network members across campuses." },
+          { title: "Manage Reports", text: "Generate cross-cutting data quality reports covering contact suppressions and deliverability." },
+          { title: "RBAC Matrix", text: "Configure granular Role-Based Access Control permissions across all platform resources." },
+          { title: "Notifications", text: "Monitor automated email dispatch logs, nightly rollups, and queue health." },
+        ],
+      },
+      {
+        title: "3. Management Administration Workflow",
+        color: "amber",
+        type: "mermaid",
+        content: "High-level structure of System Management utilities:",
+        mermaid: `graph TD
+          A[Manage Administration Hub] --> B[User & Network Management]
+          A --> C[System Governance & Diagnostics]
+          B --> D[Users Directory / Roles]
+          B --> E[Alumni Network Members]
+          B --> F[Master Data Sets]
+          C --> G[Manage Reports & Data Health]
+          C --> H[Data Management & Rollbacks]
+          C --> I[RBAC Matrix & Audit Logs]`,
+      },
+    ],
+  },
+  {
+    id: "manage.reports",
+    label: "Manage & Data Quality Reports",
+    location: "System Manage › Reports",
+    title: "Manage & System Data Quality Reports Guide",
+    description: "Field-picker driven custom report generator for system health, contact suppression, and email deliverability.",
+    sections: [
+      {
+        title: "1. Overview of Manage Reports",
+        color: "blue",
+        type: "text",
+        content:
+          "Manage Reports (/manage/reports) provides cross-cutting analytics across user classifications, alumni CRM pipelines, Coursera telemetry, contact suppressions, and email deliverability failures.",
+      },
+      {
+        title: "2. Standard Report Presets",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Master Executive Report", text: "Consolidated summary combining user category, salary, pay-forward, Coursera hours, and data health flags." },
+          { title: "Users Classification Audit", text: "Detailed audit classifying internal Staff accounts vs Alumni Network Members with assigned roles and teams." },
+          { title: "Detailed Alumni Growth Audit", text: "CRM rollup for employer, salary, Pay-Forward total, Mentoring stages, and Placement stages." },
+          { title: "Data Quality & Deliverability", text: "Isolates suppressed contacts, 90-day unresponsive email accounts, and notification delivery failure errors." },
+        ],
+      },
+      {
+        title: "3. Data Quality Pipeline Flow",
+        color: "rose",
+        type: "mermaid",
+        content: "Process for detecting and flagging bad contact details:",
+        mermaid: `graph TD
+          A[Interaction / Notification Event] --> B{Outcome Code / Send Result}
+          B -->|do_not_contact / Invalid Number| C[Add to Contact Suppression]
+          B -->|Notification Failed| D[Log Delivery Failure]
+          B -->|90d No Response| E[Mark Email Unresponsive]
+          C --> F[Manage Reports Health Flag]
+          D --> F
+          E --> F`,
+      },
+    ],
+  },
+  {
+    id: "manage.notifications",
+    label: "Notification Logs & Queue",
+    location: "System Manage › Notifications",
+    title: "System Notification Dispatch & Queue Guide",
+    description: "Monitor automated email dispatch, nightly rollups, delivery statuses, and notification queue health.",
+    sections: [
+      {
+        title: "1. Notification Dispatch Engine",
+        color: "blue",
+        type: "text",
+        content:
+          "The Notification Logs portal (/manage/notifications) tracks all automated email communications sent by NGConnect, including follow-up reminders, nightly activity rollups, and system alerts.",
+      },
+      {
+        title: "2. Delivery Statuses & Error Tracing",
+        color: "amber",
+        type: "bullets",
+        items: [
+          { title: "Sent", text: "Notification successfully processed by configured email provider (Gmail/SES/Resend)." },
+          { title: "Failed", text: "Delivery failed due to invalid recipient email, rate limit, or provider error." },
+          { title: "Pending Queue", text: "Notification queued for asynchronous background dispatch." },
+        ],
+      },
+      {
+        title: "3. Notification Queue Dispatch Architecture",
+        color: "purple",
+        type: "mermaid",
+        content: "How background notifications are queued and sent:",
+        mermaid: `graph TD
+          A[App Event Trigger] --> B[Enqueue Message in Notification Sends Table]
+          B --> C[Background Worker Pick Up Queue]
+          C --> D{Email Service API Execution}
+          D -->|Success| E[Mark Status as Sent]
+          D -->|Failure| F[Mark Status as Failed & Log Error]`,
+      },
+    ],
+  },
+  {
+    id: "learning_center.reports",
+    label: "Learning Center Reports Hub",
+    location: "Learning Center › Reports",
+    title: "Learning Center & Coursera Analytics Reports Guide",
+    description: "Modular report builder for Coursera learning progress, live session schedules, and mentor assignments.",
+    sections: [
+      {
+        title: "1. Overview of LMS Reports",
+        color: "blue",
+        type: "text",
+        content:
+          "Learning Center Reports (/learning-center/reports) combines Coursera active learning telemetry, live workshop schedules, and mentor rosters into a single modular export hub.",
+      },
+      {
+        title: "2. Key LMS Presets",
+        color: "emerald",
+        type: "cards",
+        items: [
+          { title: "Coursera Learner Analytics", text: "Active learning hours, completion counts, and 20h license compliance status." },
+          { title: "Live Sessions & Mentors", text: "Session schedules, instructor assignments, target audience, and status." },
+          { title: "Executive Analytics", text: "Executive dashboard generator for Coursera monthly learning trends and radial metrics." },
+        ],
+      },
+      {
+        title: "3. Report Export Flowchart",
+        color: "amber",
+        type: "mermaid",
+        content: "Data flow for Learning Center exports:",
+        mermaid: `graph TD
+          A[Select Coursera or Sessions Preset] --> B[Fetch Learner Telemetry & Live Sessions Data]
+          B --> C[Configure Column Picker & Live Search Filter]
+          C --> D[Render Live Preview Table & Pagination]
+          D --> E[Export Structured XLSX File]`,
+      },
+    ],
+  },
+  {
+    id: "alumni_growth.requests",
+    label: "Member Access Requests",
+    location: "Alumni Growth › Member Requests",
+    title: "Staff Member Access Requests Workspace Guide",
+    description: "Review and approve member requests for Coursera Enterprise access and Pay-Forward engagements.",
+    sections: [
+      {
+        title: "1. Member Requests Workspace",
+        color: "blue",
+        type: "text",
+        content:
+          "The Member Requests Workspace (/alumni-growth/requests) allows staff members to review, approve, or reject in-app access requests submitted by alumni for Coursera Enterprise licenses and Pay-Forward participation.",
+      },
+      {
+        title: "2. Request Processing Flow",
+        color: "purple",
+        type: "steps",
+        items: [
+          { title: "Review Request Details", text: "Inspect student email, requested access track, and submission timestamp." },
+          { title: "Grant Access / Approve", text: "Click 'Grant Access' to provision Coursera Enterprise credentials or approve Pay-Forward enrollment." },
+          { title: "Automatic Notification", text: "Approving a request updates the user's sidebar banner and sends confirmation details." },
+        ],
+      },
+      {
+        title: "3. Request Approval Lifecycle",
+        color: "emerald",
+        type: "mermaid",
+        content: "Lifecycle of a member access request:",
+        mermaid: `graph TD
+          A[Alumnus Submits Access Request] --> B[Pending Status in Staff Requests Queue]
+          B --> C{Staff Admin Review}
+          C -->|Approved| D[Provision License & Mark Approved]
+          C -->|Rejected| E[Mark Rejected with Note]
+          D --> F[Notify User in Platform Header]`,
+      },
+    ],
+  },
+  {
+    id: "support",
+    label: "Member Support Portal",
+    location: "Main Platform › Support",
+    title: "Member Support & Helpline Guide",
+    description: "Get assistance, track reference ticket SLAs, and reach the Alumni Support team during IST working hours.",
+    memberAccessible: true,
+    sections: [
+      {
+        title: "1. Navgurukul Support Helpline",
+        color: "blue",
+        type: "text",
+        content:
+          "The Support Portal (/support) provides direct helpline assistance (9999999999) and email support (alumnigrowth@navgurukul.org) for alumni and members.",
+      },
+      {
+        title: "2. Working Hours & Dynamic Status",
+        color: "emerald",
+        type: "bullets",
+        items: [
+          { title: "Active Helpline Hours", text: "Support helpline is active Monday through Friday, 10:00 AM – 5:00 PM IST." },
+          { title: "Offline Status & Countdown", text: "Outside working hours, the system indicates offline status and displays exact countdown hours until re-opening." },
+          { title: "SLA Timelines", text: "4-hour SLA for urgent quick response inquiries; 48-hour SLA for general ticket resolutions." },
+        ],
+      },
+      {
+        title: "3. Support Ticket Escalation Flow",
+        color: "amber",
+        type: "mermaid",
+        content: "How support requests are routed and handled:",
+        mermaid: `graph TD
+          A[User Files Ticket or Calls Helpline] --> B{Within Working Hours?}
+          B -->|Yes| C[Direct Operator Resolution]
+          B -->|No| D[Log Ticket with Offline Countdown SLA]
+          C --> E[Close Support Ticket]
+          D --> F[Next Working Day Priority Followup]`,
+      },
+    ],
+  },
+  {
+    id: "feedback",
+    label: "Member Feedback Hub",
+    location: "Main Platform › Feedback",
+    title: "Member Feedback & Suggestions Guide",
+    description: "Share ratings, suggest upcoming session topics, or provide feedback on career and platform experiences.",
+    memberAccessible: true,
+    sections: [
+      {
+        title: "1. Member Feedback Engine",
+        color: "blue",
+        type: "text",
+        content:
+          "The Feedback Hub (/feedback) gives alumni and staff a structured channel to provide ratings, suggest upcoming workshop topics, and report platform issues.",
+      },
+      {
+        title: "2. Contextual Feedback Tracks",
+        color: "purple",
+        type: "cards",
+        items: [
+          { title: "Sessions & Learning", text: "Rate completed workshops and suggest upcoming technical or soft-skills session topics." },
+          { title: "Mentoring & Peer Connect", text: "Provide feedback on mentor interactions and peer guidance quality." },
+          { title: "Pay-Forward Program", text: "Share input regarding contribution models, monthly plans, and alumni payback features." },
+          { title: "Platform UI / UX", text: "Report interface bugs, navigation suggestions, or usability improvements." },
+        ],
+      },
+      {
+        title: "3. Feedback Ingestion Pipeline",
+        color: "emerald",
+        type: "mermaid",
+        content: "Process flow for submitted feedback:",
+        mermaid: `graph TD
+          A[Member Submits Feedback Rating] --> B[Store Record in Feedback Table]
+          B --> C[Aggregate Ratings in Executive Dashboard]
+          C --> D[Review Session Suggestions for Upcoming Schedule]`,
+      },
+    ],
+  },
+  {
+    id: "data_management.import_coursera",
+    label: "Import Coursera Data",
+    location: "Data Management › Import Coursera",
+    title: "Coursera Monthly XLSX Import Guide",
+    description: "Upload monthly Coursera telemetry spreadsheets, audit row counts, and trigger telemetry updates.",
+    sections: [
+      {
+        title: "1. Coursera Spreadsheet Ingestion",
+        color: "blue",
+        type: "text",
+        content:
+          "The Coursera Import portal (/data-management/import-coursera) allows administrators to upload monthly Coursera XLSX export spreadsheets to update learner study hours, course completions, and active seats.",
+      },
+      {
+        title: "2. Import Steps",
+        color: "purple",
+        type: "steps",
+        items: [
+          { title: "Select Export XLSX", text: "Download official monthly telemetry report from Coursera Admin portal." },
+          { title: "Map Email & Hours Columns", text: "Confirm mapping for Student Email, Total Learning Hours, and Completed Courses." },
+          { title: "Execute Import", text: "Upload file to insert new snapshot records and update active learner compliance." },
+        ],
+      },
+      {
+        title: "3. Coursera Ingestion Flowchart",
+        color: "emerald",
+        type: "mermaid",
+        content: "Data ingestion pipeline for Coursera spreadsheets:",
+        mermaid: `graph TD
+          A[Upload Coursera Monthly XLSX] --> B[Parse Learner Rows & Telemetry]
+          B --> C[Validate Student Email Addresses]
+          C --> D[Insert Coursera Snapshots Records]
+          D --> E[Recompute 20-Hour Compliance Status]`,
+      },
+    ],
+  },
+  {
+    id: "data_management.coursera_license_audit",
+    label: "Coursera License Compliance Audit",
+    location: "Data Management › Coursera › License Audit",
+    title: "Coursera 20-Hour License Compliance Audit Guide",
+    description: "Audit learners completing at least 20 hours of study per month to maintain active enterprise seat compliance.",
+    sections: [
+      {
+        title: "1. Enterprise License Compliance Rule",
+        color: "blue",
+        type: "text",
+        content:
+          "Navgurukul enterprise Coursera seats require learners to log at least 20 hours of study time per month. The License Compliance Audit (/data-management/coursera/license-audit) flags learners below this threshold.",
+      },
+      {
+        title: "2. Compliance Audit Pipeline Flowchart",
+        color: "rose",
+        type: "mermaid",
+        content: "Process for evaluating monthly seat compliance:",
+        mermaid: `graph TD
+          A[Monthly Telemetry Data Received] --> B{Study Hours ≥ 20h?}
+          B -->|Yes| C[Mark Seat COMPLIANT]
+          B -->|No| D[Mark Seat AT RISK]
+          D --> E[Send Automated Compliance Reminder Email]`,
+      },
+    ],
+  },
+  {
+    id: "docs",
+    label: "Platform Architecture Docs",
+    location: "Main Platform › Docs",
+    title: "NGConnect System Architecture & Security Docs Guide",
+    description: "Developer documentation, RLS security guidelines, and architectural blueprints for NGConnect.",
+    sections: [
+      {
+        title: "1. System Documentation",
+        color: "blue",
+        type: "text",
+        content:
+          "The Documentation portal (/docs) outlines architectural standards, Server vs Client component boundaries, Supabase RLS policies, and design system guidelines.",
+      },
+      {
+        title: "2. Platform Layer Blueprint",
+        color: "purple",
+        type: "mermaid",
+        content: "Technical architecture of NGConnect:",
+        mermaid: `graph TD
+          A[Next.js App Router Frontend] --> B[Server Components & Route Handlers]
+          B --> C[Supabase Client with Auth Session]
+          C --> D[Database Tables & Views with RLS]
+          D --> E[Knowledge Graph & Analytics Engine]`,
       },
     ],
   },
@@ -1749,16 +2175,23 @@ export function getHelpIdForRoute(
   if (cleanPath === "/reports") return "reports.generator";
   if (cleanPath === "/profile") return "profile";
   if (cleanPath === "/greetings") return "greetings";
+  if (cleanPath === "/support") return "support";
+  if (cleanPath === "/feedback") return "feedback";
+  if (cleanPath === "/docs") return "docs";
 
   // Manage Cluster
+  if (cleanPath === "/manage" || cleanPath === "/manage/dashboard") return "manage.overview";
   if (cleanPath === "/manage/help") return "manage.help";
   if (cleanPath === "/manage/users") return "manage.users";
+  if (cleanPath === "/manage/reports") return "manage.reports";
   if (cleanPath === "/manage/rbac") return "manage.rbac";
   if (cleanPath === "/manage/master-data") return "manage.master_data";
   if (cleanPath === "/manage/alumni-network") return "manage.alumni_network";
+  if (cleanPath === "/manage/notifications") return "manage.notifications";
 
   // Learning Center Cluster
   if (cleanPath === "/learning-center" || cleanPath === "/learning-center/dashboard") return "learning_center.dashboard";
+  if (cleanPath === "/learning-center/reports") return "learning_center.reports";
   if (cleanPath === "/learning-center/sessions/create") return "learning_center.create_session";
   if (cleanPath.startsWith("/learning-center/sessions/") && cleanPath.endsWith("/feedback")) return "learning_center.session_feedback";
   if (cleanPath === "/learning-center/sessions") return "learning_center.sessions";
@@ -1770,16 +2203,19 @@ export function getHelpIdForRoute(
   // Data Management Cluster
   if (cleanPath === "/data-management") return "data_management.overview";
   if (cleanPath === "/data-management/import") return "data_management.import";
+  if (cleanPath === "/data-management/import-coursera") return "data_management.import_coursera";
   if (cleanPath === "/data-management/import-history") return "data_management.import_history";
   if (cleanPath === "/data-management/record-history") return "data_management.record_history";
   if (cleanPath === "/data-management/rollback") return "data_management.rollback";
   if (cleanPath === "/data-management/audit-logs") return "data_management.audit_logs";
   if (cleanPath === "/data-management/coursera/activity-logs") return "data_management.coursera_logs";
+  if (cleanPath === "/data-management/coursera/license-audit") return "data_management.coursera_license_audit";
   if (cleanPath.startsWith("/data-management/coursera/learner/")) return "data_management.coursera_learner";
   if (cleanPath === "/data-management/coursera") return "data_management.coursera";
 
   // Alumni Growth Cluster
   if (cleanPath === "/alumni-growth/workspace") return "workspace";
+  if (cleanPath === "/alumni-growth/requests") return "alumni_growth.requests";
   if (cleanPath === "/alumni-growth/follow-ups") return "follow_ups";
   if (cleanPath === "/alumni-growth/reports") return "reports";
   if (cleanPath === "/alumni-growth/pipelines/placement") return "boards.placement";
@@ -1812,4 +2248,5 @@ export function getHelpIdForRoute(
 
   return undefined;
 }
+
 

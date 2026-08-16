@@ -1672,3 +1672,420 @@ export async function getPipelineListView(
     totalCount: count || 0
   };
 }
+
+export async function getAlumniGrowthReportData() {
+  const supabase = await createClient();
+
+  // 1. Fetch alumni_master
+  const { data: alumni } = await supabase
+    .from('alumni_master')
+    .select('email, name, campus, course, status, company')
+    .order('name', { ascending: true })
+    .limit(500);
+
+  if (!alumni || alumni.length === 0) {
+    return [];
+  }
+
+  const emails = alumni.map((a) => a.email);
+
+  // 2. Fetch salary records (latest monthly salary per email)
+  const { data: salaries } = await supabase
+    .from('alumni_salary_records')
+    .select('alumni_email, amount_monthly_inr, recorded_at')
+    .in('alumni_email', emails)
+    .order('recorded_at', { ascending: false });
+
+  const salaryMap = new Map<string, number>();
+  if (salaries) {
+    for (const s of salaries) {
+      if (!salaryMap.has(s.alumni_email) && s.amount_monthly_inr != null) {
+        salaryMap.set(s.alumni_email, Number(s.amount_monthly_inr));
+      }
+    }
+  }
+
+  // 3. Fetch Pay-Forward progress from v_pay_forward_progress view
+  const pfMap = new Map<string, { counted: number; lifetime: number }>();
+  const { data: pfData } = await supabase
+    .from('v_pay_forward_progress')
+    .select('alumni_email, counted_toward_cap, lifetime_monetary_total')
+    .in('alumni_email', emails);
+
+  if (pfData) {
+    for (const pf of pfData) {
+      pfMap.set(pf.alumni_email, {
+        counted: Number(pf.counted_toward_cap) || 0,
+        lifetime: Number(pf.lifetime_monetary_total) || 0,
+      });
+    }
+  }
+
+  // 4. Fetch latest interactions per alumnus
+  const { data: interactions } = await supabase
+    .from('alumni_interactions')
+    .select('alumni_email, created_at, interaction_outcomes(label, code)')
+    .in('alumni_email', emails)
+    .order('created_at', { ascending: false });
+
+  const interactionMap = new Map<string, { last_contact: string; last_outcome: string }>();
+  if (interactions) {
+    for (const i of interactions) {
+      if (!interactionMap.has(i.alumni_email)) {
+        const dateStr = i.created_at ? new Date(i.created_at).toISOString().split('T')[0] : 'N/A';
+        const outcomeLabel = (i as any).interaction_outcomes?.label || (i as any).interaction_outcomes?.code || 'Connected';
+        interactionMap.set(i.alumni_email, {
+          last_contact: dateStr,
+          last_outcome: outcomeLabel,
+        });
+      }
+    }
+  }
+
+  // 5. Fetch pipeline memberships with stages and pipeline codes
+  const { data: memberships } = await supabase
+    .from('alumni_pipeline_membership')
+    .select('alumni_email, status, pipelines(code), pipeline_stages(label, code)')
+    .in('alumni_email', emails)
+    .eq('is_active', true);
+
+  const mentoringStageMap = new Map<string, string>();
+  const placementStageMap = new Map<string, string>();
+
+  if (memberships) {
+    for (const m of memberships) {
+      const pCode = (m as any).pipelines?.code;
+      const stageLabel = (m as any).pipeline_stages?.label || (m as any).pipeline_stages?.code || m.status || 'Active';
+      if (pCode === 'mentoring') {
+        mentoringStageMap.set(m.alumni_email, stageLabel);
+      } else if (pCode === 'placement') {
+        placementStageMap.set(m.alumni_email, stageLabel);
+      }
+    }
+  }
+
+  // 6. Map to report records
+  return alumni.map((a) => {
+    const pf = pfMap.get(a.email) || { counted: 0, lifetime: 0 };
+    const inter = interactionMap.get(a.email) || { last_contact: 'N/A', last_outcome: 'No interactions' };
+    const mentoringStatus = mentoringStageMap.get(a.email) || 'Not in pipeline';
+    const placementStatus = placementStageMap.get(a.email) || 'Not in pipeline';
+    const salary = salaryMap.get(a.email) ?? 0;
+
+    return {
+      name: a.name || 'Alumnus',
+      email: a.email,
+      campus: a.campus || 'N/A',
+      course: a.course || 'N/A',
+      status: a.status || 'Active',
+      company: a.company || 'N/A',
+      salary,
+      last_contact: inter.last_contact,
+      last_outcome: inter.last_outcome,
+      pf_counted: pf.counted,
+      pf_lifetime: pf.lifetime,
+      mentoring_status: mentoringStatus,
+      placement_status: placementStatus,
+    };
+  });
+}
+
+export async function getManageReportData() {
+  try {
+    const supabase = await createClient();
+    const adminSupabase = createAdminClient();
+
+    // 1. Fetch Supabase Auth users for staff/member classification
+    const authUserMap = new Map<string, { role: string; team: string; created_at: string }>();
+    try {
+      const { data: { users: authUsers } } = await adminSupabase.auth.admin.listUsers();
+      if (authUsers) {
+        for (const u of authUsers) {
+          if (u.email) {
+            const role = (u.app_metadata?.role || u.user_metadata?.role || 'Member') as string;
+            const team = (u.app_metadata?.team || u.user_metadata?.team || 'None') as string;
+            authUserMap.set(u.email.toLowerCase(), {
+              role,
+              team,
+              created_at: u.created_at ? new Date(u.created_at).toISOString().split('T')[0] : 'N/A',
+            });
+          }
+        }
+      }
+    } catch {
+      // Graceful fallback
+    }
+
+    // 2. Fetch alumni_master
+    const { data: alumni } = await supabase
+      .from('alumni_master')
+      .select('email, name, campus, course, status, company')
+      .limit(500);
+
+    const alumniList = alumni || [];
+    const emails = Array.from(new Set([
+      ...alumniList.map(a => a.email),
+      ...Array.from(authUserMap.keys()),
+    ]));
+
+    if (emails.length === 0) {
+      return {
+        masterRows: [],
+        summary: {
+          totalAccounts: 0,
+          staffCount: 0,
+          memberCount: 0,
+          totalPfMonetary: 0,
+          totalHours: 0,
+          totalCompliant: 0,
+          totalSuppressed: 0,
+          totalFailures: 0,
+          totalRequests: 0,
+        },
+      };
+    }
+
+    // 3. Fetch Salary Records
+    const { data: salaries } = await supabase
+      .from('alumni_salary_records')
+      .select('alumni_email, amount_monthly_inr, recorded_at')
+      .in('alumni_email', emails)
+      .order('recorded_at', { ascending: false });
+
+    const salaryMap = new Map<string, number>();
+    if (salaries) {
+      for (const s of salaries) {
+        if (!salaryMap.has(s.alumni_email) && s.amount_monthly_inr != null) {
+          salaryMap.set(s.alumni_email, Number(s.amount_monthly_inr));
+        }
+      }
+    }
+
+    // 4. Fetch Pay-Forward Progress View
+    const { data: pfData } = await supabase
+      .from('v_pay_forward_progress')
+      .select('alumni_email, counted_toward_cap, lifetime_monetary_total')
+      .in('alumni_email', emails);
+
+    const pfMap = new Map<string, { counted: number; lifetime: number }>();
+    if (pfData) {
+      for (const pf of pfData) {
+        pfMap.set(pf.alumni_email, {
+          counted: Number(pf.counted_toward_cap) || 0,
+          lifetime: Number(pf.lifetime_monetary_total) || 0,
+        });
+      }
+    }
+
+    // 5. Fetch Pipeline Memberships (Mentoring & Placement)
+    const { data: memberships } = await supabase
+      .from('alumni_pipeline_membership')
+      .select('alumni_email, status, pipelines(code), pipeline_stages(label, code)')
+      .in('alumni_email', emails)
+      .eq('is_active', true);
+
+    const mentoringStageMap = new Map<string, string>();
+    const placementStageMap = new Map<string, string>();
+    if (memberships) {
+      for (const m of memberships) {
+        const pCode = (m as any).pipelines?.code;
+        const stageLabel = (m as any).pipeline_stages?.label || (m as any).pipeline_stages?.code || m.status || 'Active';
+        if (pCode === 'mentoring') mentoringStageMap.set(m.alumni_email, stageLabel);
+        if (pCode === 'placement') placementStageMap.set(m.alumni_email, stageLabel);
+      }
+    }
+
+    // 6. Fetch Recent Interactions
+    const { data: interactions } = await supabase
+      .from('alumni_interactions')
+      .select('alumni_email, created_at, interaction_outcomes(label, code)')
+      .in('alumni_email', emails)
+      .order('created_at', { ascending: false });
+
+    const interactionMap = new Map<string, { last_contact: string; last_outcome: string }>();
+    if (interactions) {
+      for (const i of interactions) {
+        if (!interactionMap.has(i.alumni_email)) {
+          const dateStr = i.created_at ? new Date(i.created_at).toISOString().split('T')[0] : 'N/A';
+          const outcomeLabel = (i as any).interaction_outcomes?.label || (i as any).interaction_outcomes?.code || 'Connected';
+          interactionMap.set(i.alumni_email, { last_contact: dateStr, last_outcome: outcomeLabel });
+        }
+      }
+    }
+
+    // 7. Fetch Coursera Learner Telemetry
+    const { data: courseraSnapshots } = await supabase
+      .from('coursera_snapshots')
+      .select('email, learning_hours, completed_courses, enrolled_courses, program_name')
+      .in('email', emails);
+
+    const courseraMap = new Map<string, any>();
+    if (courseraSnapshots) {
+      for (const cs of courseraSnapshots) {
+        courseraMap.set(cs.email, cs);
+      }
+    }
+
+    // 8. Fetch Contact Suppression
+    const { data: suppressions } = await supabase
+      .from('alumni_contact_suppression')
+      .select('alumni_email, suppressed_since');
+
+    const suppressionMap = new Map<string, { suppressed: boolean; since: string }>();
+    if (suppressions) {
+      for (const s of suppressions) {
+        suppressionMap.set(s.alumni_email, {
+          suppressed: true,
+          since: s.suppressed_since ? new Date(s.suppressed_since).toISOString().split('T')[0] : 'Yes',
+        });
+      }
+    }
+
+    // 9. Fetch Channel Activity
+    const { data: channelActivity } = await supabase
+      .from('alumni_channel_activity')
+      .select('alumni_email, email_status, call_status')
+      .in('alumni_email', emails);
+
+    const channelMap = new Map<string, any>();
+    if (channelActivity) {
+      for (const c of channelActivity) {
+        channelMap.set(c.alumni_email, c);
+      }
+    }
+
+    // 10. Fetch Notification Sends Failure Audit
+    const { data: failedSends } = await supabase
+      .from('notification_sends')
+      .select('recipient_email, error_message')
+      .eq('status', 'failed')
+      .in('recipient_email', emails);
+
+    const failureMap = new Map<string, { failed_count: number; last_error: string }>();
+    if (failedSends) {
+      for (const f of failedSends) {
+        const existing = failureMap.get(f.recipient_email) || { failed_count: 0, last_error: '' };
+        failureMap.set(f.recipient_email, {
+          failed_count: existing.failed_count + 1,
+          last_error: f.error_message || 'Delivery failure',
+        });
+      }
+    }
+
+    // 11. Fetch Member Access Requests
+    const { data: memberRequests } = await supabase
+      .from('alumni_member_requests')
+      .select('requester_email, status');
+
+    const requestMap = new Map<string, number>();
+    if (memberRequests) {
+      for (const mr of memberRequests) {
+        requestMap.set(mr.requester_email, (requestMap.get(mr.requester_email) || 0) + 1);
+      }
+    }
+
+    const alumniMapByEmail = new Map(alumniList.map(a => [a.email.toLowerCase(), a]));
+
+    const masterRows = emails.map(email => {
+      const lower = email.toLowerCase();
+      const alum = (alumniMapByEmail.get(lower) || {}) as Record<string, any>;
+      const authInfo = authUserMap.get(lower) || { role: 'Member', team: 'None', created_at: 'N/A' };
+      const isStaff = ['Super Admin', 'Admin', 'Manager', 'Program', 'Operations'].includes(authInfo.role);
+
+      const pf = pfMap.get(email) || { counted: 0, lifetime: 0 };
+      const inter = interactionMap.get(email) || { last_contact: 'N/A', last_outcome: 'No interactions' };
+      const cData = courseraMap.get(email) || {};
+      const supp = suppressionMap.get(email) || { suppressed: false, since: 'None' };
+      const chan = channelMap.get(email) || {};
+      const fail = failureMap.get(email) || { failed_count: 0, last_error: 'None' };
+
+      const emailStatus = chan.email_status || 'Unknown';
+      const callStatus = chan.call_status || 'Unknown';
+      const isUnresponsive = emailStatus === 'unresponsive' || emailStatus === 'inactive';
+      const hasInvalidContact = supp.suppressed || fail.failed_count > 0;
+
+      const learningHours = cData.learning_hours != null ? Number(cData.learning_hours).toFixed(1) : '0.0';
+      const isCompliant = Number(learningHours) >= 20;
+
+      return {
+        name: alum.name || (email.split('@')[0]) || 'User',
+        email,
+        user_category: isStaff ? 'Staff' : 'Alumni Member',
+        role: authInfo.role,
+        team: authInfo.team,
+        campus: alum.campus || 'N/A',
+        course: alum.course || 'N/A',
+        master_status: alum.status || 'Active',
+        company: alum.company || 'N/A',
+        salary: salaryMap.get(email) ?? 0,
+        pf_counted: pf.counted,
+        pf_lifetime: pf.lifetime,
+        mentoring_status: mentoringStageMap.get(email) || 'Not in pipeline',
+        placement_status: placementStageMap.get(email) || 'Not in pipeline',
+        last_contact: inter.last_contact,
+        last_outcome: inter.last_outcome,
+        program_name: cData.program_name || 'NavGurukul Learning Hub',
+        learning_hours: learningHours,
+        completed_courses: cData.completed_courses || 0,
+        enrolled_courses: cData.enrolled_courses || 0,
+        compliance_status: isCompliant ? 'COMPLIANT (≥20h)' : 'AT RISK (<20h)',
+        suppression_status: supp.suppressed ? 'SUPPRESSED' : 'ACTIVE',
+        suppressed_since: supp.since,
+        email_activity_status: emailStatus.toUpperCase(),
+        call_activity_status: callStatus.toUpperCase(),
+        delivery_failures: fail.failed_count,
+        last_delivery_error: fail.last_error,
+        data_health_flag: hasInvalidContact
+          ? 'ACTION REQUIRED (Suppressed/Failures)'
+          : isUnresponsive
+          ? 'UNRESPONSIVE (90d)'
+          : 'HEALTHY',
+        request_count: requestMap.get(email) || 0,
+        created_at: authInfo.created_at,
+      };
+    });
+
+    const staffCount = masterRows.filter(r => r.user_category === 'Staff').length;
+    const memberCount = masterRows.filter(r => r.user_category === 'Alumni Member').length;
+    const totalPfMonetary = masterRows.reduce((acc, r) => acc + (r.pf_lifetime || 0), 0);
+    const totalHours = masterRows.reduce((acc, r) => acc + Number(r.learning_hours || 0), 0);
+    const totalCompliant = masterRows.filter(r => r.compliance_status.startsWith('COMPLIANT')).length;
+    const totalSuppressed = masterRows.filter(r => r.suppression_status === 'SUPPRESSED').length;
+    const totalFailures = masterRows.reduce((acc, r) => acc + (r.delivery_failures || 0), 0);
+    const totalRequests = masterRows.reduce((acc, r) => acc + (r.request_count || 0), 0);
+
+    return {
+      masterRows,
+      summary: {
+        totalAccounts: masterRows.length,
+        staffCount,
+        memberCount,
+        totalPfMonetary,
+        totalHours: Number(totalHours.toFixed(1)),
+        totalCompliant,
+        totalSuppressed,
+        totalFailures,
+        totalRequests,
+      },
+    };
+  } catch (err) {
+    console.error('Error fetching manage report data:', err);
+    return {
+      masterRows: [],
+      summary: {
+        totalAccounts: 0,
+        staffCount: 0,
+        memberCount: 0,
+        totalPfMonetary: 0,
+        totalHours: 0,
+        totalCompliant: 0,
+        totalSuppressed: 0,
+        totalFailures: 0,
+        totalRequests: 0,
+      },
+    };
+  }
+}
+
+
+

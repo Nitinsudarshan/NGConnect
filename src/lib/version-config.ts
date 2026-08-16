@@ -23,9 +23,106 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.05.02";
+export const CURRENT_VERSION = "1.06.02";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.06.02",
+    date: "2026-08-16",
+    title: "Universal In-App Help Registry Expansion & Manage Help Docs Update",
+    type: "patch",
+    highlights: [
+      "Scanned all platform routes and registered 10 missing HelpEntry objects in HELP_REGISTRY.",
+      "Header [i] Eye icon help trigger now available on all pages: /manage, /manage/reports, /manage/notifications, /learning-center/reports, /alumni-growth/requests, /support, /feedback, /docs, /data-management/import-coursera, and /data-management/coursera/license-audit.",
+      "Updated Manage Help Docs (/manage/help) to dynamically categorize and control visibility for all newly added platform guides.",
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Registered 10 new HelpEntry definitions with formatted section text, step lists, and Mermaid process flowcharts in help-registry.ts.",
+      },
+      {
+        category: "Features",
+        description: "Updated getHelpIdForRoute to map all 10 new route paths so header [i] trigger renders contextually on every page.",
+      },
+      {
+        category: "Improvements",
+        description: "Refreshed /manage/help management controls so administrators can preview, toggle global visibility, or hide guides for Member role users across all 35+ platform pages.",
+      },
+    ],
+  },
+  {
+    version: "1.06.01",
+    date: "2026-08-16",
+    title: "Master Administration System Report Hub & User Classification Rollup",
+    type: "patch",
+    highlights: [
+      "Transformed Manage Reports (/manage/reports) into the Master Executive System Report Hub.",
+      "Detailed classification across Users (Staff vs Members), Alumni Growth CRM, Pay-Forward, Learning Center LMS, and Data Quality Signals.",
+      "Added Executive System Summary tab with metric cards for total accounts, staff/member split, Pay-Forward totals, Coursera hours, and data quality alerts.",
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Expanded Manage Reports data pipeline (getManageReportData) to query Supabase Auth users, alumni master, CRM pipelines, Coursera telemetry, and data health signals.",
+      },
+      {
+        category: "Features",
+        description: "Built Master Executive Consolidated Report preset combining User Category, Role, Team, Salary, Pay-Forward Contribution, Coursera Hours, and Data Quality.",
+      },
+      {
+        category: "Improvements",
+        description: "Added Executive System Summary tab displaying metric widgets and domain classification rollups.",
+      },
+    ],
+  },
+  {
+    version: "1.06.00",
+    date: "2026-08-16",
+    title: "Pre-Distribution Audit Fixes & Reports Consolidation",
+    type: "minor",
+    highlights: [
+      "Real query wiring for Alumni Growth Reports sourcing salary, pay-forward, interactions, and pipeline stages from live database tables.",
+      "Database-backed rbac_permissions table migration (20260816000003_rbac_permissions_table.sql) with seeded permissions across all 7 roles.",
+      "Stray script cleanup, hardcoded dev shortcut removal, and stale mock DB badge cleanup.",
+      "Unified report architecture featuring Learning Center Reports (/learning-center/reports), Alumni Growth Reports (/alumni-growth/reports), and Manage Reports (/manage/reports).",
+      "Extracted shared ReportBuilderLayout component supporting presets, field picker config, live table preview, search filters, and ExcelJS exports.",
+    ],
+    changes: [
+      {
+        category: "Fixes",
+        description: "Replaced hardcoded sample report data in Alumni Growth reports with real SQL queries (getAlumniGrowthReportData).",
+      },
+      {
+        category: "Security",
+        description: "Created public.rbac_permissions database table and seeded default access permissions for Super Admin, Admin, Manager, Program, Operations, Viewer, and Member roles.",
+      },
+      {
+        category: "Fixes",
+        description: "Removed stray root scripts (temp_check_july.js, temp_refactor.js, temp_refactor_license.js) and unrendered ReportsClient component in engagement/reports.",
+      },
+      {
+        category: "Fixes",
+        description: "Removed nitinsudarshan@gmail.com hardcoded query shortcut in getUserCourseraData and removed stale 'Local Mock Database Active' badge from Profile Settings.",
+      },
+      {
+        category: "Features",
+        description: "Built Learning Center Reports (/learning-center/reports) absorbing Coursera executive analytics and session/mentor metrics.",
+      },
+      {
+        category: "Features",
+        description: "Built Manage Reports (/manage/reports) for cross-cutting data quality signals (contact suppression, unresponsive email, notification failures).",
+      },
+      {
+        category: "Improvements",
+        description: "Extracted shared ReportBuilderLayout component and updated sidebar navigation with three distinct report entry points.",
+      },
+      {
+        category: "Improvements",
+        description: "Created comprehensive .env.example environment variables template and reconciled README.md against ROLES.md.",
+      },
+    ],
+  },
   {
     version: "1.05.02",
     date: "2026-08-16",

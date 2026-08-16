@@ -73,7 +73,7 @@ export default function MasterDataPage() {
 
   useEffect(() => {
     if (role) {
-      if (role !== 'Super Admin' && role !== 'Admin' && role !== 'Manager') { // TODO(roles-refactor): confirm access level
+      if (role !== 'Super Admin' && role !== 'Admin' && role !== 'Manager') {
         toast.error('Unauthorized access to Master Data');
       } else {
         fetchMasterData();
@@ -83,7 +83,7 @@ export default function MasterDataPage() {
 
 
 
-  if (role && role !== 'Super Admin' && role !== 'Admin' && role !== 'Manager') { // TODO(roles-refactor): confirm access level
+  if (role && role !== 'Super Admin' && role !== 'Admin' && role !== 'Manager') {
     return (
       <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-20 text-center items-center justify-center h-[50vh]">
         <HelpCircle className="w-12 h-12 text-red-500 animate-bounce" />

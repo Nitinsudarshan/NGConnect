@@ -6,7 +6,7 @@
 
 * **Alumni Growth CRM:** Track alumni across multiple pipeline stages (Mentoring, Pay-forward, Placement). Record interaction outcomes, support areas, and follow-ups.
 * **Learning Center Analytics:** Deep integration with Coursera data via XLSX imports. Track lifetime learners, active learning hours, compliance, and course completions via dynamic radial and pie charts.
-* **Role-Based Access Control (RBAC):** Fine-grained permissions powered by Supabase RLS and Next.js Middleware. Roles include **Admin**, **Member**, and **Viewer**.
+* **Role-Based Access Control (RBAC):** Fine-grained permissions powered by database-backed resource permissions (`rbac_permissions`), Supabase RLS, and Next.js Middleware (`src/middleware.ts` for auth session management). Roles include **Super Admin**, **Admin**, **Manager**, **Program**, **Operations**, **Viewer**, and **Member**, categorized into teams (**CEO's Office**, **Alumni Growth**, **PNC**, **Finance**, **None**). See [`docs/ROLES.md`](docs/ROLES.md).
 * **Modern Design System:** Built with Tailwind CSS v4 and `shadcn/ui`. Features a fully standardized OKLCH-based theme (Indigo primary, semantic status tokens), glassmorphism UI, and dark/light mode support.
 * **Data Visualization:** Interactive and responsive charts powered by `recharts` for tracking campus distribution, gender stats, and learning KPIs.
 * **Knowledge Graph:** Integrated `graphify` knowledge graph (`graphify-out/`) for seamless architectural visualization and AST-based AI codebase assistance.

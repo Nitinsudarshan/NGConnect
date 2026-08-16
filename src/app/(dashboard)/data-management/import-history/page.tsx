@@ -22,7 +22,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 
 export default async function ImportHistoryPage() {
   const role = await getUserRole();
-  if (role !== 'Super Admin' && role !== 'Admin' && role !== 'Manager') { // TODO(roles-refactor): confirm access level
+  if (role !== 'Super Admin' && role !== 'Admin' && role !== 'Manager') {
     redirect('/');
   }
 

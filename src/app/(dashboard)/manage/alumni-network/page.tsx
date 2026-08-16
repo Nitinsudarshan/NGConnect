@@ -35,14 +35,13 @@ export default async function AlumniNetworkPage() {
     );
   }
 
-  // Filter for Team: Alumni Network and Role: Member
+  // Filter for Team: Alumni Growth / PNC / None and Role: Member
   const alumniUsers = (users || []).filter(user => {
     const isSuperUser = user.email && ["nitin@navgurukul.org", "nitinsudarshan@gmail.com"].includes(user.email.toLowerCase());
     const role = isSuperUser ? "Super Admin" : (user.user_metadata?.role || "Member");
-    const team = user.user_metadata?.team || "Alumni Network";
+    const team = user.user_metadata?.team || "Alumni Growth";
     
-    // TODO(roles-refactor): "Alumni Network" team no longer exists, decide which team this page should filter on (likely "PNC" or a dedicated new team)
-    return role === "Member" && team === "Alumni Network";
+    return role === "Member" && (team === "Alumni Growth" || team === "PNC" || team === "None" || team === "Alumni Network");
   });
 
   return (
@@ -53,7 +52,7 @@ export default async function AlumniNetworkPage() {
             Alumni Network
           </h1>
           <p className="text-muted-foreground mt-1 text-sm font-medium">
-            Manage your external Alumni Network members (Team: Alumni Network, Role: Member).
+            Manage your external Alumni Network members (Team: Alumni Growth / PNC, Role: Member).
           </p>
         </div>
       </div>
