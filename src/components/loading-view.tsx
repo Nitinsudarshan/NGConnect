@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 
-export const LoadingSpinner = ({ size = "md", simple = false, className = "" }: { size?: "sm" | "md" | "lg", simple?: boolean, className?: string }) => {
+export const LoadingSpinner = ({ size = "md", simple = false, showRing = true, className = "" }: { size?: "sm" | "md" | "lg", simple?: boolean, showRing?: boolean, className?: string }) => {
   const [slideIndex, setSlideIndex] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
 
@@ -71,15 +71,19 @@ export const LoadingSpinner = ({ size = "md", simple = false, className = "" }: 
   return (
     <div className={`relative ${sizeClasses[size]} ${className}`}>
       {/* Spinning Rings */}
-      <div className={`absolute ${size === "sm" ? "-inset-[2px]" : "-inset-4"} rounded-full border-2 ${size === "sm" ? "border-slate-200/30 dark:border-slate-800/30" : "border-4 border-slate-200 dark:border-slate-800"}`}></div>
-      <div className={`absolute ${size === "sm" ? "-inset-[2px]" : "-inset-4"} rounded-full border-2 border-t-transparent animate-spin transition-colors duration-500 ${isSimple ? 'border-primary' : (
-        slideIndex === 0 ? 'border-rose-500' :
-          slideIndex === 1 ? 'border-indigo-600' :
-            slideIndex === 2 ? 'border-sky-500' :
-              slideIndex === 3 ? 'border-emerald-500' :
-                'border-amber-500'
-      )
-        }`}></div>
+      {showRing && (
+        <>
+          <div className={`absolute ${size === "sm" ? "-inset-[2px]" : "-inset-4"} rounded-full border-2 ${size === "sm" ? "border-slate-200/30 dark:border-slate-800/30" : "border-4 border-slate-200 dark:border-slate-800"}`}></div>
+          <div className={`absolute ${size === "sm" ? "-inset-[2px]" : "-inset-4"} rounded-full border-2 border-t-transparent animate-spin transition-colors duration-500 ${isSimple ? 'border-primary' : (
+            slideIndex === 0 ? 'border-rose-500' :
+              slideIndex === 1 ? 'border-indigo-600' :
+                slideIndex === 2 ? 'border-sky-500' :
+                  slideIndex === 3 ? 'border-emerald-500' :
+                    'border-amber-500'
+          )
+            }`}></div>
+        </>
+      )}
 
       {/* Icon Slider Window */}
       {!isSimple && (

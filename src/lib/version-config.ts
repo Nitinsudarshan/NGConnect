@@ -23,9 +23,25 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.06.02";
+export const CURRENT_VERSION = "1.06.03";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.06.03",
+    date: "2026-08-17",
+    title: "Login Page UI Layout & Borderless Loader Refresh",
+    type: "patch",
+    changes: [
+      {
+        category: "Improvements",
+        description: "Removed outer spinning rings from login page header loader and added showRing prop support to LoadingSpinner.",
+      },
+      {
+        category: "Improvements",
+        description: "Refreshed login form card layout with expanded max-width (420px), generous padding, rounded-2xl corners, and balanced element spacing.",
+      },
+    ],
+  },
   {
     version: "1.06.02",
     date: "2026-08-16",
