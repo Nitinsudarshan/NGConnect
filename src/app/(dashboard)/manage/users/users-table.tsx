@@ -31,8 +31,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Shield, Users, Edit3, Loader2, GraduationCap, Search } from "lucide-react";
+import { Shield, Users, Edit3, Loader2, GraduationCap, Search, UserPlus, FileUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { AddUserDialog } from "./_components/add-user-dialog";
+import { BulkUploadDialog } from "./_components/bulk-upload-dialog";
 
 interface UsersTableProps {
   initialUsers: any[];
@@ -72,6 +74,8 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
   const [team, setTeam] = useState<UserTeam>("None");
   const [isAlumni, setIsAlumni] = useState<"Yes" | "No">("Yes");
   const [isSaving, setIsSaving] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -195,8 +199,8 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
 
   return (
     <div className="w-full max-w-full overflow-hidden space-y-4">
-      {/* Search Bar */}
-      <div className="flex items-center justify-between gap-4 bg-card/40 backdrop-blur-md border rounded-xl p-3 shadow-xs">
+      {/* Search & Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card/40 backdrop-blur-md border rounded-xl p-3 shadow-xs">
         <div className="relative max-w-sm w-full">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -206,8 +210,31 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
             className="pl-9 h-9.5 rounded-lg border-input bg-background/50 text-sm focus-visible:ring-1"
           />
         </div>
-        <div className="text-xs text-muted-foreground font-semibold">
-          {filteredUsers.length} of {initialUsers?.length || 0} users found
+        <div className="flex items-center gap-2.5">
+          <span className="text-xs text-muted-foreground font-semibold hidden md:inline-block mr-2">
+            {filteredUsers.length} of {initialUsers?.length || 0} users found
+          </span>
+          {canEdit && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsBulkDialogOpen(true)}
+                className="h-9.5 rounded-lg font-semibold text-xs gap-1.5 border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800"
+              >
+                <FileUp className="h-4 w-4 text-indigo-500" />
+                Bulk Upload
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setIsAddDialogOpen(true)}
+                className="h-9.5 rounded-lg font-semibold text-xs gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+              >
+                <UserPlus className="h-4 w-4" />
+                Add User
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -502,6 +529,18 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Add User Dialog */}
+      <AddUserDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+      />
+
+      {/* Bulk Upload Dialog */}
+      <BulkUploadDialog
+        open={isBulkDialogOpen}
+        onOpenChange={setIsBulkDialogOpen}
+      />
     </div>
   );
 }

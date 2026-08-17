@@ -23,9 +23,34 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.06.03";
+export const CURRENT_VERSION = "1.07.00";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.00",
+    date: "2026-08-17",
+    title: "Manage Users Single Creation Modal & Bulk Spreadsheet Upload Suite",
+    type: "minor",
+    highlights: [
+      "Launched Add User single-user creation modal with Role, Team, and Alumni status assignment.",
+      "Built Bulk Upload modal supporting CSV and XLSX spreadsheet ingestion with client-side preview & validation grid.",
+      "Added downloadable sample CSV template directly in the upload workflow.",
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Created AddUserDialog component and createUser server action in Manage Users (/manage/users) utilizing Supabase Auth Admin API.",
+      },
+      {
+        category: "Features",
+        description: "Built BulkUploadDialog component and bulkCreateUsers server action for batch user ingestion with duplicate detection and error logs.",
+      },
+      {
+        category: "Improvements",
+        description: "Integrated Add User and Bulk Upload action buttons into UsersTable header toolbar.",
+      },
+    ],
+  },
   {
     version: "1.06.03",
     date: "2026-08-17",
