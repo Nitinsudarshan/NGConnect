@@ -28,6 +28,7 @@ export default async function DashboardLayout({
     const displayAvatar = userMetadata.avatar_url || userMetadata.picture || ""
     const activeRole = await getUserRole(user)
     const isAlumni = userMetadata.is_alumni !== false
+    const isSuperAdmin = await isTrueSuperAdmin();
     const appMetadata = user?.app_metadata || {}
     const trueRole = (isSuperAdmin ? "Super Admin" : (appMetadata.role || userMetadata.role || "Member")) as string
 

@@ -23,9 +23,21 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.01";
+export const CURRENT_VERSION = "1.07.02";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.02",
+    date: "2026-08-17",
+    title: "Dashboard Layout Variable Evaluation Fix",
+    type: "patch",
+    changes: [
+      {
+        category: "Fixes",
+        description: "Fixed ReferenceError by declaring isSuperAdmin before trueRole evaluation in DashboardLayout.",
+      },
+    ],
+  },
   {
     version: "1.07.01",
     date: "2026-08-17",
