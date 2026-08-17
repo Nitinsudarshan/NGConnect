@@ -38,11 +38,12 @@ export const checkRole = async (role: UserRole) => {
     const { sessionClaims, userId } = await auth();
     const claimRole = (sessionClaims?.metadata?.role || (sessionClaims as any)?.role) as UserRole | undefined;
 
-    // Support role override for admins
+    // Support role override for staff and super admins
     const cookieStore = await cookies();
     const devRole = cookieStore.get('dev-role-override')?.value as UserRole;
     if (devRole) {
-        if (isSuperAdmin || claimRole === "Super Admin") {
+        const isStaff = isSuperAdmin || ["Super Admin", "Admin", "Manager", "Program", "Operations"].includes(claimRole || "");
+        if (isStaff) {
             return devRole === role;
         }
     }
@@ -76,11 +77,12 @@ export const getUserRole = async (freshUser?: any): Promise<UserRole> => {
     const { sessionClaims, userId } = await auth();
     const claimRole = (freshUser?.app_metadata?.role || sessionClaims?.metadata?.role || (sessionClaims as any)?.role) as UserRole | undefined;
 
-    // Support role override for admins
+    // Support role override for staff and super admins
     const cookieStore = await cookies();
     const devRole = cookieStore.get('dev-role-override')?.value as UserRole;
     if (devRole) {
-        if (isSuperAdmin || claimRole === "Super Admin") {
+        const isStaff = isSuperAdmin || ["Super Admin", "Admin", "Manager", "Program", "Operations"].includes(claimRole || "");
+        if (isStaff) {
             return devRole;
         }
     }

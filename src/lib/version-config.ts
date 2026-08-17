@@ -23,9 +23,29 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.00";
+export const CURRENT_VERSION = "1.07.01";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.01",
+    date: "2026-08-17",
+    title: "Staff Role View Mode Switcher (Staff Mode vs Member Mode)",
+    type: "patch",
+    highlights: [
+      "Enabled all staff roles (Super Admin, Admin, Manager, Program, Operations) to switch view modes between Staff Mode and Member Mode.",
+      "Added header Role View Mode button and dropdown for seamless role context switching.",
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Expanded DevRoleToggle component and site header into a universal Role View Mode Switcher for all staff roles.",
+      },
+      {
+        category: "Features",
+        description: "Updated checkRole and getUserRole in src/lib/roles.ts to allow staff members to override active view mode to Member.",
+      },
+    ],
+  },
   {
     version: "1.07.00",
     date: "2026-08-17",

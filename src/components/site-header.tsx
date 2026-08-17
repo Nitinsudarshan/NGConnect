@@ -26,6 +26,7 @@ const HeaderUserMenu = dynamic(
 
 export function SiteHeader({
   isSuperAdmin,
+  userRole,
   ...props
 }: any) {
   const { toggleSidebar } = useSidebar()
@@ -72,7 +73,7 @@ export function SiteHeader({
           </BreadcrumbList>
         </Breadcrumb>
         <div className="ml-auto flex items-center gap-2">
-          <DevRoleToggle isSuperAdmin={isSuperAdmin} />
+          <DevRoleToggle isSuperAdmin={isSuperAdmin} userRole={userRole} />
           <HeaderHelpTrigger />
           <ModeToggle />
           <HeaderUserMenu />

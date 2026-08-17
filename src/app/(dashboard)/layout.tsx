@@ -28,7 +28,8 @@ export default async function DashboardLayout({
     const displayAvatar = userMetadata.avatar_url || userMetadata.picture || ""
     const activeRole = await getUserRole(user)
     const isAlumni = userMetadata.is_alumni !== false
-    const isSuperAdmin = await isTrueSuperAdmin();
+    const appMetadata = user?.app_metadata || {}
+    const trueRole = (isSuperAdmin ? "Super Admin" : (appMetadata.role || userMetadata.role || "Member")) as string
 
     return (
         <UserProvider user={{
@@ -42,7 +43,7 @@ export default async function DashboardLayout({
             <BreadcrumbProvider>
                 <div className="[--header-height:calc(--spacing(14))] h-svh w-full flex flex-col overflow-hidden bg-background">
                     <SidebarProvider className="flex flex-col flex-1 h-full w-full overflow-hidden">
-                        <SiteHeader isSuperAdmin={isSuperAdmin} />
+                        <SiteHeader isSuperAdmin={isSuperAdmin} userRole={trueRole} />
                         <div className="flex flex-1 min-h-0 w-full overflow-hidden">
                             <AppSidebar />
                             <SidebarInset className="flex-1 min-w-0 w-full overflow-y-auto bg-background">
