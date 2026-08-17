@@ -23,9 +23,21 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.02";
+export const CURRENT_VERSION = "1.07.03";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.03",
+    date: "2026-08-17",
+    title: "Vercel Production Build TypeScript Cast Fix",
+    type: "patch",
+    changes: [
+      {
+        category: "Fixes",
+        description: "Fixed TypeScript type casting (as unknown as any[]) for readXlsxFile rows in BulkUploadDialog to resolve Vercel deployment build error.",
+      },
+    ],
+  },
   {
     version: "1.07.02",
     date: "2026-08-17",

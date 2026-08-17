@@ -104,11 +104,11 @@ export function BulkUploadDialog({ open, onOpenChange, onSuccess }: BulkUploadDi
       const rows = await readXlsxFile(selectedFile);
       if (!rows || rows.length < 2) return [];
 
-      const headers = (rows[0] as any[]).map((h) => String(h || "").trim());
+      const headers = (rows[0] as unknown as any[]).map((h) => String(h || "").trim());
       const rawRows: Record<string, string>[] = [];
 
       for (let i = 1; i < rows.length; i++) {
-        const rowData = rows[i] as any[];
+        const rowData = rows[i] as unknown as any[];
         const rowObj: Record<string, string> = {};
         headers.forEach((header, idx) => {
           const val = rowData[idx] !== null && rowData[idx] !== undefined ? String(rowData[idx]).trim() : "";
