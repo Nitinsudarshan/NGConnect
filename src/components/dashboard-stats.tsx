@@ -37,16 +37,17 @@ export function DashboardStats({ initialUsers, error }: DashboardStatsProps) {
         const appTeam = (metadata.team || "None") as UserTeam
         const isUserAlumni = metadata.is_alumni !== false
 
-        return {
-          ...u,
-          name: metadata.full_name || metadata.name || "Unknown User",
-          appRole,
-          appTeam,
-          isUserAlumni,
-          createdAtDate: new Date(u.created_at),
-          lastSignInDate: u.last_sign_in_at ? new Date(u.last_sign_in_at) : null
-        }
-      })
+          const activeTimestamp = u.last_sign_in_at || metadata.last_active_at || metadata.last_login_at;
+          return {
+            ...u,
+            name: metadata.full_name || metadata.name || "Unknown User",
+            appRole,
+            appTeam,
+            isUserAlumni,
+            createdAtDate: new Date(u.created_at),
+            lastSignInDate: activeTimestamp ? new Date(activeTimestamp) : null
+          }
+        })
       .filter(user => user.isUserAlumni) // Filter ONLY Alumni members!
   }, [initialUsers])
 

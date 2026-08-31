@@ -70,22 +70,31 @@ export async function GET(request: Request) {
       const user = data.user
       const normalizedEmail = user.email ? user.email.trim().toLowerCase() : null
       const metadata = user.user_metadata || {}
+      const now = new Date().toISOString()
 
-      // Set default registration role/team if missing
-      if (!metadata.role || !metadata.team) {
-        const defaultRole = metadata.role || "Member"
-        const defaultTeam = metadata.team || "None"
-        try {
-          const { createAdminClient } = await import("@/lib/supabase/admin")
-          const adminClient = createAdminClient()
-          await adminClient.auth.admin.updateUserById(user.id, {
-            user_metadata: { ...metadata, role: defaultRole, team: defaultTeam },
-            app_metadata: { ...(user.app_metadata || {}), role: defaultRole, team: defaultTeam }
-          })
-          console.info(`[AUTH_CALLBACK_DEFAULT_ROLE_SET] reqId=${requestId} role=${defaultRole} team=${defaultTeam}`)
-        } catch (adminErr: any) {
-          console.error(`[AUTH_CALLBACK_METADATA_UPDATE_FAILED] reqId=${requestId} msg=${adminErr?.message}`)
-        }
+      // Always update last_login_at & last_active_at, and set default registration role/team if missing
+      const defaultRole = metadata.role || "Member"
+      const defaultTeam = metadata.team || "None"
+      try {
+        const { createAdminClient } = await import("@/lib/supabase/admin")
+        const adminClient = createAdminClient()
+        await adminClient.auth.admin.updateUserById(user.id, {
+          user_metadata: {
+            ...metadata,
+            role: defaultRole,
+            team: defaultTeam,
+            last_login_at: now,
+            last_active_at: now,
+          },
+          app_metadata: {
+            ...(user.app_metadata || {}),
+            role: defaultRole,
+            team: defaultTeam,
+          }
+        })
+        console.info(`[AUTH_CALLBACK_METADATA_UPDATED] reqId=${requestId} role=${defaultRole} team=${defaultTeam} last_login_at=${now}`)
+      } catch (adminErr: any) {
+        console.error(`[AUTH_CALLBACK_METADATA_UPDATE_FAILED] reqId=${requestId} msg=${adminErr?.message}`)
       }
 
       // Log platform_login engagement event if account matches alumni_master

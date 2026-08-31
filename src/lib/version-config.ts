@@ -23,9 +23,39 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.04";
+export const CURRENT_VERSION = "1.07.05";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.05",
+    date: "2026-08-31",
+    title: "Global Realtime Presence & Live Activity Tracking",
+    type: "patch",
+    highlights: [
+      "Added global PresenceProvider using Supabase Realtime presence channel so Active Now indicator reflects actual online users across all clients",
+      "Fixed UsersTable Active Now indicator to display live online status for any connected team member instead of just oneself",
+      "Implemented automatic login & periodic heartbeat tracking (/api/user/heartbeat) to immediately record last_login_at and last_active_at",
+      "Enhanced stats cards across Manage Users, Alumni Network, and Dashboard to include metadata activity timestamps"
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Introduced PresenceProvider and usePresence hook to broadcast and subscribe to user presence over Supabase Realtime channel.",
+      },
+      {
+        category: "Fixes",
+        description: "Fixed Manage Users table to show 'Active Now' for all active users based on live presence rather than a client-only self-check.",
+      },
+      {
+        category: "Fixes",
+        description: "Updated /auth/callback and created /api/user/heartbeat to immediately persist last_login_at and last_active_at, eliminating 'Never' timestamps for active users.",
+      },
+      {
+        category: "Improvements",
+        description: "Updated 7-day activity metrics across UsersStatsCards, DashboardStats, and AlumniNetworkStats to factor in last_active_at and last_login_at.",
+      },
+    ],
+  },
   {
     version: "1.07.04",
     date: "2026-08-31",

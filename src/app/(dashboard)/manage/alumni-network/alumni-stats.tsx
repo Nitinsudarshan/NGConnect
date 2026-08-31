@@ -37,10 +37,13 @@ interface AlumniNetworkStatsProps {
 export function AlumniNetworkStatsCards({ users }: AlumniNetworkStatsProps) {
   // Format users with date objects
   const mappedUsers = useMemo(() => {
-    return users.map(u => ({
-      ...u,
-      lastSignInDate: u.last_sign_in_at ? new Date(u.last_sign_in_at) : null
-    }));
+    return users.map(u => {
+      const activeTimestamp = u.last_sign_in_at || u.user_metadata?.last_active_at || u.user_metadata?.last_login_at;
+      return {
+        ...u,
+        lastSignInDate: activeTimestamp ? new Date(activeTimestamp) : null
+      };
+    });
   }, [users]);
 
   // Stat calculations
@@ -155,10 +158,13 @@ export function AlumniNetworkStatsCharts({ users }: AlumniNetworkStatsProps) {
 
   // Format users with date objects
   const mappedUsers = useMemo(() => {
-    return users.map(u => ({
-      ...u,
-      lastSignInDate: u.last_sign_in_at ? new Date(u.last_sign_in_at) : null
-    }));
+    return users.map(u => {
+      const activeTimestamp = u.last_sign_in_at || u.user_metadata?.last_active_at || u.user_metadata?.last_login_at;
+      return {
+        ...u,
+        lastSignInDate: activeTimestamp ? new Date(activeTimestamp) : null
+      };
+    });
   }, [users]);
 
   // Stat calculations for trend card logic

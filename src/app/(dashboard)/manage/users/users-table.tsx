@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { UserRole, UserTeam } from "@/lib/roles";
 import { useUserContext } from "@/contexts/user-context";
+import { usePresence } from "@/contexts/presence-context";
 import { updateUserRoleAndTeam } from "./actions";
 import {
   Table,
@@ -68,6 +69,7 @@ function formatRelativeTime(dateString?: string | null) {
 
 export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
   const loggedInUser = useUserContext();
+  const { isUserOnline } = usePresence();
   const [mounted, setMounted] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [role, setRole] = useState<UserRole>("Viewer");
@@ -290,8 +292,9 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
                 const appRole = (isSuper ? "Super Admin" : (metadata.role || "Viewer")) as UserRole;
                 const appTeam = (metadata.team || "None") as UserTeam;
                 const isUserAlumni = metadata.is_alumni !== false;
-
-                const lastSignIn = formatRelativeTime(user.last_sign_in_at);
+                const isOnline = isUserOnline(user.id);
+                const lastActiveTimestamp = user.last_sign_in_at || metadata.last_active_at || metadata.last_login_at;
+                const lastSignIn = formatRelativeTime(lastActiveTimestamp);
 
                 return (
                   <TableRow key={user.id} className="group hover:bg-slate-50/50 dark:hover:bg-zinc-900/50 transition-colors">
@@ -329,7 +332,7 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm font-medium">
-                      {loggedInUser && loggedInUser.id === user.id ? (
+                      {isOnline ? (
                         <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                           Active Now

@@ -51,7 +51,8 @@ export function UsersStatsCards({ users }: UsersStatsProps) {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const activeRecently = users.filter(u => {
-      return u.last_sign_in_at && new Date(u.last_sign_in_at) >= sevenDaysAgo;
+      const activeTime = u.last_sign_in_at || u.user_metadata?.last_active_at || u.user_metadata?.last_login_at;
+      return activeTime && new Date(activeTime) >= sevenDaysAgo;
     }).length;
 
     const teamPercentage = total > 0 ? Math.round((teamAllocated / total) * 100) : 0;
