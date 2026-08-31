@@ -23,25 +23,9 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.08";
+export const CURRENT_VERSION = "1.07.07";
 
 export const VERSION_HISTORY: VersionEntry[] = [
-  {
-    version: "1.07.08",
-    date: "2026-08-31",
-    title: "Auth Callback MagicLink OTP Verification Support",
-    type: "patch",
-    highlights: [
-      "Added token_hash & OTP verification support in /auth/callback to resolve MissingOAuthCode error on magiclink impersonation links",
-      "Unified OAuth code exchange and magic link OTP verification within the same secure callback pipeline"
-    ],
-    changes: [
-      {
-        category: "Fixes",
-        description: "Updated /auth/callback to accept both OAuth code and magiclink token_hash/token parameters with verifyOtp verification.",
-      },
-    ],
-  },
   {
     version: "1.07.07",
     date: "2026-08-31",
@@ -51,6 +35,7 @@ export const VERSION_HISTORY: VersionEntry[] = [
       "Implemented strict RBAC hierarchy rules for user impersonation (Level 7 Super Admin > Level 6 Admin > Level 5-1 Lower roles)",
       "Admins can only impersonate strictly lower-level roles (Cannot impersonate Super Admins or fellow Admins)",
       "Added 'Log In As User' action in Manage Users table with secure magic link generation and 1-click execution",
+      "Added token_hash & OTP verification support in /auth/callback to resolve MissingOAuthCode error on magiclink impersonation links",
       "Isolated client-safe role constants in role-constants.ts to respect Server/Client Component boundaries"
     ],
     changes: [
@@ -61,6 +46,10 @@ export const VERSION_HISTORY: VersionEntry[] = [
       {
         category: "Security",
         description: "Enforced strict RBAC hierarchy: Super Admin can impersonate levels 6-1, Admin can impersonate levels 5-1 only, lower roles cannot impersonate.",
+      },
+      {
+        category: "Fixes",
+        description: "Updated /auth/callback to accept both OAuth code and magiclink token_hash/token parameters with verifyOtp verification.",
       },
       {
         category: "Features",
