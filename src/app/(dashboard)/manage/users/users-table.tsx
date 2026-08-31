@@ -78,24 +78,30 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
   const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Filter users by search term
+  // Filter users by search term and role filter
   const filteredUsers = useMemo(() => {
     return (initialUsers || []).filter(user => {
       const metadata = user.user_metadata || {};
       const name = (metadata.full_name || metadata.name || "").toLowerCase();
       const email = (user.email || "").toLowerCase();
       const search = searchTerm.toLowerCase();
-      return name.includes(search) || email.includes(search);
-    });
-  }, [initialUsers, searchTerm]);
+      const isSuper = ["nitin@navgurukul.org", "nitinsudarshan@gmail.com"].includes(email);
+      const appRole = isSuper ? "Super Admin" : (metadata.role || "Member");
 
-  // Reset page when search term changes
+      const matchesSearch = !search || name.includes(search) || email.includes(search);
+      const matchesRole = roleFilter === "ALL" || appRole === roleFilter;
+      return matchesSearch && matchesRole;
+    });
+  }, [initialUsers, searchTerm, roleFilter]);
+
+  // Reset page when search term or role filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, roleFilter]);
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   
@@ -201,14 +207,31 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
     <div className="w-full max-w-full overflow-hidden space-y-4">
       {/* Search & Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card/40 backdrop-blur-md border rounded-xl p-3 shadow-xs">
-        <div className="relative max-w-sm w-full">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 h-9.5 rounded-lg border-input bg-background/50 text-sm focus-visible:ring-1"
-          />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 max-w-lg w-full">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 h-9.5 rounded-lg border-input bg-background/50 text-sm focus-visible:ring-1"
+            />
+          </div>
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="w-full sm:w-[140px] h-9.5 rounded-lg border-input bg-background/50 text-xs font-semibold">
+              <SelectValue placeholder="All Roles" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border bg-popover shadow-xl text-xs">
+              <SelectItem value="ALL">All Roles</SelectItem>
+              <SelectItem value="Super Admin">Super Admin</SelectItem>
+              <SelectItem value="Admin">Admin</SelectItem>
+              <SelectItem value="Manager">Manager</SelectItem>
+              <SelectItem value="Program">Program</SelectItem>
+              <SelectItem value="Operations">Operations</SelectItem>
+              <SelectItem value="Viewer">Viewer</SelectItem>
+              <SelectItem value="Member">Member</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex items-center gap-2.5">
           <span className="text-xs text-muted-foreground font-semibold hidden md:inline-block mr-2">

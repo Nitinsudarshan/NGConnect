@@ -1,20 +1,56 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { LoadingSpinner } from "./loading-view";
 import { createClient } from "@/lib/supabase/client";
 
-export function LoginForm() {
+function LoginFormInner() {
+  const searchParams = useSearchParams();
   const [isSocialLoading, setIsSocialLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [correlationId, setCorrelationId] = useState<string | null>(null);
   const supabase = createClient();
+
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    const reqId = searchParams.get("reqId");
+
+    if (errorParam) {
+      setCorrelationId(reqId);
+      switch (errorParam) {
+        case "AuthExchangeFailed":
+          setError("OAuth exchange failed or session expired. Please try signing in again.");
+          break;
+        case "MissingOAuthCode":
+          setError("No authorization code received from Google. Please try again.");
+          break;
+        case "OAuthCallbackError":
+          setError("A server error occurred during login callback. Please retry.");
+          break;
+        case "AuthError":
+          setError("Authentication could not be completed. Please try again.");
+          break;
+        default:
+          setError(errorParam);
+      }
+    }
+  }, [searchParams]);
 
   const handleGoogleLogin = async () => {
     setIsSocialLoading(true);
     setError(null);
+    setCorrelationId(null);
     try {
+      // Clear any prior stale session tokens before starting fresh OAuth
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // Ignore signOut errors
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -47,9 +83,16 @@ export function LoginForm() {
           </header>
 
           {error && (
-            <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/50 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-              <i className="fa-solid fa-circle-exclamation text-rose-500 mt-0.5"></i>
-              <p className="text-xs font-bold text-rose-700 dark:text-rose-400 leading-relaxed">{error}</p>
+            <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/50 rounded-xl flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex items-start gap-3">
+                <i className="fa-solid fa-circle-exclamation text-rose-500 mt-0.5"></i>
+                <p className="text-xs font-bold text-rose-700 dark:text-rose-400 leading-relaxed">{error}</p>
+              </div>
+              {correlationId && (
+                <p className="text-[10px] text-muted-foreground font-mono pl-6">
+                  Ref ID: {correlationId}
+                </p>
+              )}
             </div>
           )}
 
@@ -57,7 +100,7 @@ export function LoginForm() {
             <button
               onClick={handleGoogleLogin}
               disabled={isSocialLoading}
-              className="w-full flex items-center justify-center gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 py-3.5 px-4 rounded-xl font-bold text-slate-700 dark:text-slate-200 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm hover:shadow-md transition-shadow"
+              className="w-full flex items-center justify-center gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 py-3.5 px-4 rounded-xl font-bold text-slate-700 dark:text-slate-200 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
             >
               {isSocialLoading ? (
                 <LoadingSpinner size="sm" />
@@ -79,3 +122,12 @@ export function LoginForm() {
     </div>
   );
 }
+
+export function LoginForm() {
+  return (
+    <Suspense fallback={<div className="flex justify-center p-8"><LoadingSpinner size="md" /></div>}>
+      <LoginFormInner />
+    </Suspense>
+  );
+}
+

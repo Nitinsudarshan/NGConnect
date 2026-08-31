@@ -23,9 +23,44 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.03";
+export const CURRENT_VERSION = "1.07.04";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.04",
+    date: "2026-08-31",
+    title: "OAuth Callback 500 Hardening, PKCE Isolation & Session Resiliency",
+    type: "patch",
+    highlights: [
+      "Eliminated 500 Internal Server Error in OAuth callback with top-level error trapping and proxy header sanitization",
+      "Isolated /auth routes in middleware to prevent PKCE cookie corruption during code exchange",
+      "Fixed logout to properly clear Supabase auth cookies and prevent stale session persistence",
+      "Restored visibility of Member-role accounts in Admin Users & Roles table with new Role filter",
+      "Fixed feedback attribution to display submitter email and normalized emails across DB queries"
+    ],
+    changes: [
+      {
+        category: "Fixes",
+        description: "Added top-level try-catch and sanitized multi-host x-forwarded-host parsing in /auth/callback to prevent 500 crashes during OAuth redirect.",
+      },
+      {
+        category: "Security",
+        description: "Bypassed middleware getUser session refresh on /auth routes to protect PKCE code verifier cookies during OAuth exchange.",
+      },
+      {
+        category: "Fixes",
+        description: "Implemented real supabase.auth.signOut() in NavUser and HeaderUserMenu to fully invalidate sessions on logout.",
+      },
+      {
+        category: "Improvements",
+        description: "Removed role !== 'Member' filter from Manage Users page and added dynamic Role filtering (All, Super Admin, Admin, Manager, Program, Operations, Viewer, Member) in UsersTable.",
+      },
+      {
+        category: "Fixes",
+        description: "Fixed FeedbackPage history rendering to show submitter identity instead of viewer context, and normalized email comparisons to lowercase.",
+      },
+    ],
+  },
   {
     version: "1.07.03",
     date: "2026-08-17",

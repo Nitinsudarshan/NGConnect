@@ -29,6 +29,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 
+import { createClient } from "@/lib/supabase/client"
+
 export function NavUser({
   user,
 }: {
@@ -40,9 +42,16 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const router = useRouter()
+  const supabase = createClient()
 
-  const signOut = () => {
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut()
+    } catch {
+      // Continue to login even if network fails
+    }
     router.push("/login")
+    router.refresh()
   }
 
   return (

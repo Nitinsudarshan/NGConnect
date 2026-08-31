@@ -21,12 +21,21 @@ function toTitleCase(str: string) {
         .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+import { createClient } from "@/lib/supabase/client";
+
 export function HeaderUserMenu() {
     const router = useRouter();
     const user = useUserContext();
+    const supabase = createClient();
 
-    const signOut = () => {
+    const signOut = async () => {
+        try {
+            await supabase.auth.signOut();
+        } catch {
+            // Ignore signOut error
+        }
         router.push("/login");
+        router.refresh();
     };
 
     const firstName = user?.name ? toTitleCase(user.name.split(" ")[0]) : "User";

@@ -40,6 +40,7 @@ interface SubmittedFeedback {
   comments: string;
   categorySpecificSuggestion?: string;
   isAnonymous: boolean;
+  userEmail?: string;
   timestamp: string;
 }
 
@@ -69,6 +70,7 @@ export default function FeedbackPage() {
             comments: item.comments,
             categorySpecificSuggestion: item.category_specific_suggestion || undefined,
             isAnonymous: item.is_anonymous,
+            userEmail: item.user_email || undefined,
             timestamp: new Date(item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           }));
           setHistory(formatted);
@@ -211,6 +213,7 @@ export default function FeedbackPage() {
           comments: data.data.comments,
           categorySpecificSuggestion: data.data.category_specific_suggestion || undefined,
           isAnonymous: data.data.is_anonymous,
+          userEmail: data.data.user_email || (isAnonymous ? undefined : (user?.email || undefined)),
           timestamp: new Date(data.data.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         };
 
@@ -558,7 +561,7 @@ export default function FeedbackPage() {
                       )}
 
                       <div className="flex items-center justify-between text-[10px] text-muted-foreground border-t border-border/40 pt-1.5">
-                        <span>{item.isAnonymous ? "Anonymous" : user?.email || "User"}</span>
+                        <span>{item.isAnonymous ? "Anonymous" : (item.userEmail || user?.email || "Member")}</span>
                         <span>{item.timestamp}</span>
                       </div>
                     </div>

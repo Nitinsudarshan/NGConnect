@@ -35,11 +35,7 @@ export default async function ManageUsersPage() {
     );
   }
 
-  const filteredUsers = (users || []).filter(user => {
-    const isSuperUser = user.email && ["nitin@navgurukul.org", "nitinsudarshan@gmail.com"].includes(user.email.toLowerCase());
-    const role = isSuperUser ? "Super Admin" : (user.user_metadata?.role || "Member");
-    return role !== "Member";
-  });
+  const allUsers = users || [];
 
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-6 md:p-8 w-full max-w-7xl mx-auto pb-12">
@@ -55,13 +51,13 @@ export default async function ManageUsersPage() {
       </div>
 
       {/* 1. Stat Cards */}
-      <UsersStatsCards users={filteredUsers} />
+      <UsersStatsCards users={allUsers} />
 
       {/* 2. User Table (paginated) */}
-      <UsersTable initialUsers={filteredUsers} canEdit={canEdit} />
+      <UsersTable initialUsers={allUsers} canEdit={canEdit} />
 
       {/* 3. Distribution Charts */}
-      <UsersStatsCharts users={filteredUsers} />
+      <UsersStatsCharts users={allUsers} />
     </div>
   );
 }

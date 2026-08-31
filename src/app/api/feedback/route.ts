@@ -45,10 +45,11 @@ export async function POST(request: Request) {
       );
     }
 
+    const normalizedEmail = isAnonymous ? null : (user.email ? user.email.trim().toLowerCase() : null);
     const feedbackEntry = {
       id: `fb_${crypto.randomUUID()}`,
       user_id: isAnonymous ? null : user.id,
-      user_email: isAnonymous ? null : user.email,
+      user_email: normalizedEmail,
       category: category.trim(),
       focus_area: focusArea ? String(focusArea).trim() : null,
       rating: numericRating,
@@ -91,14 +92,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const userRole = user.app_metadata?.role;
-    const isStaff = userRole === "Admin" || userRole === "Super Admin";
+    const email = user.email ? user.email.trim().toLowerCase() : null;
+    const isSuper = email && ["nitin@navgurukul.org", "nitinsudarshan@gmail.com"].includes(email);
+    const userRole = user.app_metadata?.role || user.user_metadata?.role;
+    const isStaff = isSuper || userRole === "Admin" || userRole === "Super Admin";
 
     const adminSupabase = createAdminClient();
     let query = adminSupabase.from("alumni_member_feedback").select("*");
 
-    if (!isStaff && user.email) {
-      query = query.eq("user_email", user.email);
+    if (!isStaff && email) {
+      query = query.eq("user_email", email);
     }
 
     const { data, error } = await query.order("created_at", { ascending: false }).limit(20);
