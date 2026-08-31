@@ -23,11 +23,11 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.08";
+export const CURRENT_VERSION = "1.07.09";
 
 export const VERSION_HISTORY: VersionEntry[] = [
   {
-    version: "1.07.08",
+    version: "1.07.09",
     date: "2026-08-31",
     title: "Auth Cookie / Session Size Hardening & Profile Storage Isolation",
     type: "patch",
@@ -60,6 +60,22 @@ export const VERSION_HISTORY: VersionEntry[] = [
       {
         category: "Improvements",
         description: "Added Edge middleware cookie size monitoring emitting structured warning alerts when request Cookie headers approach 3KB.",
+      },
+      {
+        category: "Features",
+        description: "Built automated data migration script (migrate-auth-metadata.mjs) and 18-point automated regression test suite.",
+      },
+    ],
+  },
+  {
+    version: "1.07.08",
+    date: "2026-08-31",
+    title: "Auth Hardening Initial Scaffolding",
+    type: "patch",
+    changes: [
+      {
+        category: "Security",
+        description: "Initial scaffolding of auth payload budgeting and metadata sanitization schemas.",
       },
     ],
   },
