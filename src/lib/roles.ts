@@ -2,9 +2,8 @@ import { auth } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 
-export type UserRole = "Super Admin" | "Admin" | "Manager" | "Program" | "Operations" | "Viewer" | "Member";
-
-export type UserTeam = "CEO's Office" | "Alumni Growth" | "PNC" | "Finance" | "None";
+import { UserRole, UserTeam, ROLE_HIERARCHY, canImpersonate } from '@/lib/role-constants';
+export * from '@/lib/role-constants';
 
 /** Shape of app_metadata stored on Supabase users */
 export interface UserAppMetadata {

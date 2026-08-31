@@ -3,7 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { UserRole, UserTeam } from "@/lib/roles";
+import { UserRole, UserTeam, canImpersonate } from "@/lib/roles";
 
 const SUPER_ADMINS = ["nitin@navgurukul.org", "nitinsudarshan@gmail.com"];
 
@@ -337,5 +337,65 @@ export async function forceSignOutAllUsers() {
         return { error: e.message || "Failed to force sign out all users." };
     }
 }
+
+export async function impersonateUser(targetUserId: string, origin?: string) {
+    try {
+        const clientSupabase = await createClient();
+        const { data: { user: currentUser } } = await clientSupabase.auth.getUser();
+        if (!currentUser) {
+            return { error: "Unauthorized. Please log in." };
+        }
+
+        const callerEmail = currentUser.email || "";
+        const isCallerSuper = SUPER_ADMINS.includes(callerEmail.toLowerCase());
+        const callerRole = (isCallerSuper ? "Super Admin" : (currentUser.user_metadata?.role || "Member")) as UserRole;
+
+        const adminSupabase = createAdminClient();
+        const { data: { user: targetUser }, error: getError } = await adminSupabase.auth.admin.getUserById(targetUserId);
+        if (getError || !targetUser) {
+            return { error: "Target user not found." };
+        }
+
+        const targetEmail = targetUser.email || "";
+        const isTargetSuper = SUPER_ADMINS.includes(targetEmail.toLowerCase());
+        const targetRole = (isTargetSuper ? "Super Admin" : (targetUser.user_metadata?.role || "Viewer")) as UserRole;
+
+        // Hierarchy validation: Caller must have strictly higher role level than target
+        if (!canImpersonate(callerRole, targetRole)) {
+            return {
+                error: `RBAC Violation: As a ${callerRole}, you cannot impersonate a user with the ${targetRole} role. You can only impersonate lower-level roles.`
+            };
+        }
+
+        if (currentUser.id === targetUser.id) {
+            return { error: "You cannot impersonate your own account." };
+        }
+
+        const appUrl = origin || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const redirectTo = `${appUrl.replace(/\/$/, '')}/auth/callback`;
+
+        const { data: linkData, error: linkError } = await adminSupabase.auth.admin.generateLink({
+            type: "magiclink",
+            email: targetEmail,
+            options: {
+                redirectTo,
+            },
+        });
+
+        if (linkError || !linkData?.properties?.action_link) {
+            return { error: linkError?.message || "Failed to generate impersonation sign-in link." };
+        }
+
+        return {
+            success: true,
+            actionLink: linkData.properties.action_link,
+            targetName: targetUser.user_metadata?.full_name || targetEmail,
+            targetRole,
+        };
+    } catch (e: any) {
+        return { error: e.message || "An unexpected error occurred during impersonation." };
+    }
+}
+
 
 

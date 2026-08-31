@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { UserRole, UserTeam } from "@/lib/roles";
+import { UserRole, UserTeam, canImpersonate } from "@/lib/role-constants";
 import { useUserContext } from "@/contexts/user-context";
 import { usePresence } from "@/contexts/presence-context";
-import { updateUserRoleAndTeam, forceSignOutUser, forceSignOutAllUsers } from "./actions";
+import { updateUserRoleAndTeam, forceSignOutUser, forceSignOutAllUsers, impersonateUser } from "./actions";
 import {
   Table,
   TableBody,
@@ -32,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Shield, Users, Edit3, Loader2, GraduationCap, Search, UserPlus, FileUp, LogOut, AlertTriangle } from "lucide-react";
+import { Shield, Users, Edit3, Loader2, GraduationCap, Search, UserPlus, FileUp, LogOut, AlertTriangle, UserCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AddUserDialog } from "./_components/add-user-dialog";
 import { BulkUploadDialog } from "./_components/bulk-upload-dialog";
@@ -84,6 +84,10 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
   const [isSigningOutUser, setIsSigningOutUser] = useState(false);
   const [isSignOutAllDialogOpen, setIsSignOutAllDialogOpen] = useState(false);
   const [isSigningOutAll, setIsSigningOutAll] = useState(false);
+
+  // Impersonation states
+  const [impersonateTarget, setImpersonateTarget] = useState<any>(null);
+  const [isImpersonating, setIsImpersonating] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
@@ -212,6 +216,25 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
       toast.error(err?.message || "Failed to force sign out all users.");
     } finally {
       setIsSigningOutAll(false);
+    }
+  };
+
+  const handleConfirmImpersonate = async () => {
+    if (!impersonateTarget) return;
+    setIsImpersonating(true);
+    try {
+      const result = await impersonateUser(impersonateTarget.id, window.location.origin);
+      if (result?.error) {
+        toast.error(result.error);
+      } else if (result?.actionLink) {
+        toast.success(`Logging in as ${result.targetName}...`);
+        window.open(result.actionLink, "_blank");
+        setImpersonateTarget(null);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to log in as user.");
+    } finally {
+      setIsImpersonating(false);
     }
   };
 
@@ -355,6 +378,10 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
                 const lastActiveTimestamp = user.last_sign_in_at || metadata.last_active_at || metadata.last_login_at;
                 const lastSignIn = formatRelativeTime(lastActiveTimestamp);
 
+                const isActorSuper = loggedInUser?.email && ["nitin@navgurukul.org", "nitinsudarshan@gmail.com"].includes(loggedInUser.email.toLowerCase());
+                const actorRole = (isActorSuper ? "Super Admin" : (loggedInUser?.role || "Member")) as UserRole;
+                const canActorImpersonateRowUser = loggedInUser?.id !== user.id && canImpersonate(actorRole, appRole);
+
                 return (
                   <TableRow key={user.id} className="group hover:bg-slate-50/50 dark:hover:bg-zinc-900/50 transition-colors">
                     <TableCell className="flex items-center gap-3 py-3.5">
@@ -405,6 +432,18 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
                     {canEdit && (
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
+                          {canActorImpersonateRowUser && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              title={`Log in as ${name} (${appRole})`}
+                              onClick={() => setImpersonateTarget({ ...user, appRole, name })}
+                              className="h-8 w-8 p-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-lg transition-colors"
+                            >
+                              <UserCheck className="h-4 w-4" />
+                              <span className="sr-only">Log In As</span>
+                            </Button>
+                          )}
                           {loggedInUser?.id !== user.id && (
                             <Button
                               variant="ghost"
@@ -721,6 +760,51 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
             >
               {isSigningOutAll && <Loader2 className="h-4 w-4 animate-spin" />}
               Confirm Force Sign Out All
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Impersonate User Dialog */}
+      <Dialog
+        open={Boolean(impersonateTarget)}
+        onOpenChange={(open) => {
+          if (!open) setImpersonateTarget(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[440px] rounded-2xl border bg-background shadow-2xl p-6">
+          <DialogHeader>
+            <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-2">
+              <UserCheck className="h-5 w-5" />
+            </div>
+            <DialogTitle className="text-xl font-bold tracking-tight">Log In As User (Impersonate)</DialogTitle>
+            <DialogDescription className="text-muted-foreground text-sm pt-1.5 leading-relaxed">
+              You are about to log in as{" "}
+              <strong className="text-foreground font-semibold">
+                {impersonateTarget?.name || impersonateTarget?.email}
+              </strong>{" "}
+              with the role <Badge className="mx-1 text-[10px] px-1.5 py-0 font-bold">{impersonateTarget?.appRole}</Badge>.
+              <br /><br />
+              This will generate a secure authentication session and open NGConnect under their identity in a new tab.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-4 gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              disabled={isImpersonating}
+              onClick={() => setImpersonateTarget(null)}
+              className="rounded-xl h-10 hover:bg-slate-50 dark:hover:bg-zinc-800"
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={isImpersonating}
+              onClick={handleConfirmImpersonate}
+              className="rounded-xl h-10 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 flex items-center gap-2"
+            >
+              {isImpersonating && <Loader2 className="h-4 w-4 animate-spin" />}
+              Log In As User
             </Button>
           </DialogFooter>
         </DialogContent>

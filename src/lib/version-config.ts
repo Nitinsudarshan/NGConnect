@@ -23,9 +23,39 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.06";
+export const CURRENT_VERSION = "1.07.07";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.07",
+    date: "2026-08-31",
+    title: "Strictly Hierarchical RBAC User Impersonation ('Log In As User')",
+    type: "patch",
+    highlights: [
+      "Implemented strict RBAC hierarchy rules for user impersonation (Level 7 Super Admin > Level 6 Admin > Level 5-1 Lower roles)",
+      "Admins can only impersonate strictly lower-level roles (Cannot impersonate Super Admins or fellow Admins)",
+      "Added 'Log In As User' action in Manage Users table with secure magic link generation and 1-click execution",
+      "Isolated client-safe role constants in role-constants.ts to respect Server/Client Component boundaries"
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Added impersonateUser server action with strict role hierarchy checks and one-time magic link token generation.",
+      },
+      {
+        category: "Security",
+        description: "Enforced strict RBAC hierarchy: Super Admin can impersonate levels 6-1, Admin can impersonate levels 5-1 only, lower roles cannot impersonate.",
+      },
+      {
+        category: "Features",
+        description: "Added 'Log In As User' button in UsersTable with confirmation modal that dynamically displays only on eligible target rows.",
+      },
+      {
+        category: "Improvements",
+        description: "Created role-constants.ts to separate client-safe type definitions from server-only auth imports.",
+      },
+    ],
+  },
   {
     version: "1.07.06",
     date: "2026-08-31",
