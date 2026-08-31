@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { UserRole, UserTeam } from "@/lib/roles";
 import { useUserContext } from "@/contexts/user-context";
 import { usePresence } from "@/contexts/presence-context";
-import { updateUserRoleAndTeam } from "./actions";
+import { updateUserRoleAndTeam, forceSignOutUser, forceSignOutAllUsers } from "./actions";
 import {
   Table,
   TableBody,
@@ -32,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Shield, Users, Edit3, Loader2, GraduationCap, Search, UserPlus, FileUp } from "lucide-react";
+import { Shield, Users, Edit3, Loader2, GraduationCap, Search, UserPlus, FileUp, LogOut, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AddUserDialog } from "./_components/add-user-dialog";
 import { BulkUploadDialog } from "./_components/bulk-upload-dialog";
@@ -69,7 +69,7 @@ function formatRelativeTime(dateString?: string | null) {
 
 export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
   const loggedInUser = useUserContext();
-  const { isUserOnline } = usePresence();
+  const { isUserOnline, broadcastForceSignOut } = usePresence();
   const [mounted, setMounted] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [role, setRole] = useState<UserRole>("Viewer");
@@ -78,6 +78,12 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
+
+  // Force Sign Out states
+  const [forceSignOutUserTarget, setForceSignOutUserTarget] = useState<any>(null);
+  const [isSigningOutUser, setIsSigningOutUser] = useState(false);
+  const [isSignOutAllDialogOpen, setIsSignOutAllDialogOpen] = useState(false);
+  const [isSigningOutAll, setIsSigningOutAll] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
@@ -165,6 +171,50 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
     }
   };
 
+  const handleConfirmForceSignOutUser = async () => {
+    if (!forceSignOutUserTarget) return;
+    setIsSigningOutUser(true);
+    try {
+      // 1. Broadcast immediate kick to connected client tabs
+      await broadcastForceSignOut(forceSignOutUserTarget.id, false);
+
+      // 2. Invalidate server side
+      const result = await forceSignOutUser(forceSignOutUserTarget.id);
+      if (result?.error) {
+        toast.error(result.error);
+      } else {
+        const userName = forceSignOutUserTarget.user_metadata?.full_name || forceSignOutUserTarget.email;
+        toast.success(`Force signed out ${userName} successfully.`);
+        setForceSignOutUserTarget(null);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to force sign out user.");
+    } finally {
+      setIsSigningOutUser(false);
+    }
+  };
+
+  const handleConfirmForceSignOutAll = async () => {
+    setIsSigningOutAll(true);
+    try {
+      // 1. Broadcast immediate kick to all connected client tabs (except current acting admin)
+      await broadcastForceSignOut(undefined, true);
+
+      // 2. Invalidate server side
+      const result = await forceSignOutAllUsers();
+      if (result?.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(`Successfully force signed out all active team member sessions.`);
+        setIsSignOutAllDialogOpen(false);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to force sign out all users.");
+    } finally {
+      setIsSigningOutAll(false);
+    }
+  };
+
   // Helper to determine role badge classes
   const getRoleBadgeClasses = (role: UserRole) => {
     switch (role) {
@@ -244,6 +294,15 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => setIsSignOutAllDialogOpen(true)}
+                className="h-9.5 rounded-lg font-semibold text-xs gap-1.5 border-rose-200 dark:border-rose-900/40 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+              >
+                <LogOut className="h-4 w-4" />
+                Force Sign Out All
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setIsBulkDialogOpen(true)}
                 className="h-9.5 rounded-lg font-semibold text-xs gap-1.5 border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800"
               >
@@ -273,7 +332,7 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
               <TableHead>Role</TableHead>
               <TableHead>Team</TableHead>
               <TableHead>Last Login</TableHead>
-              {canEdit && <TableHead className="w-[100px] text-right">Actions</TableHead>}
+              {canEdit && <TableHead className="w-[120px] text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -345,15 +404,30 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
                     </TableCell>
                     {canEdit && (
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditClick(user)}
-                          className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg group-hover:opacity-100 transition-opacity"
-                        >
-                          <Edit3 className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                          <span className="sr-only">Edit Access</span>
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          {loggedInUser?.id !== user.id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              title={`Force Sign Out ${name}`}
+                              onClick={() => setForceSignOutUserTarget(user)}
+                              className="h-8 w-8 p-0 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors"
+                            >
+                              <LogOut className="h-4 w-4" />
+                              <span className="sr-only">Force Sign Out</span>
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Edit Access"
+                            onClick={() => handleEditClick(user)}
+                            className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg group-hover:opacity-100 transition-opacity"
+                          >
+                            <Edit3 className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                            <span className="sr-only">Edit Access</span>
+                          </Button>
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
@@ -567,6 +641,90 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
         open={isBulkDialogOpen}
         onOpenChange={setIsBulkDialogOpen}
       />
+
+      {/* Force Sign Out Single User Dialog */}
+      <Dialog
+        open={Boolean(forceSignOutUserTarget)}
+        onOpenChange={(open) => {
+          if (!open) setForceSignOutUserTarget(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px] rounded-2xl border bg-background shadow-2xl p-6">
+          <DialogHeader>
+            <div className="h-10 w-10 rounded-full bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-2">
+              <LogOut className="h-5 w-5" />
+            </div>
+            <DialogTitle className="text-xl font-bold tracking-tight">Force Sign Out User</DialogTitle>
+            <DialogDescription className="text-muted-foreground text-sm pt-1.5 leading-relaxed">
+              Are you sure you want to force sign out{" "}
+              <strong className="text-foreground font-semibold">
+                {forceSignOutUserTarget?.user_metadata?.full_name || forceSignOutUserTarget?.email || "this user"}
+              </strong>
+              ? Their session will be revoked immediately in real time and they will be disconnected.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-4 gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              disabled={isSigningOutUser}
+              onClick={() => setForceSignOutUserTarget(null)}
+              className="rounded-xl h-10 hover:bg-slate-50 dark:hover:bg-zinc-800"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isSigningOutUser}
+              onClick={handleConfirmForceSignOutUser}
+              className="rounded-xl h-10 bg-rose-600 hover:bg-rose-700 text-white font-semibold px-5 flex items-center gap-2"
+            >
+              {isSigningOutUser && <Loader2 className="h-4 w-4 animate-spin" />}
+              Force Sign Out
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Force Sign Out All Users Dialog */}
+      <Dialog
+        open={isSignOutAllDialogOpen}
+        onOpenChange={setIsSignOutAllDialogOpen}
+      >
+        <DialogContent className="sm:max-w-[460px] rounded-2xl border bg-background shadow-2xl p-6">
+          <DialogHeader>
+            <div className="h-10 w-10 rounded-full bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-2">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <DialogTitle className="text-xl font-bold tracking-tight">Force Sign Out All Users</DialogTitle>
+            <DialogDescription className="text-muted-foreground text-sm pt-1.5 leading-relaxed">
+              Are you sure you want to force sign out <strong className="text-foreground font-semibold">all active users</strong> across NGConnect?
+              <br /><br />
+              This will immediately terminate active sessions and broadcast a disconnect signal to all connected team members in real time. (Your current session will remain active).
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-4 gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              disabled={isSigningOutAll}
+              onClick={() => setIsSignOutAllDialogOpen(false)}
+              className="rounded-xl h-10 hover:bg-slate-50 dark:hover:bg-zinc-800"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isSigningOutAll}
+              onClick={handleConfirmForceSignOutAll}
+              className="rounded-xl h-10 bg-rose-600 hover:bg-rose-700 text-white font-semibold px-5 flex items-center gap-2"
+            >
+              {isSigningOutAll && <Loader2 className="h-4 w-4 animate-spin" />}
+              Confirm Force Sign Out All
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

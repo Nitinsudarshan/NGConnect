@@ -23,9 +23,39 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.05";
+export const CURRENT_VERSION = "1.07.06";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.06",
+    date: "2026-08-31",
+    title: "Instantaneous Realtime Force Sign Out (Individual & Bulk)",
+    type: "patch",
+    highlights: [
+      "Added per-user Force Sign Out button in Manage Users table with instantaneous client session termination",
+      "Added bulk 'Force Sign Out All' action with confirmation modal to terminate all active sessions",
+      "Integrated Realtime broadcast event channel (force_signout) so target clients immediately revoke auth and redirect to login screen",
+      "Added clear session terminated alert on the login page for kicked sessions"
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Implemented forceSignOutUser and forceSignOutAllUsers server actions with real-time broadcast triggering in PresenceProvider.",
+      },
+      {
+        category: "Features",
+        description: "Added per-user Force Sign Out action buttons and top-bar 'Force Sign Out All' button in UsersTable with confirmation dialogs.",
+      },
+      {
+        category: "Security",
+        description: "Enabled immediate client-side session destruction and token invalidation on force sign out signal.",
+      },
+      {
+        category: "Improvements",
+        description: "Added dedicated SessionTerminated notification banner in LoginForm.",
+      },
+    ],
+  },
   {
     version: "1.07.05",
     date: "2026-08-31",

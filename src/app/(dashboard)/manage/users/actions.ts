@@ -257,3 +257,85 @@ export async function bulkCreateUsers(users: BulkUserRow[]) {
     }
 }
 
+export async function forceSignOutUser(targetUserId: string) {
+    try {
+        const clientSupabase = await createClient();
+        const { data: { user: currentUser } } = await clientSupabase.auth.getUser();
+        if (!currentUser) {
+            return { error: "Unauthorized. Please log in." };
+        }
+
+        const email = currentUser.email;
+        const isSuper = email && SUPER_ADMINS.includes(email.toLowerCase());
+        const isUserAdmin = isSuper || currentUser.user_metadata?.role === "Admin" || currentUser.user_metadata?.role === "Super Admin";
+
+        if (!isUserAdmin) {
+            return { error: "Unauthorized. Only administrators can perform this action." };
+        }
+
+        const adminSupabase = createAdminClient();
+        const { data: { user: targetUser }, error: getError } = await adminSupabase.auth.admin.getUserById(targetUserId);
+        if (getError || !targetUser) {
+            return { error: "Target user not found." };
+        }
+
+        const now = new Date().toISOString();
+        const updatedMetadata = {
+            ...(targetUser.user_metadata || {}),
+            force_signout_at: now,
+        };
+
+        await adminSupabase.auth.admin.updateUserById(targetUserId, {
+            user_metadata: updatedMetadata,
+        });
+
+        revalidatePath("/manage/users");
+        return { success: true };
+    } catch (e: any) {
+        return { error: e.message || "Failed to force sign out user." };
+    }
+}
+
+export async function forceSignOutAllUsers() {
+    try {
+        const clientSupabase = await createClient();
+        const { data: { user: currentUser } } = await clientSupabase.auth.getUser();
+        if (!currentUser) {
+            return { error: "Unauthorized. Please log in." };
+        }
+
+        const email = currentUser.email;
+        const isSuper = email && SUPER_ADMINS.includes(email.toLowerCase());
+        const isUserAdmin = isSuper || currentUser.user_metadata?.role === "Admin" || currentUser.user_metadata?.role === "Super Admin";
+
+        if (!isUserAdmin) {
+            return { error: "Unauthorized. Only administrators can perform this action." };
+        }
+
+        const adminSupabase = createAdminClient();
+        const { data: { users: allUsers }, error: listError } = await adminSupabase.auth.admin.listUsers();
+        if (listError) {
+            return { error: listError.message };
+        }
+
+        const now = new Date().toISOString();
+        const targetUsers = (allUsers || []).filter(u => u.id !== currentUser.id);
+
+        for (const u of targetUsers) {
+            const updatedMetadata = {
+                ...(u.user_metadata || {}),
+                force_signout_at: now,
+            };
+            await adminSupabase.auth.admin.updateUserById(u.id, {
+                user_metadata: updatedMetadata,
+            });
+        }
+
+        revalidatePath("/manage/users");
+        return { success: true, count: targetUsers.length };
+    } catch (e: any) {
+        return { error: e.message || "Failed to force sign out all users." };
+    }
+}
+
+

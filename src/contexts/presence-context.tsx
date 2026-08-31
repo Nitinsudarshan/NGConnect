@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUserContext } from "./user-context";
 
@@ -8,18 +8,21 @@ interface PresenceContextType {
   onlineUserIds: Set<string>;
   isUserOnline: (userId?: string | null) => boolean;
   onlineCount: number;
+  broadcastForceSignOut: (targetUserId?: string, all?: boolean) => Promise<void>;
 }
 
 const PresenceContext = createContext<PresenceContextType>({
   onlineUserIds: new Set(),
   isUserOnline: () => false,
   onlineCount: 0,
+  broadcastForceSignOut: async () => {},
 });
 
 export function PresenceProvider({ children }: { children: React.ReactNode }) {
   const user = useUserContext();
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
   const supabase = useMemo(() => createClient(), []);
+  const channelRef = useRef<any>(null);
 
   // Function to send a lightweight heartbeat
   const sendHeartbeat = useCallback(async () => {
@@ -52,6 +55,8 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
       },
     });
 
+    channelRef.current = channel;
+
     const updatePresenceState = () => {
       const state = channel.presenceState();
       const ids = new Set<string>();
@@ -77,6 +82,21 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
       .on("presence", { event: "sync" }, updatePresenceState)
       .on("presence", { event: "join" }, updatePresenceState)
       .on("presence", { event: "leave" }, updatePresenceState)
+      .on("broadcast", { event: "force_signout" }, async ({ payload }: { payload: any }) => {
+        if (!user?.id) return;
+        const isTargetUser = payload?.targetUserId && payload.targetUserId === user.id;
+        const isBulkExceptIssuer = payload?.all && payload?.issuerId !== user.id;
+        
+        if (isTargetUser || isBulkExceptIssuer) {
+          console.warn("[FORCE_SIGNOUT] Active session revoked by administrator.");
+          try {
+            await supabase.auth.signOut();
+          } catch {
+            // Ignore signOut error during forced exit
+          }
+          window.location.href = "/login?error=SessionTerminated";
+        }
+      })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
           try {
@@ -103,10 +123,31 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
     return () => {
       clearInterval(heartbeatInterval);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      channelRef.current = null;
       channel.untrack().catch(() => {});
       supabase.removeChannel(channel);
     };
   }, [user?.id, user?.name, user?.email, supabase, sendHeartbeat]);
+
+  const broadcastForceSignOut = useCallback(
+    async (targetUserId?: string, all?: boolean) => {
+      if (!channelRef.current) return;
+      try {
+        await channelRef.current.send({
+          type: "broadcast",
+          event: "force_signout",
+          payload: {
+            targetUserId,
+            all: Boolean(all),
+            issuerId: user?.id,
+          },
+        });
+      } catch (err) {
+        console.error("Failed to broadcast force signout:", err);
+      }
+    },
+    [user?.id]
+  );
 
   const isUserOnline = useCallback(
     (userId?: string | null) => {
@@ -122,8 +163,9 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
       onlineUserIds,
       isUserOnline,
       onlineCount: onlineUserIds.size,
+      broadcastForceSignOut,
     }),
-    [onlineUserIds, isUserOnline]
+    [onlineUserIds, isUserOnline, broadcastForceSignOut]
   );
 
   return (

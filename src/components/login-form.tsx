@@ -30,6 +30,9 @@ function LoginFormInner() {
         case "OAuthCallbackError":
           setError("A server error occurred during login callback. Please retry.");
           break;
+        case "SessionTerminated":
+          setError("Your session has been terminated by an administrator. Please sign in again.");
+          break;
         case "AuthError":
           setError("Authentication could not be completed. Please try again.");
           break;
