@@ -382,13 +382,18 @@ export async function impersonateUser(targetUserId: string, origin?: string) {
             },
         });
 
-        if (linkError || !linkData?.properties?.action_link) {
+        if (linkError || !linkData?.properties) {
             return { error: linkError?.message || "Failed to generate impersonation sign-in link." };
         }
 
+        const tokenHash = linkData.properties.hashed_token;
+        const actionLink = tokenHash
+            ? `${redirectTo}?token_hash=${encodeURIComponent(tokenHash)}&type=magiclink`
+            : linkData.properties.action_link;
+
         return {
             success: true,
-            actionLink: linkData.properties.action_link,
+            actionLink,
             targetName: targetUser.user_metadata?.full_name || targetEmail,
             targetRole,
         };

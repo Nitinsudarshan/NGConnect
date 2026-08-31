@@ -35,6 +35,7 @@ export const VERSION_HISTORY: VersionEntry[] = [
       "Implemented strict RBAC hierarchy rules for user impersonation (Level 7 Super Admin > Level 6 Admin > Level 5-1 Lower roles)",
       "Admins can only impersonate strictly lower-level roles (Cannot impersonate Super Admins or fellow Admins)",
       "Added 'Log In As User' action in Manage Users table with secure magic link generation and 1-click execution",
+      "Directly routed token_hash query parameter to /auth/callback for robust OTP verification avoiding browser URL hash truncation",
       "Added token_hash & OTP verification support in /auth/callback to resolve MissingOAuthCode error on magiclink impersonation links",
       "Isolated client-safe role constants in role-constants.ts to respect Server/Client Component boundaries"
     ],
