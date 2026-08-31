@@ -228,8 +228,11 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
         toast.error(result.error);
       } else if (result?.actionLink) {
         toast.success(`Logging in as ${result.targetName}...`);
-        window.open(result.actionLink, "_blank");
         setImpersonateTarget(null);
+        const newTab = window.open(result.actionLink, "_blank");
+        if (!newTab || newTab.closed || typeof newTab.closed === "undefined") {
+          window.location.href = result.actionLink;
+        }
       }
     } catch (err: any) {
       toast.error(err?.message || "Failed to log in as user.");
