@@ -180,6 +180,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             icon: FileQuestion,
             isActive: pathname === "/manage/help",
           },
+          {
+            title: "Auth Diagnostics",
+            url: "/manage/diagnostics/auth",
+            icon: ShieldCheck,
+            isActive: pathname.startsWith("/manage/diagnostics/auth"),
+          },
         ] : []),
       ],
     }

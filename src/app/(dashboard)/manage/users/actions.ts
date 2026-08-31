@@ -30,20 +30,22 @@ export async function updateUserRoleAndTeam(userId: string, role: UserRole, team
             return { error: getError?.message || "Target user not found." };
         }
 
-        // Preserve other metadata fields
-        const updatedUserMetadata = {
+        const { sanitizeUserAuthMetadata, sanitizeAppAuthMetadata } = await import("@/lib/auth-guard");
+
+        // Strictly allowlisted auth metadata fields
+        const updatedUserMetadata = sanitizeUserAuthMetadata({
             ...(user.user_metadata || {}),
             role,
             team,
             is_alumni: isAlumni
-        };
+        });
 
-        const updatedAppMetadata = {
+        const updatedAppMetadata = sanitizeAppAuthMetadata({
             ...(user.app_metadata || {}),
             role,
             team,
             is_alumni: isAlumni
-        };
+        });
 
         const { error: updateError } = await adminSupabase.auth.admin.updateUserById(userId, {
             user_metadata: updatedUserMetadata,
@@ -89,21 +91,27 @@ export async function createUser(data: CreateUserData) {
             return { error: "Email address is required." };
         }
 
+        const { sanitizeUserAuthMetadata, sanitizeAppAuthMetadata } = await import("@/lib/auth-guard");
+
+        const cleanUserMeta = sanitizeUserAuthMetadata({
+            full_name: data.fullName?.trim() || data.email.split("@")[0],
+            role: data.role || "Member",
+            team: data.team || "None",
+            is_alumni: data.isAlumni !== false,
+        });
+
+        const cleanAppMeta = sanitizeAppAuthMetadata({
+            role: data.role || "Member",
+            team: data.team || "None",
+            is_alumni: data.isAlumni !== false,
+        });
+
         const adminSupabase = createAdminClient();
         const { data: newUser, error: createError } = await adminSupabase.auth.admin.createUser({
             email: data.email.trim().toLowerCase(),
             email_confirm: true,
-            user_metadata: {
-                full_name: data.fullName?.trim() || data.email.split("@")[0],
-                role: data.role || "Member",
-                team: data.team || "None",
-                is_alumni: data.isAlumni !== false,
-            },
-            app_metadata: {
-                role: data.role || "Member",
-                team: data.team || "None",
-                is_alumni: data.isAlumni !== false,
-            },
+            user_metadata: cleanUserMeta,
+            app_metadata: cleanAppMeta,
         });
 
         if (createError) {
@@ -145,6 +153,7 @@ export async function bulkCreateUsers(users: BulkUserRow[]) {
             return { error: "No valid user records provided." };
         }
 
+        const { sanitizeUserAuthMetadata, sanitizeAppAuthMetadata } = await import("@/lib/auth-guard");
         const adminSupabase = createAdminClient();
 
         // Fetch existing users to identify duplicates
@@ -191,19 +200,19 @@ export async function bulkCreateUsers(users: BulkUserRow[]) {
             const existingUser = existingEmailMap.get(rowEmail);
             if (existingUser) {
                 // Update metadata for existing user
-                const updatedUserMetadata = {
+                const updatedUserMetadata = sanitizeUserAuthMetadata({
                     ...(existingUser.user_metadata || {}),
                     full_name: fullName || existingUser.user_metadata?.full_name,
                     role,
                     team,
                     is_alumni: isAlumni,
-                };
-                const updatedAppMetadata = {
+                });
+                const updatedAppMetadata = sanitizeAppAuthMetadata({
                     ...(existingUser.app_metadata || {}),
                     role,
                     team,
                     is_alumni: isAlumni,
-                };
+                });
 
                 const { error: updateErr } = await adminSupabase.auth.admin.updateUserById(existingUser.id, {
                     user_metadata: updatedUserMetadata,
@@ -218,20 +227,23 @@ export async function bulkCreateUsers(users: BulkUserRow[]) {
                 }
             } else {
                 // Create new user
+                const newUserMeta = sanitizeUserAuthMetadata({
+                    full_name: fullName,
+                    role,
+                    team,
+                    is_alumni: isAlumni,
+                });
+                const newAppMeta = sanitizeAppAuthMetadata({
+                    role,
+                    team,
+                    is_alumni: isAlumni,
+                });
+
                 const { error: createErr } = await adminSupabase.auth.admin.createUser({
                     email: rowEmail,
                     email_confirm: true,
-                    user_metadata: {
-                        full_name: fullName,
-                        role,
-                        team,
-                        is_alumni: isAlumni,
-                    },
-                    app_metadata: {
-                        role,
-                        team,
-                        is_alumni: isAlumni,
-                    },
+                    user_metadata: newUserMeta,
+                    app_metadata: newAppMeta,
                 });
 
                 if (createErr) {

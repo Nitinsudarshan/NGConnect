@@ -23,9 +23,46 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.07";
+export const CURRENT_VERSION = "1.07.08";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.08",
+    date: "2026-08-31",
+    title: "Auth Cookie / Session Size Hardening & Profile Storage Isolation",
+    type: "patch",
+    highlights: [
+      "Eliminated HTTP 494 REQUEST_HEADER_TOO_LARGE vulnerabilities by strictly capping auth metadata to essential identity and authorization claims",
+      "Created strict Auth Metadata Contract (auth-contract.ts) and centralized guardrails (auth-guard.ts) with strict < 3KB normal budget and 4KB hard block",
+      "Isolated application profile persistence: rich fields (bio, skills, campus, education, socials, theme) now strictly persist in PostgreSQL (alumni_profile table)",
+      "Built Admin Auth Diagnostics Dashboard (/manage/diagnostics/auth) with real-time Cookie header size, chunk count, and metadata footprint telemetry",
+      "Added edge middleware cookie header inspection to log structured diagnostics before infrastructure limits are reached",
+      "Automated auth metadata migration script (migrate-auth-metadata.mjs) pruning bloated user records across Supabase Auth",
+      "Added 18-point automated regression test suite (auth-hardening.test.ts) covering payload sizing, avatar safety, and resilience"
+    ],
+    changes: [
+      {
+        category: "Security",
+        description: "Enforced strict Auth Metadata Contract allowing only minimal claims in user_metadata and app_metadata, preventing JWT inflation and 494 errors.",
+      },
+      {
+        category: "Features",
+        description: "Created Admin Auth Diagnostics Dashboard (/manage/diagnostics/auth) to inspect request cookie sizes, Supabase chunk counts, and JWT metadata without credential leakage.",
+      },
+      {
+        category: "Improvements",
+        description: "Separated profile persistence in ProfilePage and profile/actions.ts so rich attributes save to PostgreSQL alumni_profile instead of auth metadata.",
+      },
+      {
+        category: "Fixes",
+        description: "Hardened /auth/callback, /api/user/heartbeat, and manage/users/actions.ts against arbitrary metadata spreading.",
+      },
+      {
+        category: "Improvements",
+        description: "Added Edge middleware cookie size monitoring emitting structured warning alerts when request Cookie headers approach 3KB.",
+      },
+    ],
+  },
   {
     version: "1.07.07",
     date: "2026-08-31",

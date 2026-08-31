@@ -8,6 +8,16 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request })
   }
 
+  // 1. Safe Auth Cookie & Header Size Monitoring (Never logs tokens or values)
+  const rawCookieHeader = request.headers.get('cookie') || ''
+  if (rawCookieHeader) {
+    const cookieHeaderBytes = rawCookieHeader.length
+    // Warning threshold: >= 3KB (3072B)
+    if (cookieHeaderBytes >= 3072) {
+      console.warn(`[AUTH_COOKIE_SIZE_WARNING] path=${request.nextUrl.pathname} headerSize=${cookieHeaderBytes}B status=${cookieHeaderBytes >= 3891 ? 'CRITICAL' : 'WARNING'}`)
+    }
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })

@@ -17,13 +17,16 @@ export async function POST() {
     const now = new Date().toISOString();
     const metadata = user.user_metadata || {};
 
+    const { sanitizeUserAuthMetadata } = await import("@/lib/auth-guard");
+    const cleanMeta = sanitizeUserAuthMetadata({
+      ...metadata,
+      last_active_at: now,
+      last_login_at: metadata.last_login_at || now,
+    });
+
     const adminClient = createAdminClient();
     await adminClient.auth.admin.updateUserById(user.id, {
-      user_metadata: {
-        ...metadata,
-        last_active_at: now,
-        last_login_at: metadata.last_login_at || now,
-      },
+      user_metadata: cleanMeta,
     });
 
     return NextResponse.json({ success: true, timestamp: now });

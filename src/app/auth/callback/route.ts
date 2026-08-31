@@ -97,28 +97,35 @@ export async function GET(request: Request) {
       const now = new Date().toISOString()
 
       try {
-        const { sanitizeUserMetadata, getSafeAvatarUrl } = await import("@/lib/avatar")
+        const { sanitizeUserAuthMetadata, sanitizeAppAuthMetadata } = await import("@/lib/auth-guard")
+        const { getSafeAvatarUrl } = await import("@/lib/avatar")
         const safeAvatar = getSafeAvatarUrl(rawMetadata)
-        const sanitizedMeta = sanitizeUserMetadata(rawMetadata)
-        const defaultRole = sanitizedMeta.role || "Member"
-        const defaultTeam = sanitizedMeta.team || "None"
+        const defaultRole = rawMetadata.role || user.app_metadata?.role || "Member"
+        const defaultTeam = rawMetadata.team || user.app_metadata?.team || "None"
+        const isAlumni = rawMetadata.is_alumni !== false && rawMetadata.isAlumni !== false
+
+        const cleanUserMeta = sanitizeUserAuthMetadata({
+          full_name: rawMetadata.full_name || rawMetadata.name || "",
+          name: rawMetadata.name || rawMetadata.full_name || "",
+          avatar_url: safeAvatar || undefined,
+          avatarUrl: safeAvatar || undefined,
+          picture: safeAvatar || undefined,
+          is_alumni: isAlumni,
+          last_login_at: now,
+          last_active_at: now,
+        })
+
+        const cleanAppMeta = sanitizeAppAuthMetadata({
+          role: defaultRole,
+          team: defaultTeam,
+          is_alumni: isAlumni,
+        })
 
         const { createAdminClient } = await import("@/lib/supabase/admin")
         const adminClient = createAdminClient()
         await adminClient.auth.admin.updateUserById(user.id, {
-          user_metadata: {
-            ...sanitizedMeta,
-            ...(safeAvatar ? { avatar_url: safeAvatar, avatarUrl: safeAvatar } : {}),
-            role: defaultRole,
-            team: defaultTeam,
-            last_login_at: now,
-            last_active_at: now,
-          },
-          app_metadata: {
-            ...(user.app_metadata || {}),
-            role: defaultRole,
-            team: defaultTeam,
-          }
+          user_metadata: cleanUserMeta,
+          app_metadata: cleanAppMeta,
         })
         console.info(`[AUTH_CALLBACK_METADATA_UPDATED] reqId=${requestId} role=${defaultRole} team=${defaultTeam} hasSafeAvatar=${Boolean(safeAvatar)} last_login_at=${now}`)
       } catch (adminErr: any) {

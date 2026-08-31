@@ -5,6 +5,7 @@ import { useUserContext } from "@/contexts/user-context";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { getSafeAvatarUrl } from "@/lib/avatar";
+import { getProfileData, saveProfileData } from "./actions";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -96,69 +97,43 @@ export default function ProfilePage() {
         const supabase = createClient();
 
         // 1. Fetch dropdown options from Supabase tables
-        const [campusesRes, educationsRes, coursesRes] = await Promise.all([
+        const [campusesRes, educationsRes, coursesRes, profileRes] = await Promise.all([
           supabase.from("ng_campuses").select("id, name, status").order("name"),
           supabase.from("highest_education").select("id, name").order("name"),
           supabase.from("ng_courses").select("id, name").order("name"),
+          getProfileData(),
         ]);
 
         const allCampuses = campusesRes.data || [];
         const allEducations = educationsRes.data || [];
         const allCourses = coursesRes.data || [];
 
+        setCampuses(allCampuses);
         setEducations(allEducations);
         setCourses(allCourses);
 
-        // 2. Fetch user profile data from Supabase Auth
-        const { data: { user } } = await supabase.auth.getUser();
-
-        let metadata: any = {};
-        let userEmail = "";
-        let isUserAlumni = true;
-
-        if (user) {
-          metadata = user.user_metadata || {};
-          userEmail = user.email || "";
-          isUserAlumni = metadata.is_alumni !== false;
-        } else {
-          // Fallback to local storage if not logged in
-          const stored = localStorage.getItem("ngconnect_profile");
-          if (stored) {
-            try {
-              metadata = JSON.parse(stored);
-              userEmail = metadata.email || "";
-              isUserAlumni = metadata.isAlumni !== false;
-            } catch (e) {
-              console.error("Error reading localStorage", e);
-            }
-          }
+        // 2. Populate profile fields from database result
+        if (profileRes && profileRes.profile) {
+          const p = profileRes.profile;
+          setName(p.name || contextUser?.name || "");
+          setEmail(p.email || contextUser?.email || "");
+          setPhone(p.phone || "");
+          setGender(p.gender || "");
+          setCity(p.city || "");
+          setState(p.state || "");
+          setCampus(p.campus || "");
+          setRole(p.role || contextUser?.role || "");
+          setBatch(p.batch || "");
+          setBio(p.bio || "");
+          setEducation(p.education || "");
+          setCourse(p.course || "");
+          setGithub(p.github || "");
+          setLinkedin(p.linkedin || "");
+          setSkills(p.skills || []);
+          setAvatarUrl(p.avatarUrl || "");
+          setSelectedTheme(p.selectedTheme || "midnight");
+          setIsAlumni(p.isAlumni !== false);
         }
-
-        // Set campuses (show all campuses since this is for alumni, including closed ones)
-        setCampuses(allCampuses);
-
-        // Set states from metadata or context or empty defaults
-        setName(metadata.full_name || metadata.name || contextUser?.name || "");
-        setEmail(userEmail || contextUser?.email || "");
-        setPhone(metadata.phone || "");
-        setGender(metadata.gender || "");
-        setCity(metadata.city || "");
-        setState(metadata.state || "");
-        setCampus(metadata.campus || "");
-        setRole(metadata.role || contextUser?.role || "");
-        setBatch(metadata.batch || "");
-        setBio(metadata.bio || "");
-        setEducation(metadata.education || "");
-        setCourse(metadata.course || "");
-        setGithub(metadata.github || "");
-        setLinkedin(metadata.linkedin || "");
-        setSkills(metadata.skills || []);
-        
-        const safeAvatar = getSafeAvatarUrl(metadata) || getSafeAvatarUrl({ avatar: contextUser?.avatar }) || "";
-        setAvatarUrl(safeAvatar);
-        setSelectedTheme(metadata.selectedTheme || metadata.selected_theme || "midnight");
-        setIsAlumni(contextUser ? contextUser.isAlumni !== false : isUserAlumni);
-
       } catch (error) {
         console.error("Error loading data from Supabase:", error);
         toast.error("Failed to load options from database.");
@@ -170,7 +145,7 @@ export default function ProfilePage() {
     loadProfileAndOptions();
   }, [contextUser]);
 
-  // Handle Save to Supabase Auth User Metadata
+  // Handle Save to Database and Sync Clean Auth User Metadata
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -211,7 +186,7 @@ export default function ProfilePage() {
         finalAvatarUrl = null;
       }
 
-      const profileData = {
+      const res = await saveProfileData({
         name,
         email,
         phone,
@@ -225,32 +200,19 @@ export default function ProfilePage() {
         github,
         linkedin,
         skills,
-        avatarUrl: finalAvatarUrl || undefined,
+        avatarUrl: finalAvatarUrl || null,
         selectedTheme,
         education,
         course,
         isAlumni,
-
-        // Match Supabase user metadata standardized keys
-        full_name: name,
-        is_alumni: isAlumni,
-        avatar_url: finalAvatarUrl || undefined,
-        selected_theme: selectedTheme
-      };
-
-      const { error } = await supabase.auth.updateUser({
-        data: profileData
       });
 
-      if (error) {
-        throw error;
+      if (!res.success) {
+        throw new Error(res.error || "Failed to save profile");
       }
 
-      // Sync local storage as cache fallback
-      localStorage.setItem("ngconnect_profile", JSON.stringify(profileData));
-
       toast.success("Profile saved successfully!", {
-        description: "Your profile details have been synced to Supabase.",
+        description: "Your profile details have been synced to the database.",
       });
     } catch (error: any) {
       console.error("Error saving profile details:", error);
