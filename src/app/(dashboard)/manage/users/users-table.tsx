@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { UserRole, UserTeam, canImpersonate } from "@/lib/role-constants";
+import { getSafeAvatarUrl } from "@/lib/avatar";
 import { useUserContext } from "@/contexts/user-context";
 import { usePresence } from "@/contexts/presence-context";
 import { updateUserRoleAndTeam, forceSignOutUser, forceSignOutAllUsers, impersonateUser } from "./actions";
@@ -366,7 +367,7 @@ export function UsersTable({ initialUsers, canEdit }: UsersTableProps) {
               paginatedUsers.map((user) => {
                 const metadata = user.user_metadata || {};
                 const name = metadata.full_name || metadata.name || "Unknown";
-                const avatar = metadata.avatar_url || metadata.picture || "";
+                const avatar = getSafeAvatarUrl(metadata) || "";
                 const initials = name !== "Unknown"
                   ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
                   : "U";

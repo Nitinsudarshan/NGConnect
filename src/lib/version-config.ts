@@ -37,6 +37,9 @@ export const VERSION_HISTORY: VersionEntry[] = [
       "Added 'Log In As User' action in Manage Users table with secure magic link generation and 1-click execution",
       "Directly routed token_hash query parameter to /auth/callback for robust OTP verification avoiding browser URL hash truncation",
       "Added token_hash & OTP verification support in /auth/callback to resolve MissingOAuthCode error on magiclink impersonation links",
+      "Resolved avatar base64 data URI bloat by introducing getSafeAvatarUrl and sanitizeUserMetadata to strictly reject non-HTTP(S) payloads",
+      "Added Supabase Storage cloud bucket ('avatars') upload for user profile photos, completely preventing image byte storage in auth metadata",
+      "Repaired all existing affected auth user records (Nilam, Jyoti) to clean valid Google picture URLs or null",
       "Isolated client-safe role constants in role-constants.ts to respect Server/Client Component boundaries"
     ],
     changes: [
@@ -47,6 +50,14 @@ export const VERSION_HISTORY: VersionEntry[] = [
       {
         category: "Security",
         description: "Enforced strict RBAC hierarchy: Super Admin can impersonate levels 6-1, Admin can impersonate levels 5-1 only, lower roles cannot impersonate.",
+      },
+      {
+        category: "Fixes",
+        description: "Eliminated base64 data URI storage in user_metadata, cookies, and session headers by adding getSafeAvatarUrl and Supabase Storage upload.",
+      },
+      {
+        category: "Fixes",
+        description: "Sanitized Nilam, Jyoti, and all existing user records in Supabase Auth to restore clean Google profile pictures and fix impersonation 500s.",
       },
       {
         category: "Fixes",

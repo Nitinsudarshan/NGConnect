@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getSafeAvatarUrl } from '@/lib/avatar';
 
 export async function auth() {
     const supabase = await createClient();
@@ -41,7 +42,7 @@ export async function currentUser() {
         firstName: user.user_metadata?.first_name || user.user_metadata?.full_name?.split(' ')[0] || "",
         lastName: user.user_metadata?.last_name || user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || "",
         fullName: user.user_metadata?.full_name || "",
-        imageUrl: user.user_metadata?.avatar_url || "",
+        imageUrl: getSafeAvatarUrl(user.user_metadata) || "",
         publicMetadata: {
             role
         }

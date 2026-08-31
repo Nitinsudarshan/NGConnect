@@ -93,18 +93,22 @@ export async function GET(request: Request) {
     if (data?.user) {
       const user = data.user
       const normalizedEmail = user.email ? user.email.trim().toLowerCase() : null
-      const metadata = user.user_metadata || {}
+      const rawMetadata = user.user_metadata || {}
       const now = new Date().toISOString()
 
-      // Always update last_login_at & last_active_at, and set default registration role/team if missing
-      const defaultRole = metadata.role || "Member"
-      const defaultTeam = metadata.team || "None"
       try {
+        const { sanitizeUserMetadata, getSafeAvatarUrl } = await import("@/lib/avatar")
+        const safeAvatar = getSafeAvatarUrl(rawMetadata)
+        const sanitizedMeta = sanitizeUserMetadata(rawMetadata)
+        const defaultRole = sanitizedMeta.role || "Member"
+        const defaultTeam = sanitizedMeta.team || "None"
+
         const { createAdminClient } = await import("@/lib/supabase/admin")
         const adminClient = createAdminClient()
         await adminClient.auth.admin.updateUserById(user.id, {
           user_metadata: {
-            ...metadata,
+            ...sanitizedMeta,
+            ...(safeAvatar ? { avatar_url: safeAvatar, avatarUrl: safeAvatar } : {}),
             role: defaultRole,
             team: defaultTeam,
             last_login_at: now,
@@ -116,7 +120,7 @@ export async function GET(request: Request) {
             team: defaultTeam,
           }
         })
-        console.info(`[AUTH_CALLBACK_METADATA_UPDATED] reqId=${requestId} role=${defaultRole} team=${defaultTeam} last_login_at=${now}`)
+        console.info(`[AUTH_CALLBACK_METADATA_UPDATED] reqId=${requestId} role=${defaultRole} team=${defaultTeam} hasSafeAvatar=${Boolean(safeAvatar)} last_login_at=${now}`)
       } catch (adminErr: any) {
         console.error(`[AUTH_CALLBACK_METADATA_UPDATE_FAILED] reqId=${requestId} msg=${adminErr?.message}`)
       }

@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { UserRole, UserTeam, canImpersonate } from "@/lib/roles";
+import { sanitizeUserMetadata, getSafeAvatarUrl } from "@/lib/avatar";
 
 const SUPER_ADMINS = ["nitin@navgurukul.org", "nitinsudarshan@gmail.com"];
 
@@ -369,6 +370,27 @@ export async function impersonateUser(targetUserId: string, origin?: string) {
 
         if (currentUser.id === targetUser.id) {
             return { error: "You cannot impersonate your own account." };
+        }
+
+        // Clean target user metadata if it contains malformed/base64 avatar payloads
+        const rawTargetMeta = targetUser.user_metadata || {};
+        const safeAvatar = getSafeAvatarUrl(rawTargetMeta);
+        const cleanedTargetMeta = sanitizeUserMetadata(rawTargetMeta);
+
+        // If corrupted base64 data was found, sanitize and repair the user record in Supabase Auth immediately
+        const hasMalformedAvatar = typeof rawTargetMeta.avatarUrl === 'string' && rawTargetMeta.avatarUrl.startsWith('data:') ||
+                                   typeof rawTargetMeta.avatar_url === 'string' && rawTargetMeta.avatar_url.startsWith('data:');
+        if (hasMalformedAvatar) {
+            try {
+                await adminSupabase.auth.admin.updateUserById(targetUser.id, {
+                    user_metadata: {
+                        ...cleanedTargetMeta,
+                        ...(safeAvatar ? { avatar_url: safeAvatar, avatarUrl: safeAvatar } : {}),
+                    }
+                });
+            } catch (repairErr) {
+                console.warn("[impersonateUser] On-the-fly target avatar repair failed:", repairErr);
+            }
         }
 
         const appUrl = origin || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";

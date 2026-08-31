@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useUserContext } from "@/contexts/user-context";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
+import { getSafeAvatarUrl } from "@/lib/avatar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,6 +74,7 @@ export default function ProfilePage() {
 
   // Avatar State
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
 
   // Custom Card Background Banner
   const [selectedTheme, setSelectedTheme] = useState("midnight");
@@ -151,7 +153,9 @@ export default function ProfilePage() {
         setGithub(metadata.github || "");
         setLinkedin(metadata.linkedin || "");
         setSkills(metadata.skills || []);
-        setAvatarUrl(metadata.avatarUrl || metadata.avatar_url || contextUser?.avatar || "");
+        
+        const safeAvatar = getSafeAvatarUrl(metadata) || getSafeAvatarUrl({ avatar: contextUser?.avatar }) || "";
+        setAvatarUrl(safeAvatar);
         setSelectedTheme(metadata.selectedTheme || metadata.selected_theme || "midnight");
         setIsAlumni(contextUser ? contextUser.isAlumni !== false : isUserAlumni);
 
@@ -173,6 +177,39 @@ export default function ProfilePage() {
 
     try {
       const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      let finalAvatarUrl: string | null = getSafeAvatarUrl({ avatarUrl }) || null;
+
+      // If user uploaded a new image file, upload it to Supabase Storage bucket 'avatars'
+      if (selectedAvatarFile && user) {
+        try {
+          const fileExt = selectedAvatarFile.name.split('.').pop() || 'jpg';
+          const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+          const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, selectedAvatarFile, { upsert: true });
+
+          if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(filePath);
+            finalAvatarUrl = publicUrl;
+            setAvatarUrl(publicUrl);
+            setSelectedAvatarFile(null);
+          } else {
+            console.error("Avatar storage upload error:", uploadError);
+            toast.warning("Could not upload new image to cloud storage. Retaining current avatar.");
+          }
+        } catch (uploadErr) {
+          console.error("Avatar upload exception:", uploadErr);
+        }
+      }
+
+      // Enforce invariant: avatarUrl is strictly NEVER a base64 data URI
+      if (finalAvatarUrl && finalAvatarUrl.startsWith('data:')) {
+        finalAvatarUrl = null;
+      }
 
       const profileData = {
         name,
@@ -188,7 +225,7 @@ export default function ProfilePage() {
         github,
         linkedin,
         skills,
-        avatarUrl,
+        avatarUrl: finalAvatarUrl || undefined,
         selectedTheme,
         education,
         course,
@@ -197,7 +234,7 @@ export default function ProfilePage() {
         // Match Supabase user metadata standardized keys
         full_name: name,
         is_alumni: isAlumni,
-        avatar_url: avatarUrl,
+        avatar_url: finalAvatarUrl || undefined,
         selected_theme: selectedTheme
       };
 
@@ -251,18 +288,26 @@ export default function ProfilePage() {
     setSkills(skills.filter(s => s !== skillToRemove));
   };
 
-  // Avatar Mock Upload
+  // Avatar Selection Handler (Uses temporary preview blob, never stores base64)
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarUrl(reader.result as string);
-        toast.info("Avatar uploaded!", {
-          description: "Don't forget to save changes to persist your avatar.",
-        });
-      };
-      reader.readAsDataURL(file);
+      if (!file.type.startsWith("image/")) {
+        toast.error("Invalid file type", { description: "Please upload an image file (JPEG, PNG, WebP, etc.)." });
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("File too large", { description: "Profile photos must be less than 5MB." });
+        return;
+      }
+
+      setSelectedAvatarFile(file);
+      // Temporary preview URL for UI display only (never stored in database/metadata)
+      const previewUrl = URL.createObjectURL(file);
+      setAvatarUrl(previewUrl);
+      toast.info("Image selected!", {
+        description: "Click 'Save Changes' below to upload and update your profile picture.",
+      });
     }
   };
 

@@ -11,6 +11,7 @@ import { UserProvider } from "@/contexts/user-context"
 import { PresenceProvider } from "@/contexts/presence-context"
 import { BreadcrumbProvider } from "@/contexts/breadcrumb-context"
 import { getUserRole, isTrueSuperAdmin } from "@/lib/roles"
+import { getSafeAvatarUrl } from "@/lib/avatar"
 
 export default async function DashboardLayout({
     children,
@@ -26,7 +27,7 @@ export default async function DashboardLayout({
     const userMetadata = user?.user_metadata || {}
     const displayName = userMetadata.full_name || userMetadata.name || "User"
     const displayEmail = user?.email || "user@example.com"
-    const displayAvatar = userMetadata.avatar_url || userMetadata.picture || ""
+    const displayAvatar = getSafeAvatarUrl(userMetadata) || ""
     const activeRole = await getUserRole(user)
     const isAlumni = userMetadata.is_alumni !== false
     const isSuperAdmin = await isTrueSuperAdmin();
