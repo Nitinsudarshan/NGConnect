@@ -23,9 +23,25 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.07";
+export const CURRENT_VERSION = "1.07.08";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.08",
+    date: "2026-08-31",
+    title: "Auth Callback MagicLink OTP Verification Support",
+    type: "patch",
+    highlights: [
+      "Added token_hash & OTP verification support in /auth/callback to resolve MissingOAuthCode error on magiclink impersonation links",
+      "Unified OAuth code exchange and magic link OTP verification within the same secure callback pipeline"
+    ],
+    changes: [
+      {
+        category: "Fixes",
+        description: "Updated /auth/callback to accept both OAuth code and magiclink token_hash/token parameters with verifyOtp verification.",
+      },
+    ],
+  },
   {
     version: "1.07.07",
     date: "2026-08-31",

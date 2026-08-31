@@ -46,23 +46,47 @@ export async function GET(request: Request) {
   const origin = urlObj.origin
   const searchParams = urlObj.searchParams
   const code = searchParams.get('code')
+  const token_hash = searchParams.get('token_hash') || searchParams.get('token')
+  const rawType = searchParams.get('type')
+  const type = (rawType === 'email' || rawType === 'signup' || rawType === 'invite' || rawType === 'recovery' || rawType === 'email_change' ? rawType : 'magiclink') as any
+  const authErrorParam = searchParams.get('error')
+  const authErrorDesc = searchParams.get('error_description')
   const rawNext = searchParams.get('next')
   const next = sanitizeNextPath(rawNext)
   const baseUrl = getSafeBaseUrl(request, origin)
 
-  console.info(`[AUTH_CALLBACK_START] reqId=${requestId} host=${urlObj.host} hasCode=${Boolean(code)}`)
+  console.info(`[AUTH_CALLBACK_START] reqId=${requestId} host=${urlObj.host} hasCode=${Boolean(code)} hasTokenHash=${Boolean(token_hash)}`)
+
+  if (authErrorParam) {
+    console.error(`[AUTH_CALLBACK_PARAM_ERROR] reqId=${requestId} error=${authErrorParam} desc=${authErrorDesc}`)
+    return NextResponse.redirect(`${baseUrl}/login?error=${encodeURIComponent(authErrorDesc || authErrorParam)}&reqId=${requestId}`)
+  }
 
   try {
-    if (!code) {
-      console.warn(`[AUTH_CALLBACK_MISSING_CODE] reqId=${requestId}`)
+    if (!code && !token_hash) {
+      console.warn(`[AUTH_CALLBACK_MISSING_CODE_AND_TOKEN] reqId=${requestId}`)
       return NextResponse.redirect(`${baseUrl}/login?error=MissingOAuthCode&reqId=${requestId}`)
     }
 
     const supabase = await createClient()
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    let data: any = null
+    let error: any = null
+
+    if (code) {
+      const res = await supabase.auth.exchangeCodeForSession(code)
+      data = res.data
+      error = res.error
+    } else if (token_hash) {
+      const res = await supabase.auth.verifyOtp({
+        token_hash,
+        type,
+      })
+      data = res.data
+      error = res.error
+    }
 
     if (error) {
-      console.error(`[AUTH_CALLBACK_EXCHANGE_FAILED] reqId=${requestId} code=${error.name} msg=${error.message}`)
+      console.error(`[AUTH_CALLBACK_AUTH_FAILED] reqId=${requestId} code=${error.name} msg=${error.message}`)
       return NextResponse.redirect(`${baseUrl}/login?error=AuthExchangeFailed&reqId=${requestId}`)
     }
 
