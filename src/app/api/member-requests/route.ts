@@ -5,6 +5,7 @@ import {
   createMemberRequest,
   updateMemberRequestStatus,
 } from "@/lib/requests-store";
+import { enrollCourseraUser } from "@/lib/coursera-api";
 
 export async function GET(request: Request) {
   try {
@@ -125,7 +126,25 @@ export async function PATCH(request: Request) {
       );
     }
 
-    return NextResponse.json({ success: true, data: updated });
+    // Option B: If a Coursera access request was approved, automatically enroll the learner in Coursera Enterprise
+    let courseraProvisioning = null;
+    if (status === "approved" && updated.type === "coursera" && updated.user_email) {
+      try {
+        courseraProvisioning = await enrollCourseraUser({
+          email: updated.user_email,
+          fullName: updated.user_name || updated.user_email.split("@")[0],
+        });
+      } catch (err: any) {
+        console.error("[Member Requests] Coursera auto-enroll failed:", err);
+        courseraProvisioning = {
+          success: false,
+          action: "enroll",
+          message: err.message || "Failed to auto-enroll via Coursera API",
+        };
+      }
+    }
+
+    return NextResponse.json({ success: true, data: updated, courseraProvisioning });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || "Failed to update request status" },

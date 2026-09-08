@@ -14,7 +14,8 @@ import {
   Upload,
   Users,
   LayoutDashboard,
-  FileDown
+  FileDown,
+  UserPlus
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
@@ -124,6 +125,16 @@ const COURSERA_CATEGORY = {
       gradient: 'from-blue-500/10 via-sky-500/5 to-transparent',
       border: 'hover:border-blue-500/30 dark:hover:border-blue-500/50',
       iconBg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white',
+    },
+    {
+      href: '/data-management/coursera/enroll',
+      label: 'Learner Enrollment & Checker',
+      description: 'Check learner account status across snapshots and live API, invite, or force-enroll.',
+      icon: UserPlus,
+      badge: 'Admin',
+      gradient: 'from-violet-500/10 via-purple-500/5 to-transparent',
+      border: 'hover:border-violet-500/30 dark:hover:border-violet-500/50',
+      iconBg: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 group-hover:bg-violet-600 group-hover:text-white',
     },
   ],
 };

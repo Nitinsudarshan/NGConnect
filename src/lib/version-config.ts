@@ -23,9 +23,40 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.16";
+export const CURRENT_VERSION = "1.07.17";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.17",
+    date: "2026-09-08",
+    title: "Coursera Enterprise Enrollment Checker & Automated Access Provisioning",
+    type: "minor",
+    highlights: [
+      "Added Learner Enrollment & Verification Checker portal (/data-management/coursera/enroll) with single/bulk manual email entry and spreadsheet uploads",
+      "Multi-tier status checking across database snapshots, learner months, and live Coursera Enterprise API roster",
+      "Automatic full name resolution from system databases and title-cased email derivations with in-place table editing",
+      "One-click invitation and force-enrollment actions for individual learners or batch operations with progress tracking",
+      "Automatic Coursera Enterprise enrollment hook upon approval of Member Access Requests in alumni growth dashboard"
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Created Learner Enrollment & Verification Checker page under Data Management with downloadable Excel template and bulk provisioning.",
+      },
+      {
+        category: "Features",
+        description: "Implemented auto-enrollment hook in member-requests PATCH route triggering Coursera Enterprise enrollment on request approval.",
+      },
+      {
+        category: "Features",
+        description: "Added dedicated enrollment, check, parse, and template API endpoints with rate-limiting, batching, and error isolation.",
+      },
+      {
+        category: "Improvements",
+        description: "Added 5th navigation card for Learner Enrollment & Checker to the Data Management dashboard under Coursera.",
+      },
+    ],
+  },
   {
     version: "1.07.16",
     date: "2026-09-08",

@@ -402,3 +402,185 @@ export async function batchFetchCourseraUserEnrollmentActivity(
 
   return result;
 }
+
+// ── Coursera Program Invitations & Memberships ───────────────────────────────
+
+export interface CourseraEnrollmentResult {
+  email: string;
+  success: boolean;
+  action: 'invite' | 'enroll';
+  message: string;
+  courseraId?: string;
+}
+
+/**
+ * Sends an email invitation to join the enterprise learning program.
+ */
+export async function inviteCourseraUser(user: {
+  email: string;
+  fullName: string;
+}): Promise<CourseraEnrollmentResult> {
+  const orgId = process.env.COURSERA_ORG_ID;
+  const progId = process.env.COURSERA_PROGRAM_ID || 'WsV-YttFEeq-fw5R5-S6kw';
+  const cleanEmail = user.email.toLowerCase().trim();
+  const cleanName = user.fullName.trim() || cleanEmail.split('@')[0];
+
+  if (!orgId || !progId) {
+    return { email: cleanEmail, success: false, action: 'invite', message: 'Coursera Org/Program ID not configured.' };
+  }
+
+  const token = await getCourseraAccessToken();
+  if (!token) {
+    return { email: cleanEmail, success: false, action: 'invite', message: 'Failed to acquire Coursera OAuth token.' };
+  }
+
+  try {
+    const url = `https://api.coursera.com/ent/api/businesses.v1/${orgId}/programs/${progId}/invitations`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: cleanEmail,
+        fullName: cleanName,
+        externalId: cleanEmail,
+      }),
+      cache: 'no-store',
+    });
+
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return {
+        email: cleanEmail,
+        success: true,
+        action: 'invite',
+        message: 'Invitation sent successfully via Coursera.',
+        courseraId: data.id,
+      };
+    }
+
+    const errText = await res.text();
+    return {
+      email: cleanEmail,
+      success: false,
+      action: 'invite',
+      message: `Coursera API error (${res.status}): ${errText.slice(0, 150)}`,
+    };
+  } catch (err: any) {
+    return {
+      email: cleanEmail,
+      success: false,
+      action: 'invite',
+      message: `Network error: ${err.message || 'unknown'}`,
+    };
+  }
+}
+
+/**
+ * Provisions a direct membership in the enterprise learning program.
+ */
+export async function enrollCourseraUser(user: {
+  email: string;
+  fullName: string;
+}): Promise<CourseraEnrollmentResult> {
+  const orgId = process.env.COURSERA_ORG_ID;
+  const progId = process.env.COURSERA_PROGRAM_ID || 'WsV-YttFEeq-fw5R5-S6kw';
+  const cleanEmail = user.email.toLowerCase().trim();
+  const cleanName = user.fullName.trim() || cleanEmail.split('@')[0];
+
+  if (!orgId || !progId) {
+    return { email: cleanEmail, success: false, action: 'enroll', message: 'Coursera Org/Program ID not configured.' };
+  }
+
+  const token = await getCourseraAccessToken();
+  if (!token) {
+    return { email: cleanEmail, success: false, action: 'enroll', message: 'Failed to acquire Coursera OAuth token.' };
+  }
+
+  try {
+    const url = `https://api.coursera.com/ent/api/businesses.v1/${orgId}/programs/${progId}/memberships`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: cleanEmail,
+        fullName: cleanName,
+        externalId: cleanEmail,
+      }),
+      cache: 'no-store',
+    });
+
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return {
+        email: cleanEmail,
+        success: true,
+        action: 'enroll',
+        message: 'Learner enrolled directly into Coursera Enterprise Program.',
+        courseraId: data.id,
+      };
+    }
+
+    const errText = await res.text();
+    return {
+      email: cleanEmail,
+      success: false,
+      action: 'enroll',
+      message: `Coursera API error (${res.status}): ${errText.slice(0, 150)}`,
+    };
+  } catch (err: any) {
+    return {
+      email: cleanEmail,
+      success: false,
+      action: 'enroll',
+      message: `Network error: ${err.message || 'unknown'}`,
+    };
+  }
+}
+
+/**
+ * Batch sends invitations to learners with concurrency limiting and throttling.
+ */
+export async function batchInviteCourseraUsers(
+  users: Array<{ email: string; fullName: string }>
+): Promise<CourseraEnrollmentResult[]> {
+  const results: CourseraEnrollmentResult[] = [];
+  const CONCURRENCY = 5;
+
+  for (let i = 0; i < users.length; i += CONCURRENCY) {
+    const chunk = users.slice(i, i + CONCURRENCY);
+    const chunkRes = await Promise.all(chunk.map(u => inviteCourseraUser(u)));
+    results.push(...chunkRes);
+    if (i + CONCURRENCY < users.length) {
+      await sleep(100); // 100ms throttle
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Batch enrolls learners with concurrency limiting and throttling.
+ */
+export async function batchEnrollCourseraUsers(
+  users: Array<{ email: string; fullName: string }>
+): Promise<CourseraEnrollmentResult[]> {
+  const results: CourseraEnrollmentResult[] = [];
+  const CONCURRENCY = 5;
+
+  for (let i = 0; i < users.length; i += CONCURRENCY) {
+    const chunk = users.slice(i, i + CONCURRENCY);
+    const chunkRes = await Promise.all(chunk.map(u => enrollCourseraUser(u)));
+    results.push(...chunkRes);
+    if (i + CONCURRENCY < users.length) {
+      await sleep(100); // 100ms throttle
+    }
+  }
+
+  return results;
+}
