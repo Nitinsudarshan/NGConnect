@@ -23,9 +23,35 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.09";
+export const CURRENT_VERSION = "1.07.10";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.10",
+    date: "2026-09-08",
+    title: "Coursera & Alumni Import Capacity Expansion & Phantom Row Hardening",
+    type: "patch",
+    highlights: [
+      "Expanded Coursera export import capacity from 10,000 rows to 100,000 rows and file size limit from 5MB to 25MB",
+      "Fixed false-positive 'File has too many rows' errors caused by Excel metadata / styled empty rows by switching from sheet.rowCount to sheet.actualRowCount and filtering blank rows",
+      "Doubled batch upsert size to 1,000 rows and set route maxDuration to 300s to streamline high-volume database ingestion without timeouts",
+      "Applied matching phantom row filtering and 50,000 row capacity to Alumni import parser"
+    ],
+    changes: [
+      {
+        category: "Fixes",
+        description: "Fixed 'File has too many rows (max 10000 allowed)' error in /data-management/import-coursera by evaluating non-empty data rows rather than Excel worksheet dimension rowCount.",
+      },
+      {
+        category: "Improvements",
+        description: "Increased Coursera import limit to 100,000 rows and 25MB file size, with batch upsert chunk size increased to 1,000 rows for faster processing.",
+      },
+      {
+        category: "Fixes",
+        description: "Hardened Alumni import parser (import-parser.ts) to filter empty rows and raised capacity to 50,000 rows.",
+      },
+    ],
+  },
   {
     version: "1.07.09",
     date: "2026-08-31",

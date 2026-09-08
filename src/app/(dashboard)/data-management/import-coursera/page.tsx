@@ -108,6 +108,10 @@ export default function ImportCourseraPage() {
       setUploadError('Only .xlsx files are supported.');
       return;
     }
+    if (f.size > 25 * 1024 * 1024) {
+      setUploadError('File size must be less than 25MB.');
+      return;
+    }
     setFile(f);
     setUploadError(null);
     setUploadResult(null);
@@ -291,6 +295,7 @@ export default function ImportCourseraPage() {
             <div className="space-y-1">
               <p className="font-medium text-foreground">Drop your .xlsx file here</p>
               <p className="text-sm text-muted-foreground">or click to browse</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Supports exports up to 25MB and 100,000 rows</p>
             </div>
           )}
         </div>

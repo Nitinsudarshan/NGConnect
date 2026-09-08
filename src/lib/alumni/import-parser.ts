@@ -30,8 +30,12 @@ export async function parseImportFile(
   const sheet = workbook.worksheets[0];
   const rawRows: Record<string, string>[] = [];
   
-  if (sheet.rowCount > 10000) {
-    throw new Error('File has too many rows (max 10000 allowed)');
+  const MAX_ALUMNI_ROWS = 50000;
+  if (!sheet || sheet.actualRowCount === 0) {
+    throw new Error('File is empty');
+  }
+  if (sheet.actualRowCount > MAX_ALUMNI_ROWS) {
+    throw new Error(`File has too many rows (${sheet.actualRowCount.toLocaleString()} rows detected, max ${MAX_ALUMNI_ROWS.toLocaleString()} allowed)`);
   }
 
   const headerRow = sheet.getRow(1);
@@ -40,14 +44,23 @@ export async function parseImportFile(
   sheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return; // skip header
     const rowObj: Record<string, string> = {};
+    let hasData = false;
     (row.values as any[]).forEach((val, colIndex) => {
       const headerName = headers[colIndex];
       if (headerName) {
-        rowObj[headerName] = val !== null && val !== undefined ? String(val) : '';
+        const cleanVal = val !== null && val !== undefined ? String(val).trim() : '';
+        if (cleanVal !== '') hasData = true;
+        rowObj[headerName] = cleanVal;
       }
     });
-    rawRows.push(rowObj);
+    if (hasData) {
+      rawRows.push(rowObj);
+    }
   });
+
+  if (rawRows.length > MAX_ALUMNI_ROWS) {
+    throw new Error(`File has too many rows (${rawRows.length.toLocaleString()} rows found, max ${MAX_ALUMNI_ROWS.toLocaleString()} allowed)`);
+  }
 
   // Invert the map: GHAR header → DB field name
   const headerToField = Object.entries(map).reduce<Record<string, string>>(

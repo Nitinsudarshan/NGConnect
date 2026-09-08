@@ -4,6 +4,11 @@ import { createClient } from '@/lib/supabase/server';
 import ExcelJS from 'exceljs';
 import { Readable } from 'stream';
 
+export const maxDuration = 300;
+
+const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25MB limit
+const MAX_ROWS = 100000; // Up to 100,000 rows
+
 // firstDayOfMonth: string-only, no new Date() to avoid IST timezone shift
 const firstDayOfMonth = (s: string) => s.substring(0, 7) + '-01';
 
@@ -26,7 +31,7 @@ async function upsertInBatches<T extends object>(
   table: string,
   rows: T[],
   onConflict: string,
-  batchSize = 500
+  batchSize = 1000
 ) {
   for (let i = 0; i < rows.length; i += batchSize) {
     const batch = rows.slice(i, i + batchSize);
@@ -89,8 +94,8 @@ export async function POST(request: NextRequest) {
   if (!file.name.toLowerCase().endsWith('.xlsx')) {
     return NextResponse.json({ error: 'Only .xlsx files are supported' }, { status: 400 });
   }
-  if (file.size > 5 * 1024 * 1024) {
-    return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 });
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    return NextResponse.json({ error: 'File size must be less than 25MB' }, { status: 400 });
   }
 
   // Check for duplicate import (must consider rollbacks)
@@ -124,11 +129,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    if (sheet.rowCount === 0) {
+    if (sheet.actualRowCount === 0) {
       return NextResponse.json({ error: 'File is empty' }, { status: 400 });
     }
-    if (sheet.rowCount > 10000) {
-      return NextResponse.json({ error: 'File has too many rows (max 10000 allowed)' }, { status: 400 });
+    if (sheet.actualRowCount > MAX_ROWS) {
+      return NextResponse.json({
+        error: `File has too many rows (${sheet.actualRowCount.toLocaleString()} rows detected, max ${MAX_ROWS.toLocaleString()} allowed)`
+      }, { status: 400 });
     }
 
     const headerRow = sheet.getRow(1);
@@ -137,14 +144,30 @@ export async function POST(request: NextRequest) {
     sheet.eachRow((row, rowNumber) => {
       if (rowNumber === 1) return; // skip header
       const rowObj: Record<string, any> = {};
+      let hasData = false;
       (row.values as any[]).forEach((val, colIndex) => {
         const headerName = headers[colIndex];
         if (headerName) {
-          rowObj[String(headerName).trim()] = val !== null && val !== undefined ? val : null;
+          const cleanVal = val !== null && val !== undefined ? val : null;
+          if (cleanVal !== null && String(cleanVal).trim() !== '') {
+            hasData = true;
+          }
+          rowObj[String(headerName).trim()] = cleanVal;
         }
       });
-      rawRows.push(rowObj);
+      if (hasData) {
+        rawRows.push(rowObj);
+      }
     });
+
+    if (rawRows.length === 0) {
+      return NextResponse.json({ error: 'File contains no data rows' }, { status: 400 });
+    }
+    if (rawRows.length > MAX_ROWS) {
+      return NextResponse.json({
+        error: `File has too many rows (${rawRows.length.toLocaleString()} rows found, max ${MAX_ROWS.toLocaleString()} allowed)`
+      }, { status: 400 });
+    }
   } catch (err: any) {
     return NextResponse.json({ error: `Failed to parse XLSX file: ${err.message}` }, { status: 400 });
   }
