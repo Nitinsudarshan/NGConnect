@@ -66,7 +66,14 @@ export default function ExportCourseraActivityPage() {
     total: number;
     foundCount: number;
     notFoundCount: number;
-    found: Array<{ email: string; name: string | null; inSelectedMonth: boolean; source?: string }>;
+    found: Array<{
+      email: string;
+      name: string | null;
+      inSelectedMonth: boolean;
+      source?: string;
+      enrollmentDate?: string;
+      lastActivityDate?: string;
+    }>;
     notFound: Array<{ email: string; reason: string }>;
     selectedMonth: string | null;
   } | null>(null);
@@ -543,14 +550,20 @@ export default function ExportCourseraActivityPage() {
                           <span>Verified Accounts ({verificationResult.foundCount})</span>
                           <span className="text-[10px] text-muted-foreground">Cross-checked against Snapshots & Live Enterprise API</span>
                         </div>
-                        <div className="max-h-48 overflow-y-auto space-y-1.5 p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                        <div className="max-h-56 overflow-y-auto space-y-1.5 p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
                           {verificationResult.found.map(f => (
-                            <div key={f.email} className="flex items-center justify-between text-xs py-1 px-2 rounded bg-background/80 border border-border/50">
+                            <div key={f.email} className="flex flex-col sm:flex-row sm:items-center justify-between text-xs py-1.5 px-2.5 rounded bg-background/80 border border-border/50 gap-1.5 sm:gap-4">
                               <div className="flex items-center gap-2 min-w-0">
                                 <span className="font-mono text-foreground truncate">{f.email}</span>
                                 {f.name && <span className="text-muted-foreground text-[11px] truncate">({f.name})</span>}
                               </div>
-                              <div className="flex items-center gap-1.5 shrink-0">
+                              <div className="flex flex-wrap items-center gap-2 shrink-0 text-[11px] text-muted-foreground">
+                                {f.enrollmentDate && f.enrollmentDate !== '—' && (
+                                  <span>Enrolled: <strong className="font-medium text-foreground">{f.enrollmentDate}</strong></span>
+                                )}
+                                {f.lastActivityDate && f.lastActivityDate !== '—' && (
+                                  <span>Last Active: <strong className="font-medium text-foreground">{f.lastActivityDate}</strong></span>
+                                )}
                                 <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
                                   f.source?.includes('Live API')
                                     ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20'

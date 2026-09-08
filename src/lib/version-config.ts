@@ -23,9 +23,30 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.14";
+export const CURRENT_VERSION = "1.07.15";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.15",
+    date: "2026-09-08",
+    title: "Enrollment Date & Last Activity Date for Unmatched Learners & Verification",
+    type: "patch",
+    highlights: [
+      "Added Enrollment Date and Last Activity Date columns to Sheet 3 (Unmatched Learners) in exported Excel reports",
+      "Added Learner Name, Enrollment Date, and Last Activity Date to the interactive verification UI list on /data-management/coursera/export",
+      "Automated extraction of earliest course enrollment and latest learning activity across historical snapshots"
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Added Enrollment Date and Last Activity Date columns to Sheet 3 (Unmatched Learners) in exported Coursera Excel activity reports.",
+      },
+      {
+        category: "Improvements",
+        description: "Enhanced verify-users API and export UI with live date stamps for enrolled and active accounts.",
+      },
+    ],
+  },
   {
     version: "1.07.14",
     date: "2026-09-08",

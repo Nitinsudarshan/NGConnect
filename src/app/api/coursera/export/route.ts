@@ -34,6 +34,17 @@ function formatMonthForReport(dateStr: string | null | undefined): string {
   }
 }
 
+function formatDateTimeForReport(dateVal: string | number | Date | null | undefined): string {
+  if (!dateVal) return '—';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  } catch {
+    return '—';
+  }
+}
+
 export async function POST(request: NextRequest) {
   const authClient = await createClient();
   const { data: { user } } = await authClient.auth.getUser();
@@ -305,9 +316,12 @@ export async function POST(request: NextRequest) {
     });
 
     wsUnmatched.columns = [
-      { header: 'Email Address', key: 'email', width: 35 },
-      { header: 'Coursera Status', key: 'status', width: 28 },
-      { header: 'Historical Enrollment', key: 'history', width: 32 },
+      { header: 'Email Address', key: 'email', width: 34 },
+      { header: 'Learner Name', key: 'name', width: 26 },
+      { header: 'Coursera Status', key: 'status', width: 32 },
+      { header: 'Enrollment Date', key: 'enrollment_date', width: 20 },
+      { header: 'Last Activity Date', key: 'last_activity_date', width: 20 },
+      { header: 'Historical Enrollment', key: 'history', width: 30 },
       { header: 'Verification Notes', key: 'notes', width: 55 },
     ];
 
@@ -321,25 +335,54 @@ export async function POST(request: NextRequest) {
     header3.alignment = { vertical: 'middle', horizontal: 'center' };
     header3.height = 28;
 
-    // Check if these missing emails exist in any other snapshot months
-    const everSnapshotEmails = new Set<string>();
-    const otherMonthsMap = new Map<string, string[]>();
+    // Check if these missing emails exist in snapshots and extract enrollment/activity dates
+    interface LearnerHistoryInfo {
+      name: string | null;
+      earliestEnrollment: string | null;
+      latestActivity: string | null;
+      months: string[];
+    }
+    const historyMap = new Map<string, LearnerHistoryInfo>();
 
     const CHUNK_SIZE = 500;
     for (let i = 0; i < missingEmails.length; i += CHUNK_SIZE) {
       const chunk = missingEmails.slice(i, i + CHUNK_SIZE);
       const { data: otherSnaps } = await supabase
         .from('coursera_snapshots')
-        .select('email, snapshot_month')
+        .select('email, name, enrollment_time, last_activity_time, snapshot_month')
         .in('email', chunk);
 
       if (otherSnaps) {
         for (const os of otherSnaps) {
-          everSnapshotEmails.add(os.email);
-          if (!otherMonthsMap.has(os.email)) otherMonthsMap.set(os.email, []);
-          const formatted = formatMonthForReport(os.snapshot_month);
-          if (!otherMonthsMap.get(os.email)!.includes(formatted)) {
-            otherMonthsMap.get(os.email)!.push(formatted);
+          let info = historyMap.get(os.email);
+          if (!info) {
+            info = {
+              name: os.name || null,
+              earliestEnrollment: os.enrollment_time || null,
+              latestActivity: os.last_activity_time || null,
+              months: [],
+            };
+            historyMap.set(os.email, info);
+          }
+          if (os.name && !info.name) info.name = os.name;
+
+          // Track earliest enrollment date
+          if (os.enrollment_time) {
+            if (!info.earliestEnrollment || new Date(os.enrollment_time) < new Date(info.earliestEnrollment)) {
+              info.earliestEnrollment = os.enrollment_time;
+            }
+          }
+
+          // Track latest activity date
+          if (os.last_activity_time) {
+            if (!info.latestActivity || new Date(os.last_activity_time) > new Date(info.latestActivity)) {
+              info.latestActivity = os.last_activity_time;
+            }
+          }
+
+          const formattedMonth = formatMonthForReport(os.snapshot_month);
+          if (!info.months.includes(formattedMonth)) {
+            info.months.push(formattedMonth);
           }
         }
       }
@@ -354,35 +397,49 @@ export async function POST(request: NextRequest) {
     }
 
     for (const email of missingEmails) {
-      const existsInOtherMonths = everSnapshotEmails.has(email);
-      const otherMonths = otherMonthsMap.get(email);
+      const historyInfo = historyMap.get(email);
       const liveUser = liveCourseraMap.get(email);
 
+      let name = '—';
       let status = 'No Coursera Account Found';
+      let enrollmentDate = '—';
+      let lastActivityDate = '—';
       let history = 'Never Enrolled / No Records';
       let notes = 'Email address was not found in system snapshots or live Coursera Enterprise roster.';
 
-      if (existsInOtherMonths) {
+      if (historyInfo) {
+        name = historyInfo.name || (liveUser?.fullName ?? '—');
         status = 'Inactive in Selected Month';
-        history = otherMonths && otherMonths.length > 0
-          ? `Recorded in ${otherMonths.join(', ')}`
+        enrollmentDate = formatDateTimeForReport(historyInfo.earliestEnrollment);
+        lastActivityDate = formatDateTimeForReport(historyInfo.latestActivity);
+        history = historyInfo.months.length > 0
+          ? `Recorded in ${historyInfo.months.join(', ')}`
           : 'Enrolled in Other Months';
         notes = 'Learner exists in system snapshots but had 0 hours and no course enrollments in the selected month.';
       } else if (liveUser) {
+        name = liveUser.fullName || '—';
         status = 'Active on Coursera (No Activity in Selected Month)';
+        enrollmentDate = 'Active Account';
+        lastActivityDate = '—';
         history = 'Live Coursera Enterprise Account';
         notes = `Learner holds an active Coursera Enterprise license${liveUser.fullName ? ` (${liveUser.fullName})` : ''}, but no activity was recorded in this period.`;
       }
 
       const row = wsUnmatched.addRow({
         email,
+        name,
         status,
+        enrollment_date: enrollmentDate,
+        last_activity_date: lastActivityDate,
         history,
         notes,
       });
 
       row.getCell('email').alignment = { vertical: 'middle', horizontal: 'left' };
+      row.getCell('name').alignment = { vertical: 'middle', horizontal: 'left' };
       row.getCell('status').alignment = { vertical: 'middle', horizontal: 'center' };
+      row.getCell('enrollment_date').alignment = { vertical: 'middle', horizontal: 'center' };
+      row.getCell('last_activity_date').alignment = { vertical: 'middle', horizontal: 'center' };
       row.getCell('history').alignment = { vertical: 'middle', horizontal: 'left' };
       row.getCell('notes').alignment = { vertical: 'middle', horizontal: 'left' };
     }

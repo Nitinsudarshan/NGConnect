@@ -9,6 +9,17 @@ export const maxDuration = 120;
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const MAX_EMAILS_PER_REQUEST = 5000;
 
+function formatDateTimeForReport(dateVal: string | number | Date | null | undefined): string {
+  if (!dateVal) return '—';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  } catch {
+    return '—';
+  }
+}
+
 export async function POST(request: NextRequest) {
   // 1. Session & Role Verification
   const authClient = await createClient();
@@ -84,12 +95,14 @@ export async function POST(request: NextRequest) {
   const allSnapshotEmails = new Set<string>();
   const monthSnapshotEmails = new Set<string>();
   const emailToName = new Map<string, string>();
+  const emailToEnrollment = new Map<string, string>();
+  const emailToLastActivity = new Map<string, string>();
 
   for (let i = 0; i < sanitizedEmails.length; i += CHUNK_SIZE) {
     const chunk = sanitizedEmails.slice(i, i + CHUNK_SIZE);
     const { data: snaps, error: snapErr } = await supabase
       .from('coursera_snapshots')
-      .select('email, name, snapshot_month')
+      .select('email, name, enrollment_time, last_activity_time, snapshot_month')
       .in('email', chunk);
 
     if (snapErr) {
@@ -101,6 +114,18 @@ export async function POST(request: NextRequest) {
         allSnapshotEmails.add(s.email);
         if (s.name && !emailToName.has(s.email)) {
           emailToName.set(s.email, s.name);
+        }
+        if (s.enrollment_time) {
+          const current = emailToEnrollment.get(s.email);
+          if (!current || new Date(s.enrollment_time) < new Date(current)) {
+            emailToEnrollment.set(s.email, s.enrollment_time);
+          }
+        }
+        if (s.last_activity_time) {
+          const current = emailToLastActivity.get(s.email);
+          if (!current || new Date(s.last_activity_time) > new Date(current)) {
+            emailToLastActivity.set(s.email, s.last_activity_time);
+          }
         }
         if (selectedMonth && s.snapshot_month === selectedMonth) {
           monthSnapshotEmails.add(s.email);
@@ -149,6 +174,8 @@ export async function POST(request: NextRequest) {
     name: string | null;
     inSelectedMonth: boolean;
     source: 'Snapshots' | 'Coursera Enterprise (Live API)';
+    enrollmentDate: string;
+    lastActivityDate: string;
   }> = [];
 
   const notFound: Array<{
@@ -169,6 +196,8 @@ export async function POST(request: NextRequest) {
         name: emailToName.get(email) ?? null,
         inSelectedMonth: inMonth,
         source: 'Snapshots',
+        enrollmentDate: formatDateTimeForReport(emailToEnrollment.get(email)),
+        lastActivityDate: formatDateTimeForReport(emailToLastActivity.get(email)),
       });
     } else {
       // Check live API result
@@ -179,6 +208,8 @@ export async function POST(request: NextRequest) {
           name: liveUser.fullName || null,
           inSelectedMonth: false, // Active on Coursera, but no activity recorded for this specific snapshot month
           source: 'Coursera Enterprise (Live API)',
+          enrollmentDate: 'Active Account',
+          lastActivityDate: '—',
         });
       } else {
         notFound.push({
