@@ -280,6 +280,126 @@ export async function batchCheckCourseraUsersLive(
   return result;
 }
 
+// ── Pending Invitations Roster ───────────────────────────────────────────────
+
+export interface CourseraPendingInvitation {
+  id: string;
+  email: string;
+  fullName: string;
+  externalId?: string;
+  createdAt?: number;
+}
+
+let cachedInvitations: { invitations: Map<string, CourseraPendingInvitation>; fetchedAt: number } | null = null;
+const INVITATIONS_TTL_MS = 5 * 60 * 1000; // 5 minutes cache
+let inFlightInvitationsPromise: Promise<Map<string, CourseraPendingInvitation>> | null = null;
+
+/**
+ * Fetches all pending invitations for the configured Coursera program with caching & request coalescing.
+ */
+export async function getCourseraPendingInvitations(): Promise<Map<string, CourseraPendingInvitation>> {
+  if (cachedInvitations && Date.now() - cachedInvitations.fetchedAt < INVITATIONS_TTL_MS) {
+    return cachedInvitations.invitations;
+  }
+
+  if (inFlightInvitationsPromise) {
+    return inFlightInvitationsPromise;
+  }
+
+  inFlightInvitationsPromise = (async () => {
+    const orgId = process.env.COURSERA_ORG_ID;
+    const progId = process.env.COURSERA_PROGRAM_ID || 'WsV-YttFEeq-fw5R5-S6kw';
+    if (!orgId || !progId) {
+      return cachedInvitations ? cachedInvitations.invitations : new Map();
+    }
+
+    const token = await getCourseraAccessToken();
+    if (!token) {
+      return cachedInvitations ? cachedInvitations.invitations : new Map();
+    }
+
+    const invMap = new Map<string, CourseraPendingInvitation>();
+    let start = 0;
+    const limit = 100;
+    const MAX_PAGES = 10;
+    let page = 0;
+
+    try {
+      while (page < MAX_PAGES) {
+        page++;
+        const url = `https://api.coursera.com/ent/api/businesses.v1/${orgId}/programs/${progId}/invitations?limit=${limit}&start=${start}`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+
+        if (!res.ok) {
+          break;
+        }
+
+        const data = await res.json();
+        const elements = data.elements || [];
+        for (const el of elements) {
+          if (el.email) {
+            invMap.set(el.email.toLowerCase().trim(), {
+              id: el.id,
+              email: el.email.toLowerCase().trim(),
+              fullName: el.fullName || '',
+              externalId: el.externalId,
+              createdAt: el.createdAt,
+            });
+          }
+        }
+
+        if (!data.paging?.next || elements.length === 0) {
+          break;
+        }
+        start = Number(data.paging.next);
+        await sleep(50);
+      }
+
+      if (invMap.size > 0) {
+        cachedInvitations = {
+          invitations: invMap,
+          fetchedAt: Date.now(),
+        };
+        return invMap;
+      }
+      return cachedInvitations ? cachedInvitations.invitations : new Map();
+    } catch (err) {
+      console.error('[Coursera API] getCourseraPendingInvitations error:', err);
+      return cachedInvitations ? cachedInvitations.invitations : new Map();
+    } finally {
+      inFlightInvitationsPromise = null;
+    }
+  })();
+
+  return inFlightInvitationsPromise;
+}
+
+/**
+ * Batch checks a list of emails against Coursera pending invitations.
+ */
+export async function batchCheckCourseraInvitationsLive(
+  emails: string[]
+): Promise<Map<string, CourseraPendingInvitation | null>> {
+  const result = new Map<string, CourseraPendingInvitation | null>();
+  if (!emails || emails.length === 0) return result;
+
+  const invMap = await getCourseraPendingInvitations();
+  for (const raw of emails) {
+    if (!raw || raw.length > 254) continue;
+    const clean = raw.toLowerCase().trim();
+    result.set(clean, invMap.get(clean) || null);
+  }
+  return result;
+}
+
 // ── Live Learner Enrollment & Activity Dates ─────────────────────────────────
 
 export interface CourseraUserActivity {

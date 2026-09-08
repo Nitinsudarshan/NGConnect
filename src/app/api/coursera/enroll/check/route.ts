@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/rate-limiter';
-import { batchCheckCourseraUsersLive, batchFetchCourseraUserEnrollmentActivity } from '@/lib/coursera-api';
+import {
+  batchCheckCourseraUsersLive,
+  batchCheckCourseraInvitationsLive,
+  batchFetchCourseraUserEnrollmentActivity,
+} from '@/lib/coursera-api';
 
 export const maxDuration = 120;
 
@@ -202,15 +206,22 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 6. Step 2: Query Live Coursera Enterprise API for missing or verification
+  // 6. Step 2: Query Live Coursera Enterprise API for roster and pending invitations
   // If not found in snapshots, query live API
   const missingFromSnapshots = sanitizedEmails.filter(e => !snapshotEmails.has(e));
   let liveApiUserMap = new Map<string, { fullName: string; id: string } | null>();
   let liveActivityMap = new Map<string, { coursesCount: number; earliestEnrollment: number | null; latestActivity: number | null }>();
+  let liveInvitationsMap = new Map<string, { id: string; email: string; fullName: string; createdAt?: number } | null>();
 
   if (missingFromSnapshots.length > 0) {
     try {
-      liveApiUserMap = await batchCheckCourseraUsersLive(missingFromSnapshots);
+      const [userRosterMap, invitationsMap] = await Promise.all([
+        batchCheckCourseraUsersLive(missingFromSnapshots),
+        batchCheckCourseraInvitationsLive(missingFromSnapshots),
+      ]);
+      liveApiUserMap = userRosterMap;
+      liveInvitationsMap = invitationsMap;
+
       const activeLiveEmails = missingFromSnapshots.filter(e => liveApiUserMap.get(e));
       if (activeLiveEmails.length > 0) {
         liveActivityMap = await batchFetchCourseraUserEnrollmentActivity(activeLiveEmails);
@@ -226,7 +237,7 @@ export async function POST(request: NextRequest) {
     fullName: string;
     nameSource: 'uploaded' | 'snapshot' | 'database' | 'coursera' | 'derived';
     status: 'enrolled' | 'invited' | 'not_enrolled';
-    source: 'Snapshots' | 'Coursera Enterprise (Live API)' | 'None';
+    source: 'Snapshots' | 'Coursera Enterprise (Live API)' | 'Coursera Enterprise (Invite Pending)' | 'None';
     enrollmentDate: string;
     lastActivityDate: string;
     courseraId?: string;
@@ -239,6 +250,7 @@ export async function POST(request: NextRequest) {
     const dbNameInfo = dbNameToSource.get(email);
     const existsInSnapshots = snapshotEmails.has(email);
     const liveUser = liveApiUserMap.get(email);
+    const liveInv = liveInvitationsMap.get(email);
 
     // Resolve name
     let finalName = '';
@@ -252,6 +264,9 @@ export async function POST(request: NextRequest) {
       nameSource = dbNameInfo.source === 'snapshot' ? 'snapshot' : 'database';
     } else if (liveUser?.fullName) {
       finalName = liveUser.fullName;
+      nameSource = 'coursera';
+    } else if (liveInv?.fullName) {
+      finalName = liveInv.fullName;
       nameSource = 'coursera';
     } else {
       finalName = deriveNameFromEmail(email);
@@ -280,6 +295,17 @@ export async function POST(request: NextRequest) {
         lastActivityDate: formatDateTimeForReport(liveAct?.latestActivity),
         courseraId: liveUser.id,
       });
+    } else if (liveInv) {
+      results.push({
+        email,
+        fullName: finalName,
+        nameSource,
+        status: 'invited',
+        source: 'Coursera Enterprise (Invite Pending)',
+        enrollmentDate: formatDateTimeForReport(liveInv.createdAt),
+        lastActivityDate: '—',
+        courseraId: liveInv.id,
+      });
     } else {
       results.push({
         email,
@@ -294,11 +320,13 @@ export async function POST(request: NextRequest) {
   }
 
   const enrolledCount = results.filter(r => r.status === 'enrolled').length;
+  const invitedCount = results.filter(r => r.status === 'invited').length;
   const notEnrolledCount = results.filter(r => r.status === 'not_enrolled').length;
 
   return NextResponse.json({
     total: results.length,
     enrolledCount,
+    invitedCount,
     notEnrolledCount,
     results,
   }, {

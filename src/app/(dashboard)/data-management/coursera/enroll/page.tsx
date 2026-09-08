@@ -57,7 +57,12 @@ export default function CourseraEnrollmentCheckerPage() {
   // Checker state
   const [isChecking, setIsChecking] = useState(false);
   const [checkResults, setCheckResults] = useState<CheckerItem[] | null>(null);
-  const [summary, setSummary] = useState<{ total: number; enrolledCount: number; notEnrolledCount: number } | null>(null);
+  const [summary, setSummary] = useState<{
+    total: number;
+    enrolledCount: number;
+    invitedCount: number;
+    notEnrolledCount: number;
+  } | null>(null);
 
   // Table filtering and search
   const [filterTab, setFilterTab] = useState<FilterTab>('all');
@@ -184,10 +189,11 @@ export default function CourseraEnrollmentCheckerPage() {
       setSummary({
         total: data.total,
         enrolledCount: data.enrolledCount,
+        invitedCount: data.invitedCount ?? 0,
         notEnrolledCount: data.notEnrolledCount,
       });
       setSuccessMessage(
-        `Check complete: ${data.enrolledCount} already active on Coursera, ${data.notEnrolledCount} ready for invitation or enrollment.`
+        `Check complete: ${data.enrolledCount} active, ${data.invitedCount ?? 0} invite pending, ${data.notEnrolledCount} not enrolled.`
       );
     } catch (err: any) {
       setErrorMessage(`Verification check error: ${err.message || 'Network error'}`);
@@ -703,34 +709,46 @@ export default function CourseraEnrollmentCheckerPage() {
       {checkResults && summary && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
           {/* Summary Metric Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-4 rounded-xl border border-border bg-card shadow-xs">
               <div className="text-xs text-muted-foreground font-medium">Total Evaluated</div>
               <div className="text-2xl font-bold text-foreground mt-1">{summary.total}</div>
               <div className="text-xs text-muted-foreground mt-0.5">Learner records submitted</div>
             </div>
 
+            <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 shadow-xs">
+              <div className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1.5">
+                <UserPlus className="w-3.5 h-3.5" /> Not Enrolled
+              </div>
+              <div className="text-2xl font-bold text-amber-700 dark:text-amber-400 mt-1">
+                {summary.notEnrolledCount}
+              </div>
+              <div className="text-xs text-amber-600/80 dark:text-amber-400/70 mt-0.5">
+                Ready for invite / enroll
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-500/5 shadow-xs">
+              <div className="text-xs text-blue-700 dark:text-blue-400 font-medium flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5" /> Invite Pending
+              </div>
+              <div className="text-2xl font-bold text-blue-700 dark:text-blue-400 mt-1">
+                {summary.invitedCount}
+              </div>
+              <div className="text-xs text-blue-600/80 dark:text-blue-400/70 mt-0.5">
+                Sent invitation, awaiting join
+              </div>
+            </div>
+
             <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 shadow-xs">
               <div className="text-xs text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Already Enrolled / Active
+                <CheckCircle2 className="w-3.5 h-3.5" /> Active Enterprise
               </div>
               <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 mt-1">
                 {summary.enrolledCount}
               </div>
               <div className="text-xs text-emerald-600/80 dark:text-emerald-400/70 mt-0.5">
-                Existing Coursera Enterprise accounts
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 shadow-xs">
-              <div className="text-xs text-indigo-700 dark:text-indigo-400 font-medium flex items-center gap-1.5">
-                <UserPlus className="w-3.5 h-3.5" /> Needs Invitation / Enrollment
-              </div>
-              <div className="text-2xl font-bold text-indigo-700 dark:text-indigo-400 mt-1">
-                {summary.notEnrolledCount}
-              </div>
-              <div className="text-xs text-indigo-600/80 dark:text-indigo-400/70 mt-0.5">
-                Ready for one-click action
+                Existing Coursera learners
               </div>
             </div>
           </div>

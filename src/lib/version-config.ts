@@ -23,9 +23,35 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.18";
+export const CURRENT_VERSION = "1.07.19";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.19",
+    date: "2026-09-08",
+    title: "Proactive Pending Invitation Detection & 4-Tier Learner Classification",
+    type: "patch",
+    highlights: [
+      "Integrated live Coursera invitations API query into the Check Account Status pipeline",
+      "Classified evaluated learners directly into 4 distinct categories: All, Not Enrolled, Invite Pending, and Active Enterprise",
+      "Extracted exact invitation creation date and name from pending invitations roster",
+      "Added dedicated Invite Pending metric card and filter tab with real-time counts"
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Implemented getCourseraPendingInvitations in coursera-api.ts fetching and caching active program invitations.",
+      },
+      {
+        category: "Improvements",
+        description: "Enhanced check route to query snapshots -> live roster -> pending invitations in a unified pass without needing manual invite clicks.",
+      },
+      {
+        category: "Improvements",
+        description: "Updated UI metric cards and filter tabs to 4 columns reflecting immediate counts for Not Enrolled, Invite Pending, and Active.",
+      },
+    ],
+  },
   {
     version: "1.07.18",
     date: "2026-09-08",
