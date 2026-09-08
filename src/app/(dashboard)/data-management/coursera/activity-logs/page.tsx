@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getUserRole } from '@/lib/roles';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileDown } from 'lucide-react';
 
 interface SearchParams {
   month?: string;
@@ -97,6 +97,15 @@ export default async function ActivityLogsPage({
           <p className="text-muted-foreground text-sm mt-0.5">
             {selectedMonth ? formatMonth(selectedMonth, firstImportMonth) : 'All months'} · {(count ?? 0).toLocaleString()} learners
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/data-management/coursera/export"
+            className="inline-flex items-center gap-2 text-sm px-3.5 py-2 rounded-lg border border-border/80 bg-background hover:bg-accent transition-colors shadow-sm"
+          >
+            <FileDown className="w-4 h-4 text-muted-foreground" />
+            Export Report
+          </Link>
         </div>
       </div>
 

@@ -23,9 +23,61 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.10";
+export const CURRENT_VERSION = "1.07.12";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.12",
+    date: "2026-09-08",
+    title: "Coursera Report Snapshot Month Formatting & Consolidated User Scoping",
+    type: "patch",
+    highlights: [
+      "Formatted Snapshot Month column values in exported Excel reports to 'Aug 2026', 'Jul 2026' style",
+      "Removed Compliance Status column from exported activity report per user requirements",
+      "Consolidated 'Specific User' and 'Comma-separated List' into a single 'Specific User(s)' scope allowing single or multiple comma-separated email IDs"
+    ],
+    changes: [
+      {
+        category: "Improvements",
+        description: "Formatted Snapshot Month cells in both Learner Summary and Course Breakdown sheets to clean 'MMM YYYY' format (e.g. Aug 2026).",
+      },
+      {
+        category: "Improvements",
+        description: "Removed Compliance Status column from the Learner Summary export sheet.",
+      },
+      {
+        category: "Improvements",
+        description: "Merged Specific User and Comma-separated List options in /data-management/coursera/export into a streamlined Specific User(s) selector.",
+      },
+    ],
+  },
+  {
+    version: "1.07.11",
+    date: "2026-09-08",
+    title: "Coursera Activity Report Excel Export & Learner List Ingestion",
+    type: "patch",
+    highlights: [
+      "Added dedicated 'Export Activity Report' portal under /data-management/coursera/export with multi-sheet Excel generation",
+      "Flexible user filtering: All users, specific user email ID, comma-separated email list, or spreadsheet import (.xlsx/.csv)",
+      "Server-side spreadsheet parser extracting learner emails with real-time feedback and template download",
+      "Generated workbooks feature Learner Monthly Summary and granular Course Breakdown snapshots with formatted columns and headers",
+      "Integrated fast access links directly into Coursera Dashboard and Activity Logs navigation"
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Implemented Coursera Activity Report export portal (/data-management/coursera/export) with month filtering and 4-tier user scoping (all, single, comma-separated, spreadsheet import).",
+      },
+      {
+        category: "Features",
+        description: "Created server-side Excel export endpoints (/api/coursera/export, /api/coursera/export/parse-list, /api/coursera/export/template) streaming styled .xlsx workbooks.",
+      },
+      {
+        category: "Improvements",
+        description: "Added direct 'Export Activity Report' navigation cards to Data Management, Coursera Dashboard, and Activity Logs.",
+      },
+    ],
+  },
   {
     version: "1.07.10",
     date: "2026-09-08",

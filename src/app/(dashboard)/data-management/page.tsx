@@ -13,7 +13,8 @@ import {
   Activity,
   Upload,
   Users,
-  LayoutDashboard
+  LayoutDashboard,
+  FileDown
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
@@ -103,6 +104,16 @@ const COURSERA_CATEGORY = {
       gradient: 'from-cyan-500/10 via-teal-500/5 to-transparent',
       border: 'hover:border-cyan-500/30 dark:hover:border-cyan-500/50',
       iconBg: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 group-hover:bg-cyan-600 group-hover:text-white',
+    },
+    {
+      href: '/data-management/coursera/export',
+      label: 'Export Activity Report',
+      description: 'Export filtered learner activity logs and course breakdown spreadsheets.',
+      icon: FileDown,
+      badge: 'Admin',
+      gradient: 'from-emerald-500/10 via-teal-500/5 to-transparent',
+      border: 'hover:border-emerald-500/30 dark:hover:border-emerald-500/50',
+      iconBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white',
     },
     {
       href: '/data-management/import-coursera',

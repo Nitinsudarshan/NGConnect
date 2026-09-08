@@ -139,6 +139,9 @@ export default function CourseraDashboardClient({ metrics, trend, selectedMonth,
           <Link href="/data-management/coursera/activity-logs" className="text-sm px-4 py-2 rounded-lg border border-border/80 hover:bg-accent transition-colors">
             Activity Logs
           </Link>
+          <Link href="/data-management/coursera/export" className="text-sm px-4 py-2 rounded-lg border border-border/80 hover:bg-accent transition-colors">
+            Export Report
+          </Link>
           <Link href="/data-management/import-coursera" className="text-sm px-4 py-2 rounded-lg border border-border/80 hover:bg-accent transition-colors">
             Import Reports
           </Link>
