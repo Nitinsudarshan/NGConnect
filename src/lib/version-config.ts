@@ -23,9 +23,65 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.12";
+export const CURRENT_VERSION = "1.07.14";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.14",
+    date: "2026-09-08",
+    title: "Coursera Enterprise Live API Integration & Multi-Layer Abuse Protections",
+    type: "patch",
+    highlights: [
+      "Integrated live Coursera Enterprise OAuth 2.0 client credentials API with automated token caching and roster lookup",
+      "Implemented multi-layer abuse protections: sliding-window rate limiter, single-flight request coalescing, and circuit breaker",
+      "Connected live Enterprise verification to export activity report and member dashboard status checks",
+      "Added live enterprise account status badge to export page verification results"
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Implemented Coursera for Business Enterprise API client (coursera-api.ts) supporting live account verification and roster synchronization.",
+      },
+      {
+        category: "Security",
+        description: "Created high-performance sliding-window in-memory rate limiter (rate-limiter.ts) protecting verification and export endpoints from abuse and DoS.",
+      },
+      {
+        category: "Security",
+        description: "Added circuit breaker and request coalescing to Coursera API client to safeguard external API quotas and handle upstream throttling gracefully.",
+      },
+      {
+        category: "Improvements",
+        description: "Wired live Coursera enterprise roster fallback into /api/coursera/export, verify-users route, and member dashboard learning queries.",
+      },
+    ],
+  },
+  {
+    version: "1.07.13",
+    date: "2026-09-08",
+    title: "Coursera Account Verification & Unmatched Learners Worksheet Export",
+    type: "patch",
+    highlights: [
+      "Added dedicated Unmatched Learners worksheet to exported Excel report to flag requested users without Coursera accounts or activity",
+      "Created server-side Coursera account verification endpoint (/api/coursera/export/verify-users) scanning snapshots and monthly logs",
+      "Added interactive 'Check Coursera Accounts' UI widget providing instant verification statistics and expandable missing accounts preview",
+      "Added 'Include Unmatched / No Coursera Account Sheet' option under Report Output Structure"
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Implemented server-side Coursera account verification API (/api/coursera/export/verify-users) and verification UI widget on export page.",
+      },
+      {
+        category: "Features",
+        description: "Added Unmatched Learners sheet to exported Excel reports detailing missing accounts, historical enrollment, and verification notes.",
+      },
+      {
+        category: "Improvements",
+        description: "Added toggle checkbox for Unmatched / No Coursera Account Sheet under Report Output Structure.",
+      },
+    ],
+  },
   {
     version: "1.07.12",
     date: "2026-09-08",

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
+import { checkRateLimit } from '@/lib/rate-limiter';
+import { batchCheckCourseraUsersLive } from '@/lib/coursera-api';
 import ExcelJS from 'exceljs';
 
 export const maxDuration = 300;
@@ -44,6 +46,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  // Abuse Protection: Rate Limiting (10 report generations per minute per user)
+  const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  const rateLimitKey = `export-report:${user.id}:${clientIp}`;
+  const rateLimit = checkRateLimit(rateLimitKey, 10, 60 * 1000);
+
+  if (!rateLimit.allowed) {
+    const retrySec = Math.ceil(rateLimit.resetTimeMs / 1000);
+    return NextResponse.json(
+      { error: `Export rate limit reached. Please wait ${retrySec} seconds.` },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(retrySec),
+          'X-RateLimit-Limit': String(rateLimit.limit),
+          'X-RateLimit-Remaining': '0',
+        },
+      }
+    );
+  }
+
   const supabase = createAdminClient();
 
   let body: {
@@ -51,6 +73,7 @@ export async function POST(request: NextRequest) {
     userScope?: 'all' | 'users' | 'single' | 'list' | 'imported';
     emails?: string[];
     includeCourseBreakdown?: boolean;
+    includeUnmatchedSheet?: boolean;
   };
 
   try {
@@ -64,6 +87,7 @@ export async function POST(request: NextRequest) {
     userScope = 'all',
     emails = [],
     includeCourseBreakdown = true,
+    includeUnmatchedSheet = true,
   } = body;
 
   const sanitizedEmails = Array.from(
@@ -111,7 +135,13 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (learners.length === 0) {
+  // Identify missing emails that were requested but not found in the selected month
+  const foundEmailSet = new Set(learners.map(l => l.email));
+  const missingEmails = userScope !== 'all'
+    ? sanitizedEmails.filter(e => !foundEmailSet.has(e))
+    : [];
+
+  if (learners.length === 0 && (!includeUnmatchedSheet || missingEmails.length === 0)) {
     return NextResponse.json({
       error: 'No learner activity records found matching the specified month and email criteria.'
     }, { status: 404 });
@@ -265,6 +295,96 @@ export async function POST(request: NextRequest) {
       row.getCell('email').alignment = { vertical: 'middle', horizontal: 'left' };
       row.getCell('completed').alignment = { vertical: 'middle', horizontal: 'center' };
       row.getCell('snapshot_month').alignment = { vertical: 'middle', horizontal: 'center' };
+    }
+  }
+
+  // ── Sheet 3: Unmatched Learners (Requested emails with no records) ──────────
+  if (includeUnmatchedSheet && missingEmails.length > 0) {
+    const wsUnmatched = workbook.addWorksheet('Unmatched Learners', {
+      views: [{ state: 'frozen', ySplit: 1 }]
+    });
+
+    wsUnmatched.columns = [
+      { header: 'Email Address', key: 'email', width: 35 },
+      { header: 'Coursera Status', key: 'status', width: 28 },
+      { header: 'Historical Enrollment', key: 'history', width: 32 },
+      { header: 'Verification Notes', key: 'notes', width: 55 },
+    ];
+
+    const header3 = wsUnmatched.getRow(1);
+    header3.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+    header3.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF475569' }, // Slate 600
+    };
+    header3.alignment = { vertical: 'middle', horizontal: 'center' };
+    header3.height = 28;
+
+    // Check if these missing emails exist in any other snapshot months
+    const everSnapshotEmails = new Set<string>();
+    const otherMonthsMap = new Map<string, string[]>();
+
+    const CHUNK_SIZE = 500;
+    for (let i = 0; i < missingEmails.length; i += CHUNK_SIZE) {
+      const chunk = missingEmails.slice(i, i + CHUNK_SIZE);
+      const { data: otherSnaps } = await supabase
+        .from('coursera_snapshots')
+        .select('email, snapshot_month')
+        .in('email', chunk);
+
+      if (otherSnaps) {
+        for (const os of otherSnaps) {
+          everSnapshotEmails.add(os.email);
+          if (!otherMonthsMap.has(os.email)) otherMonthsMap.set(os.email, []);
+          const formatted = formatMonthForReport(os.snapshot_month);
+          if (!otherMonthsMap.get(os.email)!.includes(formatted)) {
+            otherMonthsMap.get(os.email)!.push(formatted);
+          }
+        }
+      }
+    }
+
+    // Also check missing emails against live Coursera Enterprise API
+    let liveCourseraMap = new Map<string, { fullName: string; id: string } | null>();
+    try {
+      liveCourseraMap = await batchCheckCourseraUsersLive(missingEmails);
+    } catch (err) {
+      console.warn('[export] Live Coursera check failed gracefully:', err);
+    }
+
+    for (const email of missingEmails) {
+      const existsInOtherMonths = everSnapshotEmails.has(email);
+      const otherMonths = otherMonthsMap.get(email);
+      const liveUser = liveCourseraMap.get(email);
+
+      let status = 'No Coursera Account Found';
+      let history = 'Never Enrolled / No Records';
+      let notes = 'Email address was not found in system snapshots or live Coursera Enterprise roster.';
+
+      if (existsInOtherMonths) {
+        status = 'Inactive in Selected Month';
+        history = otherMonths && otherMonths.length > 0
+          ? `Recorded in ${otherMonths.join(', ')}`
+          : 'Enrolled in Other Months';
+        notes = 'Learner exists in system snapshots but had 0 hours and no course enrollments in the selected month.';
+      } else if (liveUser) {
+        status = 'Active on Coursera (No Activity in Selected Month)';
+        history = 'Live Coursera Enterprise Account';
+        notes = `Learner holds an active Coursera Enterprise license${liveUser.fullName ? ` (${liveUser.fullName})` : ''}, but no activity was recorded in this period.`;
+      }
+
+      const row = wsUnmatched.addRow({
+        email,
+        status,
+        history,
+        notes,
+      });
+
+      row.getCell('email').alignment = { vertical: 'middle', horizontal: 'left' };
+      row.getCell('status').alignment = { vertical: 'middle', horizontal: 'center' };
+      row.getCell('history').alignment = { vertical: 'middle', horizontal: 'left' };
+      row.getCell('notes').alignment = { vertical: 'middle', horizontal: 'left' };
     }
   }
 

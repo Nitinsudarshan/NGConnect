@@ -10,8 +10,11 @@ import {
   User,
   FileSpreadsheet,
   ChevronDown,
+  ChevronUp,
   CheckCircle2,
   XCircle,
+  AlertCircle,
+  Search,
   Loader2,
   Trash2,
   ArrowLeft,
@@ -52,9 +55,23 @@ export default function ExportCourseraActivityPage() {
 
   // Options & export state
   const [includeCourseBreakdown, setIncludeCourseBreakdown] = useState(true);
+  const [includeUnmatchedSheet, setIncludeUnmatchedSheet] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Verification state
+  const [verifying, setVerifying] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<{
+    total: number;
+    foundCount: number;
+    notFoundCount: number;
+    found: Array<{ email: string; name: string | null; inSelectedMonth: boolean; source?: string }>;
+    notFound: Array<{ email: string; reason: string }>;
+    selectedMonth: string | null;
+  } | null>(null);
+  const [showMissingList, setShowMissingList] = useState(false);
+  const [showFoundList, setShowFoundList] = useState(false);
 
   // Fetch available snapshot months
   const fetchMonths = useCallback(async () => {
@@ -93,6 +110,7 @@ export default function ExportCourseraActivityPage() {
   const handleFileUpload = async (file: File) => {
     setErrorMessage(null);
     setSuccessMessage(null);
+    setVerificationResult(null);
     const lowerName = file.name.toLowerCase();
     if (!lowerName.endsWith('.xlsx') && !lowerName.endsWith('.csv')) {
       setErrorMessage('Please upload a valid .xlsx or .csv spreadsheet.');
@@ -132,6 +150,7 @@ export default function ExportCourseraActivityPage() {
     setImportFile(null);
     setImportedEmails([]);
     setImportedFileName(null);
+    setVerificationResult(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -144,6 +163,40 @@ export default function ExportCourseraActivityPage() {
       return importedEmails;
     }
     return [];
+  };
+
+  // Verify whether active users exist in Coursera snapshots
+  const handleVerifyUsers = async () => {
+    const emails = getActiveEmails();
+    if (emails.length === 0) {
+      setErrorMessage('Please enter or upload at least one valid email address to verify.');
+      return;
+    }
+    setVerifying(true);
+    setErrorMessage(null);
+
+    try {
+      const res = await fetch('/api/coursera/export/verify-users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emails, month: selectedMonth || 'all' }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        setErrorMessage(json.error ?? 'Failed to verify users against Coursera records.');
+        setVerificationResult(null);
+      } else {
+        setVerificationResult(json);
+        if (json.notFoundCount > 0) {
+          setShowMissingList(true);
+        }
+      }
+    } catch {
+      setErrorMessage('Network error while verifying users.');
+    } finally {
+      setVerifying(false);
+    }
   };
 
   // Trigger export
@@ -172,6 +225,7 @@ export default function ExportCourseraActivityPage() {
           userScope,
           emails: targetEmails,
           includeCourseBreakdown,
+          includeUnmatchedSheet,
         }),
       });
 
@@ -430,6 +484,120 @@ export default function ExportCourseraActivityPage() {
                 )}
               </div>
             )}
+
+            {/* Verify Accounts Action & Results */}
+            {userScope !== 'all' && getActiveEmails().length > 0 && (
+              <div className="pt-3 border-t border-border/40 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-xs text-muted-foreground">
+                    Check if these emails exist in Coursera snapshots before exporting:
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleVerifyUsers}
+                    disabled={verifying}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/80 bg-background hover:bg-accent text-xs font-medium transition shadow-sm disabled:opacity-50"
+                  >
+                    {verifying ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Verifying Accounts…
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-3.5 h-3.5 text-primary" /> Check Coursera Accounts
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {verificationResult && (
+                  <div className="rounded-xl border border-border/80 bg-background/50 p-4 space-y-3 animate-in fade-in duration-200">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-xs font-semibold">
+                        <span>Account Verification Summary</span>
+                        <span className="text-muted-foreground">({verificationResult.total} emails checked)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowFoundList(!showFoundList)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15 transition-colors cursor-pointer"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" /> {verificationResult.foundCount} Verified in Coursera
+                          {showFoundList ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        </button>
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${
+                          verificationResult.notFoundCount > 0
+                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                            : 'bg-muted text-muted-foreground border-border/60'
+                        }`}>
+                          <AlertCircle className="w-3.5 h-3.5" /> {verificationResult.notFoundCount} Not Found / No Records
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Found users list */}
+                    {showFoundList && verificationResult.foundCount > 0 && (
+                      <div className="space-y-2 pt-1 border-t border-border/40">
+                        <div className="flex items-center justify-between text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                          <span>Verified Accounts ({verificationResult.foundCount})</span>
+                          <span className="text-[10px] text-muted-foreground">Cross-checked against Snapshots & Live Enterprise API</span>
+                        </div>
+                        <div className="max-h-48 overflow-y-auto space-y-1.5 p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                          {verificationResult.found.map(f => (
+                            <div key={f.email} className="flex items-center justify-between text-xs py-1 px-2 rounded bg-background/80 border border-border/50">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="font-mono text-foreground truncate">{f.email}</span>
+                                {f.name && <span className="text-muted-foreground text-[11px] truncate">({f.name})</span>}
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                                  f.source?.includes('Live API')
+                                    ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                }`}>
+                                  {f.source || 'Snapshots'}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Missing / Unmatched users list */}
+                    {verificationResult.notFoundCount > 0 && (
+                      <div className="space-y-2 pt-1 border-t border-border/40">
+                        <button
+                          type="button"
+                          onClick={() => setShowMissingList(!showMissingList)}
+                          className="flex items-center justify-between w-full text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline text-left"
+                        >
+                          <span>
+                            {showMissingList ? 'Hide' : 'Show'} {verificationResult.notFoundCount} email(s) with no Coursera account
+                          </span>
+                          {showMissingList ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        </button>
+
+                        {showMissingList && (
+                          <div className="max-h-40 overflow-y-auto space-y-1.5 p-2 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                            {verificationResult.notFound.map(nf => (
+                              <div key={nf.email} className="flex items-center justify-between text-xs py-1 px-2 rounded bg-background/80 border border-border/50">
+                                <span className="font-mono text-foreground">{nf.email}</span>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
+                                  No Account Found
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         </div>
 
@@ -438,17 +606,32 @@ export default function ExportCourseraActivityPage() {
           <label className="text-sm font-semibold text-foreground">
             3. Report Output Structure
           </label>
-          <div className="flex items-center gap-3 pt-1">
-            <input
-              type="checkbox"
-              id="include-course-breakdown"
-              checked={includeCourseBreakdown}
-              onChange={e => setIncludeCourseBreakdown(e.target.checked)}
-              className="h-4 w-4 rounded border-border text-primary focus:ring-primary/40 cursor-pointer"
-            />
-            <label htmlFor="include-course-breakdown" className="text-sm text-foreground cursor-pointer select-none">
-              Include Course-Level Breakdown Sheet <span className="text-xs text-muted-foreground">(adds a 2nd worksheet with individual course enrollments, hours, and grades)</span>
-            </label>
+          <div className="space-y-2 pt-1">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="include-course-breakdown"
+                checked={includeCourseBreakdown}
+                onChange={e => setIncludeCourseBreakdown(e.target.checked)}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary/40 cursor-pointer"
+              />
+              <label htmlFor="include-course-breakdown" className="text-sm text-foreground cursor-pointer select-none">
+                Include Course-Level Breakdown Sheet <span className="text-xs text-muted-foreground">(adds a 2nd worksheet with individual course enrollments, hours, and grades)</span>
+              </label>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="include-unmatched-sheet"
+                checked={includeUnmatchedSheet}
+                onChange={e => setIncludeUnmatchedSheet(e.target.checked)}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary/40 cursor-pointer"
+              />
+              <label htmlFor="include-unmatched-sheet" className="text-sm text-foreground cursor-pointer select-none">
+                Include Unmatched / No Coursera Account Sheet <span className="text-xs text-muted-foreground">(adds a worksheet listing requested users who do not exist or have no Coursera records)</span>
+              </label>
+            </div>
           </div>
         </div>
 

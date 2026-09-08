@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { checkCourseraUserLive } from "@/lib/coursera-api"
 
 export interface Mentor {
   id: string;
@@ -611,7 +612,7 @@ export interface UserCourseraData {
 
 export async function checkCourseraApiUserActive(email: string): Promise<boolean> {
   if (!email) return false
-  const lowerEmail = email.toLowerCase()
+  const lowerEmail = email.toLowerCase().trim()
 
   try {
     const supabase = await createClient()
@@ -623,7 +624,15 @@ export async function checkCourseraApiUserActive(email: string): Promise<boolean
 
     if (data && data.length > 0) return true
   } catch (e) {
-    // Table may not exist or RLS blocks it — treat as not found
+    // Table may not exist or RLS blocks it — proceed to live API check
+  }
+
+  // Cross-check live Coursera Enterprise API roster
+  try {
+    const liveUser = await checkCourseraUserLive(lowerEmail)
+    if (liveUser) return true
+  } catch (e) {
+    // Graceful fallback
   }
 
   return false
