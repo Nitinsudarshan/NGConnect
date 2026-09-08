@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/rate-limiter';
-import { batchCheckCourseraUsersLive } from '@/lib/coursera-api';
+import { batchCheckCourseraUsersLive, batchFetchCourseraUserEnrollmentActivity } from '@/lib/coursera-api';
 import ExcelJS from 'exceljs';
 
 export const maxDuration = 300;
@@ -390,8 +390,14 @@ export async function POST(request: NextRequest) {
 
     // Also check missing emails against live Coursera Enterprise API
     let liveCourseraMap = new Map<string, { fullName: string; id: string } | null>();
+    let liveActivityMap = new Map<string, { coursesCount: number; earliestEnrollment: number | null; latestActivity: number | null }>();
+
     try {
       liveCourseraMap = await batchCheckCourseraUsersLive(missingEmails);
+      const liveEmailList = missingEmails.filter(e => liveCourseraMap.get(e));
+      if (liveEmailList.length > 0) {
+        liveActivityMap = await batchFetchCourseraUserEnrollmentActivity(liveEmailList);
+      }
     } catch (err) {
       console.warn('[export] Live Coursera check failed gracefully:', err);
     }
@@ -399,6 +405,7 @@ export async function POST(request: NextRequest) {
     for (const email of missingEmails) {
       const historyInfo = historyMap.get(email);
       const liveUser = liveCourseraMap.get(email);
+      const liveAct = liveActivityMap.get(email);
 
       let name = '—';
       let status = 'No Coursera Account Found';
@@ -410,8 +417,8 @@ export async function POST(request: NextRequest) {
       if (historyInfo) {
         name = historyInfo.name || (liveUser?.fullName ?? '—');
         status = 'Inactive in Selected Month';
-        enrollmentDate = formatDateTimeForReport(historyInfo.earliestEnrollment);
-        lastActivityDate = formatDateTimeForReport(historyInfo.latestActivity);
+        enrollmentDate = formatDateTimeForReport(historyInfo.earliestEnrollment || liveAct?.earliestEnrollment);
+        lastActivityDate = formatDateTimeForReport(historyInfo.latestActivity || liveAct?.latestActivity);
         history = historyInfo.months.length > 0
           ? `Recorded in ${historyInfo.months.join(', ')}`
           : 'Enrolled in Other Months';
@@ -419,10 +426,10 @@ export async function POST(request: NextRequest) {
       } else if (liveUser) {
         name = liveUser.fullName || '—';
         status = 'Active on Coursera (No Activity in Selected Month)';
-        enrollmentDate = 'Active Account';
-        lastActivityDate = '—';
+        enrollmentDate = formatDateTimeForReport(liveAct?.earliestEnrollment);
+        lastActivityDate = formatDateTimeForReport(liveAct?.latestActivity);
         history = 'Live Coursera Enterprise Account';
-        notes = `Learner holds an active Coursera Enterprise license${liveUser.fullName ? ` (${liveUser.fullName})` : ''}, but no activity was recorded in this period.`;
+        notes = `Learner holds an active Coursera Enterprise license${liveUser.fullName ? ` (${liveUser.fullName})` : ''}${liveAct?.coursesCount ? ` with ${liveAct.coursesCount} enrolled course(s)` : ''}, but no activity was recorded in this period.`;
       }
 
       const row = wsUnmatched.addRow({

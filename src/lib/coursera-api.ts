@@ -279,3 +279,126 @@ export async function batchCheckCourseraUsersLive(
 
   return result;
 }
+
+// ── Live Learner Enrollment & Activity Dates ─────────────────────────────────
+
+export interface CourseraUserActivity {
+  email: string;
+  coursesCount: number;
+  earliestEnrollment: number | null;
+  latestActivity: number | null;
+}
+
+const userActivityCache = new Map<string, { activity: CourseraUserActivity; fetchedAt: number }>();
+const ACTIVITY_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Fetches real course enrollment date and last activity timestamp for an enterprise user
+ * using Coursera's live enrollmentReports endpoint.
+ */
+export async function fetchCourseraUserEnrollmentActivity(
+  email: string
+): Promise<CourseraUserActivity | null> {
+  if (!email || email.length > 254) return null;
+  const cleanEmail = email.toLowerCase().trim();
+
+  // Check in-memory cache
+  const cached = userActivityCache.get(cleanEmail);
+  if (cached && Date.now() - cached.fetchedAt < ACTIVITY_TTL_MS) {
+    return cached.activity;
+  }
+
+  if (isCircuitOpen()) {
+    return cached ? cached.activity : null;
+  }
+
+  const orgId = process.env.COURSERA_ORG_ID;
+  if (!orgId) return null;
+
+  const token = await getCourseraAccessToken();
+  if (!token) return null;
+
+  try {
+    const url = `https://api.coursera.com/ent/api/businesses.v1/${orgId}/enrollmentReports?externalId=${encodeURIComponent(cleanEmail)}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      recordApiFailure(res.status);
+      return null;
+    }
+
+    const data = await res.json();
+    const elements: Array<{ enrolledAt?: number; lastActivityAt?: number }> = data.elements || [];
+
+    let earliestEnrollment: number | null = null;
+    let latestActivity: number | null = null;
+
+    for (const item of elements) {
+      if (item.enrolledAt) {
+        if (!earliestEnrollment || item.enrolledAt < earliestEnrollment) {
+          earliestEnrollment = item.enrolledAt;
+        }
+      }
+      if (item.lastActivityAt) {
+        if (!latestActivity || item.lastActivityAt > latestActivity) {
+          latestActivity = item.lastActivityAt;
+        }
+      }
+    }
+
+    const activity: CourseraUserActivity = {
+      email: cleanEmail,
+      coursesCount: elements.length,
+      earliestEnrollment,
+      latestActivity,
+    };
+
+    userActivityCache.set(cleanEmail, { activity, fetchedAt: Date.now() });
+    recordApiSuccess();
+    return activity;
+  } catch (err) {
+    recordApiFailure();
+    console.error('[Coursera API] fetchCourseraUserEnrollmentActivity error:', err);
+    return null;
+  }
+}
+
+/**
+ * Batch fetches enrollment and activity dates for multiple emails with concurrency limiting.
+ */
+export async function batchFetchCourseraUserEnrollmentActivity(
+  emails: string[]
+): Promise<Map<string, CourseraUserActivity>> {
+  const result = new Map<string, CourseraUserActivity>();
+  if (!emails || emails.length === 0) return result;
+
+  const uniqueEmails = Array.from(new Set(emails.map(e => e.toLowerCase().trim()).filter(Boolean)));
+  const CONCURRENCY = 5;
+
+  for (let i = 0; i < uniqueEmails.length; i += CONCURRENCY) {
+    const slice = uniqueEmails.slice(i, i + CONCURRENCY);
+    const promises = slice.map(email => fetchCourseraUserEnrollmentActivity(email));
+    const activities = await Promise.all(promises);
+
+    for (let j = 0; j < slice.length; j++) {
+      const act = activities[j];
+      if (act) {
+        result.set(slice[j], act);
+      }
+    }
+
+    if (i + CONCURRENCY < uniqueEmails.length) {
+      await sleep(25); // Small delay to avoid burst throttling
+    }
+  }
+
+  return result;
+}

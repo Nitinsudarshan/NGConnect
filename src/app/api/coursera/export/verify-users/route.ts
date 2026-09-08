@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/rate-limiter';
-import { batchCheckCourseraUsersLive } from '@/lib/coursera-api';
+import { batchCheckCourseraUsersLive, batchFetchCourseraUserEnrollmentActivity } from '@/lib/coursera-api';
 
 export const maxDuration = 120;
 
@@ -159,10 +159,15 @@ export async function POST(request: NextRequest) {
   // 5. Step 2: For any emails not found in DB, check Coursera Enterprise Live API
   const missingFromDb = sanitizedEmails.filter(e => !allSnapshotEmails.has(e));
   let liveApiUserMap = new Map<string, { fullName: string; id: string } | null>();
+  let liveActivityMap = new Map<string, { coursesCount: number; earliestEnrollment: number | null; latestActivity: number | null }>();
 
   if (missingFromDb.length > 0) {
     try {
       liveApiUserMap = await batchCheckCourseraUsersLive(missingFromDb);
+      const liveEmails = missingFromDb.filter(e => liveApiUserMap.get(e));
+      if (liveEmails.length > 0) {
+        liveActivityMap = await batchFetchCourseraUserEnrollmentActivity(liveEmails);
+      }
     } catch (err) {
       console.warn('[verify-users] Live Coursera API check failed gracefully:', err);
     }
@@ -203,13 +208,14 @@ export async function POST(request: NextRequest) {
       // Check live API result
       const liveUser = liveApiUserMap.get(email);
       if (liveUser) {
+        const liveAct = liveActivityMap.get(email);
         found.push({
           email,
           name: liveUser.fullName || null,
           inSelectedMonth: false, // Active on Coursera, but no activity recorded for this specific snapshot month
           source: 'Coursera Enterprise (Live API)',
-          enrollmentDate: 'Active Account',
-          lastActivityDate: '—',
+          enrollmentDate: formatDateTimeForReport(liveAct?.earliestEnrollment),
+          lastActivityDate: formatDateTimeForReport(liveAct?.latestActivity),
         });
       } else {
         notFound.push({

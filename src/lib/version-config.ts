@@ -23,9 +23,30 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.15";
+export const CURRENT_VERSION = "1.07.16";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.16",
+    date: "2026-09-08",
+    title: "Live Coursera enrollmentReports Querying for Real-Time Learner Activity",
+    type: "patch",
+    highlights: [
+      "Integrated Coursera Enterprise enrollmentReports endpoint to fetch real enrolledAt and lastActivityAt timestamps for live enterprise learners",
+      "Populated precise enrollment date and last activity date into Sheet 3 (Unmatched Learners) instead of static placeholders",
+      "Enhanced verify-users route with batchFetchCourseraUserEnrollmentActivity supporting concurrency controls and caching"
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Implemented batchFetchCourseraUserEnrollmentActivity in coursera-api.ts querying live course progress timestamps directly from Coursera.",
+      },
+      {
+        category: "Improvements",
+        description: "Updated export route Sheet 3 and verification API to display exact enrollment and last activity dates for live enterprise accounts.",
+      },
+    ],
+  },
   {
     version: "1.07.15",
     date: "2026-09-08",
