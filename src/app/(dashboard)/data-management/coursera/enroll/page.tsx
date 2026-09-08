@@ -34,12 +34,13 @@ interface CheckerItem {
   lastActivityDate: string;
   courseraId?: string;
   // Local operation tracking
-  actionStatus?: 'idle' | 'loading' | 'success' | 'error';
+  actionStatus?: 'idle' | 'loading' | 'success' | 'already_invited' | 'already_enrolled' | 'error';
   actionMessage?: string;
+  errorCode?: string;
 }
 
 type InputMethod = 'manual' | 'spreadsheet';
-type FilterTab = 'all' | 'not_enrolled' | 'enrolled';
+type FilterTab = 'all' | 'not_enrolled' | 'invited' | 'enrolled';
 
 export default function CourseraEnrollmentCheckerPage() {
   // Input mode state
@@ -233,26 +234,81 @@ export default function CourseraEnrollmentCheckerPage() {
       });
 
       const data = await res.json();
-      if (!res.ok || !data.results?.[0]?.success) {
-        const msg = data.results?.[0]?.message || data.error || 'Operation failed';
-        setCheckResults(prev =>
-          prev
-            ? prev.map(item =>
-                item.email === user.email
-                  ? { ...item, actionStatus: 'error', actionMessage: msg }
-                  : item
-              )
-            : null
-        );
+      const r = data.results?.[0];
+
+      if (!res.ok || !r?.success) {
+        const msg = r?.message || data.error || 'Operation failed';
+        const isExistingInvite =
+          r?.statusCategory === 'already_invited' ||
+          r?.errorCode === 'PROGRAM_INVITEE_ERROR_EXISTING_INVITATION_FOR_EMAIL';
+        const isExistingMember =
+          r?.statusCategory === 'already_enrolled' ||
+          r?.errorCode === 'PROGRAM_MEMBER_ERROR_EXISTING_MEMBERSHIP_FOR_EMAIL';
+
+        if (isExistingInvite) {
+          setCheckResults(prev =>
+            prev
+              ? prev.map(item =>
+                  item.email === user.email
+                    ? {
+                        ...item,
+                        status: 'invited',
+                        actionStatus: 'already_invited',
+                        actionMessage: msg,
+                        errorCode: r?.errorCode,
+                      }
+                    : item
+                )
+              : null
+          );
+          setSuccessMessage(
+            `Notice for ${user.email}: Learner already has an active invitation to join Coursera Enterprise. You can click "Force Enroll" to activate their account immediately without waiting for them to accept.`
+          );
+        } else if (isExistingMember) {
+          setCheckResults(prev =>
+            prev
+              ? prev.map(item =>
+                  item.email === user.email
+                    ? {
+                        ...item,
+                        status: 'enrolled',
+                        source: 'Coursera Enterprise (Live API)',
+                        actionStatus: 'already_enrolled',
+                        actionMessage: msg,
+                        errorCode: r?.errorCode,
+                      }
+                    : item
+                )
+              : null
+          );
+          setSuccessMessage(`${user.email} is already an active enrolled member of this Coursera program.`);
+        } else {
+          setCheckResults(prev =>
+            prev
+              ? prev.map(item =>
+                  item.email === user.email
+                    ? {
+                        ...item,
+                        actionStatus: 'error',
+                        actionMessage: msg,
+                        errorCode: r?.errorCode,
+                      }
+                    : item
+                )
+              : null
+          );
+          setErrorMessage(`${user.email}: ${msg}`);
+        }
       } else {
-        const msg = data.results[0].message;
+        const msg = r.message;
+        const newStatus = action === 'enroll' ? 'enrolled' : 'invited';
         setCheckResults(prev =>
           prev
             ? prev.map(item =>
                 item.email === user.email
                   ? {
                       ...item,
-                      status: 'enrolled',
+                      status: newStatus,
                       source: 'Coursera Enterprise (Live API)',
                       actionStatus: 'success',
                       actionMessage: msg,
@@ -261,12 +317,13 @@ export default function CourseraEnrollmentCheckerPage() {
               )
             : null
         );
+        setSuccessMessage(`${user.email}: ${msg}`);
         // Refresh summary
         setSummary(prev =>
           prev
             ? {
                 ...prev,
-                enrolledCount: prev.enrolledCount + 1,
+                enrolledCount: action === 'enroll' ? prev.enrolledCount + 1 : prev.enrolledCount,
                 notEnrolledCount: Math.max(0, prev.notEnrolledCount - 1),
               }
             : null
@@ -282,6 +339,7 @@ export default function CourseraEnrollmentCheckerPage() {
             )
           : null
       );
+      setErrorMessage(`${user.email}: ${err.message || 'Network error'}`);
     }
   };
 
@@ -343,9 +401,27 @@ export default function CourseraEnrollmentCheckerPage() {
                       successCount++;
                       return {
                         ...item,
-                        status: 'enrolled',
+                        status: action === 'enroll' ? 'enrolled' : 'invited',
                         source: 'Coursera Enterprise (Live API)',
                         actionStatus: 'success',
+                        actionMessage: r.message,
+                      };
+                    } else if (
+                      r.statusCategory === 'already_invited' ||
+                      r.errorCode === 'PROGRAM_INVITEE_ERROR_EXISTING_INVITATION_FOR_EMAIL'
+                    ) {
+                      return {
+                        ...item,
+                        status: 'invited',
+                        actionStatus: 'already_invited',
+                        actionMessage: r.message,
+                      };
+                    } else if (r.statusCategory === 'already_enrolled') {
+                      return {
+                        ...item,
+                        status: 'enrolled',
+                        source: 'Coursera Enterprise (Live API)',
+                        actionStatus: 'already_enrolled',
                         actionMessage: r.message,
                       };
                     } else {
@@ -400,6 +476,7 @@ export default function CourseraEnrollmentCheckerPage() {
   // Filtered results
   const filteredResults = (checkResults || []).filter(item => {
     if (filterTab === 'not_enrolled' && item.status !== 'not_enrolled') return false;
+    if (filterTab === 'invited' && item.status !== 'invited') return false;
     if (filterTab === 'enrolled' && item.status !== 'enrolled') return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -680,7 +757,17 @@ export default function CourseraEnrollmentCheckerPage() {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Not Enrolled ({summary.notEnrolledCount})
+                Not Enrolled ({checkResults.filter(r => r.status === 'not_enrolled').length})
+              </button>
+              <button
+                onClick={() => setFilterTab('invited')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  filterTab === 'invited'
+                    ? 'bg-card text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Invite Pending ({checkResults.filter(r => r.status === 'invited').length})
               </button>
               <button
                 onClick={() => setFilterTab('enrolled')}
@@ -690,7 +777,7 @@ export default function CourseraEnrollmentCheckerPage() {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Active ({summary.enrolledCount})
+                Active ({checkResults.filter(r => r.status === 'enrolled').length})
               </button>
             </div>
 
@@ -802,6 +889,11 @@ export default function CourseraEnrollmentCheckerPage() {
                               <CheckCircle2 className="w-3 h-3 mr-1" />
                               Active Enterprise
                             </Badge>
+                          ) : item.status === 'invited' || item.actionStatus === 'already_invited' ? (
+                            <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400 hover:bg-blue-500/20 border-blue-500/20">
+                              <Mail className="w-3 h-3 mr-1" />
+                              Invite Pending
+                            </Badge>
                           ) : (
                             <Badge variant="outline" className="text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/5">
                               <XCircle className="w-3 h-3 mr-1" />
@@ -830,23 +922,69 @@ export default function CourseraEnrollmentCheckerPage() {
                           {item.actionStatus === 'loading' ? (
                             <span className="inline-flex items-center text-xs text-muted-foreground">
                               <Loader2 className="w-3.5 h-3.5 animate-spin mr-1 text-indigo-600" />
-                              Executing...
+                              Processing...
                             </span>
                           ) : item.actionStatus === 'success' ? (
                             <span className="inline-flex items-center text-xs text-emerald-600 dark:text-emerald-400 font-medium">
                               <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                              Success
+                              {item.actionMessage || 'Success'}
                             </span>
-                          ) : item.status === 'not_enrolled' || item.actionStatus === 'error' ? (
-                            <div className="flex items-center justify-end gap-1.5">
-                              {item.actionStatus === 'error' && (
+                          ) : item.actionStatus === 'already_invited' || item.status === 'invited' ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <div className="text-right hidden sm:block">
+                                <span className="text-xs font-medium text-blue-600 dark:text-blue-400 block leading-tight">
+                                  Invite Already Sent
+                                </span>
+                                <span className="text-[10px] text-muted-foreground block leading-tight">
+                                  Pending learner acceptance
+                                </span>
+                              </div>
+                              <Button
+                                size="sm"
+                                onClick={() => handleSingleAction(item, 'enroll')}
+                                className="h-7 px-2 text-[11px] bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-xs"
+                                title="Direct Force Enroll into Program (bypasses pending invite)"
+                              >
+                                <UserPlus className="w-3 h-3 mr-1" />
+                                Force Enroll
+                              </Button>
+                            </div>
+                          ) : item.actionStatus === 'error' ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <div className="text-right max-w-[220px]">
+                                <span className="text-xs font-semibold text-destructive flex items-center justify-end gap-1 leading-tight">
+                                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                                  Action Failed
+                                </span>
                                 <span
-                                  className="text-[11px] text-destructive truncate max-w-[120px]"
+                                  className="text-[10px] text-muted-foreground block truncate leading-tight mt-0.5"
                                   title={item.actionMessage}
                                 >
-                                  Error
+                                  {item.actionMessage}
                                 </span>
-                              )}
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleSingleAction(item, 'invite')}
+                                className="h-7 px-2 text-[11px]"
+                                title="Retry sending invitation"
+                              >
+                                <Mail className="w-3 h-3 mr-1 text-indigo-500" />
+                                Retry
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleSingleAction(item, 'enroll')}
+                                className="h-7 px-2 text-[11px] bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
+                                title="Direct Force Enroll into Program"
+                              >
+                                <UserPlus className="w-3 h-3 mr-1" />
+                                Enroll
+                              </Button>
+                            </div>
+                          ) : item.status === 'not_enrolled' ? (
+                            <div className="flex items-center justify-end gap-1.5">
                               <Button
                                 size="sm"
                                 variant="outline"

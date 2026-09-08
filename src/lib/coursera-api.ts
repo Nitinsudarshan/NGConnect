@@ -410,11 +410,71 @@ export interface CourseraEnrollmentResult {
   success: boolean;
   action: 'invite' | 'enroll';
   message: string;
+  errorCode?: string;
+  statusCategory?: 'success' | 'already_invited' | 'already_enrolled' | 'error';
   courseraId?: string;
 }
 
+function parseCourseraErrorMessage(errText: string, status: number): {
+  message: string;
+  errorCode?: string;
+  statusCategory: 'already_invited' | 'already_enrolled' | 'error';
+} {
+  try {
+    const json = JSON.parse(errText);
+    const code = json.errorCode || json.code;
+    const rawMsg = json.message || json.error_description;
+
+    if (code === 'PROGRAM_INVITEE_ERROR_EXISTING_INVITATION_FOR_EMAIL') {
+      return {
+        message: 'Learner already has a pending invitation waiting to be accepted.',
+        errorCode: code,
+        statusCategory: 'already_invited',
+      };
+    }
+    if (
+      code === 'PROGRAM_MEMBER_ERROR_EXISTING_MEMBERSHIP_FOR_EMAIL' ||
+      code === 'PROGRAM_MEMBER_ERROR_EXISTING_USER'
+    ) {
+      return {
+        message: 'Learner is already an active enrolled member of this program.',
+        errorCode: code,
+        statusCategory: 'already_enrolled',
+      };
+    }
+    if (code === 'EXTERNAL_ID_ALREADY_EXISTS') {
+      return {
+        message: 'A learner with this external ID already exists in Coursera directory.',
+        errorCode: code,
+        statusCategory: 'error',
+      };
+    }
+    if (rawMsg) {
+      return {
+        message: rawMsg,
+        errorCode: code,
+        statusCategory: 'error',
+      };
+    }
+  } catch {
+    // not JSON
+  }
+
+  if (status === 429) {
+    return {
+      message: 'Coursera rate limit reached. Please wait a moment and retry.',
+      statusCategory: 'error',
+    };
+  }
+
+  return {
+    message: `Coursera API returned error (${status}): ${errText.slice(0, 150)}`,
+    statusCategory: 'error',
+  };
+}
+
 /**
- * Sends an email invitation to join the enterprise learning program.
+ * Sends an invitation to a learner for the Coursera Enterprise program.
  */
 export async function inviteCourseraUser(user: {
   email: string;
@@ -456,23 +516,28 @@ export async function inviteCourseraUser(user: {
         email: cleanEmail,
         success: true,
         action: 'invite',
+        statusCategory: 'success',
         message: 'Invitation sent successfully via Coursera.',
         courseraId: data.id,
       };
     }
 
     const errText = await res.text();
+    const parsed = parseCourseraErrorMessage(errText, res.status);
     return {
       email: cleanEmail,
       success: false,
       action: 'invite',
-      message: `Coursera API error (${res.status}): ${errText.slice(0, 150)}`,
+      message: parsed.message,
+      errorCode: parsed.errorCode,
+      statusCategory: parsed.statusCategory,
     };
   } catch (err: any) {
     return {
       email: cleanEmail,
       success: false,
       action: 'invite',
+      statusCategory: 'error',
       message: `Network error: ${err.message || 'unknown'}`,
     };
   }
@@ -521,23 +586,28 @@ export async function enrollCourseraUser(user: {
         email: cleanEmail,
         success: true,
         action: 'enroll',
+        statusCategory: 'success',
         message: 'Learner enrolled directly into Coursera Enterprise Program.',
         courseraId: data.id,
       };
     }
 
     const errText = await res.text();
+    const parsed = parseCourseraErrorMessage(errText, res.status);
     return {
       email: cleanEmail,
       success: false,
       action: 'enroll',
-      message: `Coursera API error (${res.status}): ${errText.slice(0, 150)}`,
+      message: parsed.message,
+      errorCode: parsed.errorCode,
+      statusCategory: parsed.statusCategory,
     };
   } catch (err: any) {
     return {
       email: cleanEmail,
       success: false,
       action: 'enroll',
+      statusCategory: 'error',
       message: `Network error: ${err.message || 'unknown'}`,
     };
   }

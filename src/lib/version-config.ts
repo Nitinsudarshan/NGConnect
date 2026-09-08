@@ -23,9 +23,31 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.17";
+export const CURRENT_VERSION = "1.07.18";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.07.18",
+    date: "2026-09-08",
+    title: "Descriptive Coursera API Error Handling & Pending Invitation Status",
+    type: "patch",
+    highlights: [
+      "Parsed Coursera API error responses to extract human-friendly error messages and specific error codes",
+      "Automatically detected pending invitations (PROGRAM_INVITEE_ERROR_EXISTING_INVITATION_FOR_EMAIL) and displayed 'Invite Pending' status",
+      "Replaced generic 'Error' labels with descriptive failure notices and instant Force Enroll bypass options",
+      "Added dedicated 'Invite Pending' filter tab in Learner Enrollment & Checker table"
+    ],
+    changes: [
+      {
+        category: "Improvements",
+        description: "Implemented parseCourseraErrorMessage in coursera-api.ts to cleanly interpret API error codes including existing invitations and memberships.",
+      },
+      {
+        category: "Improvements",
+        description: "Enhanced table row actions in Coursera Enrollment Checker to display detailed notifications, retry buttons, and bypass enrollment.",
+      },
+    ],
+  },
   {
     version: "1.07.17",
     date: "2026-09-08",
