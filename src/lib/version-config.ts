@@ -23,9 +23,43 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.09.01";
+export const CURRENT_VERSION = "1.09.02";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.09.02",
+    date: "2026-09-18",
+    title: "Per-Role Gate Audit — Matrix Alignment & Unmoderated Surface Register",
+    type: "patch",
+    highlights: [
+      "Audited every gate against the seeded matrix for all seven roles",
+      "Opened the gates that were closed tighter than the matrix allowed, including the Alumni CRM settings actions and the Master Data page",
+      "Left every unallocated surface working and catalogued it in docs/RBAC-UNMODERATED.md for review",
+      "Dashboard org-wide statistics now follow the reports permission instead of a hardcoded role list"
+    ],
+    changes: [
+      {
+        category: "Fixes",
+        description: "Alumni CRM settings actions (pipeline stages, org settings, interaction outcomes, contribution types, outcome mapping, call reasons, pipeline POC) required the Admin role directly, blocking Managers the matrix grants crm.settings.* edit; they now resolve through the matrix.",
+      },
+      {
+        category: "Fixes",
+        description: "Master Data page re-checked a Super Admin / Admin / Manager role list after its layout had already granted access; it now follows manage.master_data view.",
+      },
+      {
+        category: "Fixes",
+        description: "saveGranularRbacChanges and rollbackGranularRbac used isTrueAdmin instead of manage.rbac edit, and the notification test-email route checked manage.users edit instead of manage.notifications edit.",
+      },
+      {
+        category: "Improvements",
+        description: "Main dashboard resolves org-wide statistics from reports view rather than excluding the Viewer and Member roles by name, and the requests portal dropped its client-side role redirect in favour of the page guard.",
+      },
+      {
+        category: "Improvements",
+        description: "Added docs/RBAC-UNMODERATED.md cataloguing the pages, API routes, server actions, matrix bypasses, and cosmetic role checks that remain reachable without an allocation, each with a suggested resource and a decision column.",
+      },
+    ],
+  },
   {
     version: "1.09.01",
     date: "2026-09-18",

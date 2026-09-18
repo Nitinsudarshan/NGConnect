@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useUserContext } from '@/contexts/user-context';
+import { useCan } from '@/contexts/permission-context';
 import type { AlumniMaster } from '@/types/alumni';
 import AlumniDetailsModule from '@/components/shared/alumni-details-module';
 import { PageBanner } from '@/components/shared/page-banner';
@@ -49,7 +50,7 @@ export default function MasterDataPage() {
 
   const supabase = createClient();
   const user = useUserContext();
-  const role = user?.role;
+  const canViewMasterData = useCan()('manage.master_data', 'view');
 
   const fetchMasterData = async () => {
     setLoading(true);
@@ -71,19 +72,19 @@ export default function MasterDataPage() {
     }
   };
 
+  // The layout already gates this route on `manage.master_data` view, so the
+  // page follows the matrix rather than re-checking a hardcoded role list.
   useEffect(() => {
-    if (role) {
-      if (role !== 'Super Admin' && role !== 'Admin' && role !== 'Manager') {
-        toast.error('Unauthorized access to Master Data');
-      } else {
-        fetchMasterData();
-      }
+    if (canViewMasterData) {
+      fetchMasterData();
+    } else {
+      toast.error('Unauthorized access to Master Data');
     }
-  }, [role]);
+  }, [canViewMasterData]);
 
 
 
-  if (role && role !== 'Super Admin' && role !== 'Admin' && role !== 'Manager') {
+  if (!canViewMasterData) {
     return (
       <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-20 text-center items-center justify-center h-[50vh]">
         <HelpCircle className="w-12 h-12 text-red-500 animate-bounce" />

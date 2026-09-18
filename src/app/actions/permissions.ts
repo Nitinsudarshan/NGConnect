@@ -1,7 +1,9 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/admin';
-import { isTrueAdmin, getSupabaseUserEmail } from '@/lib/roles';
+import { getSupabaseUserEmail } from '@/lib/roles';
+import { auth } from '@/lib/auth';
+import { checkAccess } from '@/lib/permissions';
 
 type RolePermissionData = {
   role: string;
@@ -17,9 +19,10 @@ type RolePermissionData = {
 
 // Legacy, kept temporarily just in case.
 export async function saveRbacChanges(snapshot: RolePermissionData[]) {
-  const isAdmin = await isTrueAdmin();
-  if (!isAdmin) {
-    return { success: false, error: 'Unauthorized' };
+  const { userId } = await auth();
+  const canEditRbac = await checkAccess(userId, 'manage.rbac', 'edit');
+  if (!canEditRbac) {
+    return { success: false, error: 'Unauthorized: you do not have edit access to the RBAC matrix.' };
   }
 
   const userEmail = await getSupabaseUserEmail() || 'unknown';
@@ -76,9 +79,10 @@ export async function saveGranularRbacChanges(
   subjectType: RbacSubjectType,
   permissions: GranularPermissionInput[]
 ) {
-  const isAdmin = await isTrueAdmin();
-  if (!isAdmin) {
-    return { success: false, error: 'Unauthorized' };
+  const { userId } = await auth();
+  const canEditRbac = await checkAccess(userId, 'manage.rbac', 'edit');
+  if (!canEditRbac) {
+    return { success: false, error: 'Unauthorized: you do not have edit access to the RBAC matrix.' };
   }
 
   if (subjectType !== 'role' && subjectType !== 'user') {
@@ -133,9 +137,10 @@ export async function saveGranularRbacChanges(
 
 // Rollback to a specific audit log
 export async function rollbackGranularRbac(logId: string, snapshot: any) {
-  const isAdmin = await isTrueAdmin();
-  if (!isAdmin) {
-    return { success: false, error: 'Unauthorized' };
+  const { userId } = await auth();
+  const canEditRbac = await checkAccess(userId, 'manage.rbac', 'edit');
+  if (!canEditRbac) {
+    return { success: false, error: 'Unauthorized: you do not have edit access to the RBAC matrix.' };
   }
 
   const userEmail = await getSupabaseUserEmail() || 'unknown';

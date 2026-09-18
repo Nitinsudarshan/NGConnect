@@ -1,7 +1,8 @@
 "use server";
 
 import { createClient } from '@/lib/supabase/server';
-import { checkAccess, checkClusterAccess } from '@/lib/permissions';
+import { checkAccess, checkAnyAccess, checkClusterAccess } from '@/lib/permissions';
+import { denyActionUnlessAccess } from '@/lib/action-guard';
 import { auth } from '@/lib/auth';
 import { getUserRole, getSupabaseUserEmail } from '@/lib/roles';
 import { LogInteractionPayload, OutcomeMappingRow, PipelineSuggestion, PipelineStage } from '@/types/engagement';
@@ -460,10 +461,8 @@ export async function managePipelineStageAction(payload: {
   archive?: boolean;
 }) {
   try {
-    const role = await getUserRole();
-    if (role !== 'Admin' && role !== 'Super Admin') {
-      return { success: false, error: 'Admin access required' };
-    }
+    const denied = await denyActionUnlessAccess('crm.settings.pipeline_stages', 'edit');
+    if (denied) return denied;
 
     const supabase = await createClient();
     const cleanCode = payload.code.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
@@ -605,9 +604,14 @@ export async function updateOrgSettingsAction(payload: {
   updated_by: string;
 }) {
   try {
-    const role = await getUserRole();
-    if (role !== 'Admin' && role !== 'Super Admin') {
-      return { success: false, error: 'Admin access required to change org settings' };
+    const { userId } = await auth();
+    const canEditOrgSettings = await checkAnyAccess(userId, [
+      'crm.settings.pay_forward_rules',
+      'crm.settings.active_member_criteria',
+      'crm.settings.profile_scoring',
+    ], 'edit');
+    if (!canEditOrgSettings) {
+      return { success: false, error: 'You do not have edit access to the Alumni Growth outreach rules.' };
     }
 
     const adminSupabase = createAdminClient();
@@ -703,10 +707,8 @@ export async function manageOutcomeAction(payload: {
   archive?: boolean;
 }) {
   try {
-    const role = await getUserRole();
-    if (role !== 'Admin' && role !== 'Super Admin') {
-      return { success: false, error: 'Admin access required' };
-    }
+    const denied = await denyActionUnlessAccess('crm.settings.interaction_outcomes', 'edit');
+    if (denied) return denied;
 
     const supabase = await createClient();
     const { data: existing } = await supabase.from('interaction_outcomes').select('id').eq('code', payload.code).maybeSingle();
@@ -756,10 +758,8 @@ export async function manageContributionTypeAction(payload: {
   archive?: boolean;
 }) {
   try {
-    const role = await getUserRole();
-    if (role !== 'Admin' && role !== 'Super Admin') {
-      return { success: false, error: 'Admin access required' };
-    }
+    const denied = await denyActionUnlessAccess('crm.settings.contribution_types', 'edit');
+    if (denied) return denied;
 
     const supabase = await createClient();
     const { data: existing } = await supabase.from('contribution_types').select('id').eq('code', payload.code).maybeSingle();
@@ -982,10 +982,8 @@ export async function transferPocAction(payload: {
 
 export async function saveOutcomeMappingAction(rows: OutcomeMappingRow[], actionType: 'create' | 'update' | 'delete', details: string) {
   try {
-    const role = await getUserRole();
-    if (role !== 'Admin' && role !== 'Super Admin') {
-      return { success: false, error: 'Admin access required' };
-    }
+    const denied = await denyActionUnlessAccess('crm.settings.outcome_mapping', 'edit');
+    if (denied) return denied;
 
     const supabase = await createClient();
     const userEmail = await getSupabaseUserEmail();
@@ -1019,10 +1017,8 @@ export async function manageCallReasonAction(payload: {
   archive?: boolean;
 }) {
   try {
-    const role = await getUserRole();
-    if (role !== 'Admin' && role !== 'Super Admin') {
-      return { success: false, error: 'Admin access required' };
-    }
+    const denied = await denyActionUnlessAccess('crm.settings.interaction_outcomes', 'edit');
+    if (denied) return denied;
 
     const supabase = await createClient();
     
@@ -1061,10 +1057,8 @@ export async function managePipelinePocAction(payload: {
   archive?: boolean;
 }) {
   try {
-    const role = await getUserRole();
-    if (role !== 'Admin' && role !== 'Super Admin') {
-      return { success: false, error: 'Admin access required' };
-    }
+    const denied = await denyActionUnlessAccess('crm.settings.pipelines_config', 'edit');
+    if (denied) return denied;
 
     const supabase = await createClient();
     

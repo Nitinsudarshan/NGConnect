@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { checkAccess } from '@/lib/permissions';
+import { denyApiUnlessAccess } from '@/lib/api-guard';
 import { sendEmailViaDispatcher } from '@/lib/email/dispatcher';
 import { EmailProviderType } from '@/types/email-notifications';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -9,12 +9,8 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const canManage = await checkAccess(user?.id ?? null, 'manage.users', 'edit');
-  // Allow super admin / admin
-  const isSuperUser = user?.email && ['nitin@navgurukul.org', 'nitinsudarshan@gmail.com'].includes(user.email.toLowerCase());
-  if (!canManage && !isSuperUser) {
-    return NextResponse.json({ error: 'Unauthorized access' }, { status: 403 });
-  }
+  const denied = await denyApiUnlessAccess('manage.notifications', 'edit');
+  if (denied) return denied;
 
   try {
     const body = await request.json();
