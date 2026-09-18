@@ -19,7 +19,8 @@ export default async function RbacPage() {
 
   const { data: permissions, error } = await supabase
     .from('rbac_permissions')
-    .select('*');
+    .select('*')
+    .in('subject_type', ['role', 'user']);
 
   const { data: logs, error: logsError } = await supabase
     .from('rbac_audit_logs')
@@ -38,8 +39,7 @@ export default async function RbacPage() {
     id: u.id,
     name: u.user_metadata?.full_name || u.user_metadata?.name || '',
     email: u.email || '',
-    role: (u.email && ["nitin@navgurukul.org", "nitinsudarshan@gmail.com"].includes(u.email.toLowerCase())) ? "Super Admin" : (u.user_metadata?.role || "Member"),
-    team: u.user_metadata?.team || "None"
+    role: (u.email && ["nitin@navgurukul.org", "nitinsudarshan@gmail.com"].includes(u.email.toLowerCase())) ? "Super Admin" : (u.user_metadata?.role || "Member")
   }));
 
   return (
@@ -54,7 +54,7 @@ export default async function RbacPage() {
               Role-Based Access Control (RBAC)
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Configure which page clusters each user role can access.
+              Permissions are granted per role, and can be overridden for an individual user.
             </p>
           </div>
         </div>

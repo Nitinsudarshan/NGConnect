@@ -56,8 +56,14 @@ export async function saveRbacChanges(snapshot: RolePermissionData[]) {
   return { success: true };
 }
 
+/**
+ * RBAC subjects. Team-based permissions were retired — permissions resolve
+ * from the role default, optionally overridden per individual user.
+ */
+export type RbacSubjectType = 'role' | 'user';
+
 export type GranularPermissionInput = {
-  subject_type: 'role' | 'team' | 'user';
+  subject_type: RbacSubjectType;
   subject_id: string;
   resource_id: string;
   can_view: boolean;
@@ -67,12 +73,20 @@ export type GranularPermissionInput = {
 
 // New save function for granular RBAC
 export async function saveGranularRbacChanges(
-  subjectType: 'role' | 'team' | 'user',
+  subjectType: RbacSubjectType,
   permissions: GranularPermissionInput[]
 ) {
   const isAdmin = await isTrueAdmin();
   if (!isAdmin) {
     return { success: false, error: 'Unauthorized' };
+  }
+
+  if (subjectType !== 'role' && subjectType !== 'user') {
+    return { success: false, error: 'Team-based permissions have been retired. Use role or user permissions instead.' };
+  }
+
+  if (permissions.some(p => p.subject_type !== 'role' && p.subject_type !== 'user')) {
+    return { success: false, error: 'Team-based permissions have been retired and can no longer be saved.' };
   }
 
   const userEmail = await getSupabaseUserEmail() || 'unknown';
@@ -133,6 +147,11 @@ export async function rollbackGranularRbac(logId: string, snapshot: any) {
 
   const permissions: GranularPermissionInput[] = snapshot.data;
   const subjectType = snapshot.subjectType;
+
+  // Snapshots taken before team RBAC was retired can no longer be restored.
+  if (subjectType === 'team' || permissions.some(p => p.subject_type !== 'role' && p.subject_type !== 'user')) {
+    return { success: false, error: 'This snapshot contains team permissions, which have been retired and cannot be restored.' };
+  }
 
   const upsertData = permissions.map(p => ({
     subject_type: p.subject_type,

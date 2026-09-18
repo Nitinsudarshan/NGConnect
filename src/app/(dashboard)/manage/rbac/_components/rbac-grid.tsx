@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useTransition, useMemo } from 'react';
-import { saveGranularRbacChanges, GranularPermissionInput } from '@/app/actions/permissions';
+import { saveGranularRbacChanges, GranularPermissionInput, RbacSubjectType } from '@/app/actions/permissions';
 import { PERMISSION_RESOURCES, RESOURCE_CLUSTERS, ActionType } from '@/lib/resource-tree';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Edit, Save, X, AlertTriangle, Search, Shield, Users, User, ChevronDown, ChevronRight, CheckSquare, Info } from 'lucide-react';
+import { Loader2, Edit, Save, X, AlertTriangle, Search, Shield, User, ChevronDown, ChevronRight, CheckSquare, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,10 +14,10 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 
-type SubjectType = 'role' | 'team' | 'user';
+/** Permissions are granted per role, and optionally overridden per individual user. */
+type SubjectType = RbacSubjectType;
 
 const ROLES = ['Admin', 'Manager', 'Program', 'Operations', 'Viewer', 'Member'];
-const TEAMS = ["CEO's Office", 'Alumni Growth', 'PNC', 'Finance', 'None'];
 
 // Group resources by cluster
 const RESOURCES_BY_CLUSTER = RESOURCE_CLUSTERS.map(cluster => ({
@@ -25,7 +25,7 @@ const RESOURCES_BY_CLUSTER = RESOURCE_CLUSTERS.map(cluster => ({
   resources: PERMISSION_RESOURCES.filter(r => r.cluster === cluster.id)
 }));
 
-export function RbacGrid({ initialData, canEdit, users = [] }: { initialData: GranularPermissionInput[], canEdit: boolean, users?: { id: string, name: string, email: string, role?: string, team?: string }[] }) {
+export function RbacGrid({ initialData, canEdit, users = [] }: { initialData: GranularPermissionInput[], canEdit: boolean, users?: { id: string, name: string, email: string, role?: string }[] }) {
   const router = useRouter();
   
   const [activeTab, setActiveTab] = useState<SubjectType>('role');
@@ -127,10 +127,6 @@ export function RbacGrid({ initialData, canEdit, users = [] }: { initialData: Gr
       const p = initialData.find(x => x.subject_type === 'role' && x.subject_id === selectedSubject && x.resource_id === resourceId);
       return p ? p[`can_${action}`] : false;
     }
-    if (activeTab === 'team') {
-      const p = initialData.find(x => x.subject_type === 'team' && x.subject_id === selectedSubject && x.resource_id === resourceId);
-      return p ? p[`can_${action}`] : false;
-    }
     if (activeTab === 'user') {
       const user = users.find(u => u.id === selectedSubject);
       if (!user) return false;
@@ -138,11 +134,6 @@ export function RbacGrid({ initialData, canEdit, users = [] }: { initialData: Gr
       
       const userPerm = initialData.find(x => x.subject_type === 'user' && x.subject_id === selectedSubject && x.resource_id === resourceId);
       if (userPerm && userPerm[`can_${action}`] !== null && userPerm[`can_${action}`] !== undefined) return userPerm[`can_${action}`];
-      
-      if (user.team && user.team !== 'None') {
-        const teamPerm = initialData.find(x => x.subject_type === 'team' && x.subject_id === user.team && x.resource_id === resourceId);
-        if (teamPerm && teamPerm[`can_${action}`] !== null && teamPerm[`can_${action}`] !== undefined) return teamPerm[`can_${action}`];
-      }
       
       if (user.role) {
         const rolePerm = initialData.find(x => x.subject_type === 'role' && x.subject_id === user.role && x.resource_id === resourceId);
@@ -234,10 +225,9 @@ export function RbacGrid({ initialData, canEdit, users = [] }: { initialData: Gr
               setUserSearchQuery('');
               setShowUserDropdown(false);
             }}>
-              <TabsList className="w-full grid grid-cols-3">
-                <TabsTrigger value="role" title="Roles"><Shield className="w-4 h-4" /></TabsTrigger>
-                <TabsTrigger value="team" title="Teams"><Users className="w-4 h-4" /></TabsTrigger>
-                <TabsTrigger value="user" title="Individuals"><User className="w-4 h-4" /></TabsTrigger>
+              <TabsList className="w-full grid grid-cols-2">
+                <TabsTrigger value="role" title="Roles" className="gap-2"><Shield className="w-4 h-4" /> Roles</TabsTrigger>
+                <TabsTrigger value="user" title="Individuals" className="gap-2"><User className="w-4 h-4" /> Users</TabsTrigger>
               </TabsList>
             </Tabs>
             
@@ -253,20 +243,6 @@ export function RbacGrid({ initialData, canEdit, users = [] }: { initialData: Gr
                       className={`text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${selectedSubject === role ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground'}`}
                     >
                       {role}
-                    </button>
-                  ))}
-                </div>
-              )}
-              
-              {activeTab === 'team' && (
-                <div className="flex flex-col gap-1">
-                  {TEAMS.map(team => (
-                    <button
-                      key={team}
-                      onClick={() => { setSelectedSubject(team); setIsEditing(false); setPermissions(initialData); }}
-                      className={`text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${selectedSubject === team ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground'}`}
-                    >
-                      {team}
                     </button>
                   ))}
                 </div>

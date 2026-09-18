@@ -1,27 +1,32 @@
 import { createClient } from '@/lib/supabase/server';
-import { UserRole, UserTeam, getUserRole, getSupabaseUserEmail } from './roles';
-import { auth } from '@/lib/auth';
-import { ActionType, getResourcesByCluster, PERMISSION_RESOURCES } from './resource-tree';
+import { getUserRole } from './roles';
+import { ActionType, getResourcesByCluster } from './resource-tree';
 
+/**
+ * Permission resolution is two-tiered:
+ *   1. Individual user override (`subject_type = 'user'`)
+ *   2. Role default            (`subject_type = 'role'`)
+ *
+ * Team-based permissions were removed — a user's team is an organisational
+ * label only and never grants or revokes access.
+ */
 export async function checkAccess(userId: string | null, resourceId: string, action: ActionType): Promise<boolean> {
   if (!userId) return false;
 
-  // 1. Get role and team
+  // 1. Get role
   const role = await getUserRole();
-  const { sessionClaims } = await auth();
-  const team = (sessionClaims?.metadata?.team || (sessionClaims as any)?.team || 'None') as UserTeam;
-  
+
   // Super Admin bypass
   if (role === 'Super Admin') return true;
 
   const supabase = await createClient();
 
-  // Query permissions for user, team, and role for this resource
+  // Query permissions for the user and their role for this resource
   const { data, error } = await supabase
     .from('rbac_permissions')
     .select('*')
     .eq('resource_id', resourceId)
-    .in('subject_id', [userId, team, role]);
+    .in('subject_id', [userId, role]);
 
   if (error || !data) {
     // Graceful fallback for Admins during migration if tables don't exist
@@ -30,7 +35,6 @@ export async function checkAccess(userId: string | null, resourceId: string, act
   }
 
   const indData = data.find(d => d.subject_type === 'user' && d.subject_id === userId);
-  const teamData = data.find(d => d.subject_type === 'team' && d.subject_id === team);
   const roleData = data.find(d => d.subject_type === 'role' && d.subject_id === role);
 
   const actionCol = `can_${action}` as keyof typeof indData;
@@ -41,12 +45,7 @@ export async function checkAccess(userId: string | null, resourceId: string, act
     return indData[actionCol];
   }
 
-  // 3. Check team overrides
-  if (teamData && teamData[actionCol] !== undefined) {
-    return teamData[actionCol];
-  }
-
-  // 4. Check role default
+  // 3. Check role default
   if (roleData && roleData[actionCol] !== undefined) {
     return roleData[actionCol];
   }
@@ -74,9 +73,6 @@ export async function getUserPermissions(userId: string | null, cluster: string)
 
   if (isAdmin) return map as any;
 
-  const { sessionClaims } = await auth();
-  const team = (sessionClaims?.metadata?.team || (sessionClaims as any)?.team || 'None') as UserTeam;
-
   const resourceIds = resources.map(r => r.id);
 
   const supabase = await createClient();
@@ -84,15 +80,14 @@ export async function getUserPermissions(userId: string | null, cluster: string)
     .from('rbac_permissions')
     .select('*')
     .in('resource_id', resourceIds)
-    .in('subject_id', [userId, team, role]);
+    .in('subject_id', [userId, role]);
 
   if (!data) return map as any;
 
-  const indData = data.filter(d => d.subject_type === 'user');
-  const teamData = data.filter(d => d.subject_type === 'team');
-  const roleData = data.filter(d => d.subject_type === 'role');
+  const indData = data.filter(d => d.subject_type === 'user' && d.subject_id === userId);
+  const roleData = data.filter(d => d.subject_type === 'role' && d.subject_id === role);
 
-  // Apply role
+  // Apply role defaults
   for (const r of roleData) {
     if (map[r.resource_id]) {
       map[r.resource_id].view = r.can_view;
@@ -101,16 +96,7 @@ export async function getUserPermissions(userId: string | null, cluster: string)
     }
   }
 
-  // Apply team
-  for (const r of teamData) {
-    if (map[r.resource_id]) {
-      map[r.resource_id].view = r.can_view;
-      map[r.resource_id].edit = r.can_edit;
-      map[r.resource_id].delete = r.can_delete;
-    }
-  }
-
-  // Apply individual
+  // Apply individual overrides
   for (const r of indData) {
     if (map[r.resource_id]) {
       map[r.resource_id].view = r.can_view;
@@ -134,21 +120,18 @@ export async function checkClusterAccess(userId: string | null, cluster: string)
   const role = await getUserRole();
   if (role === 'Super Admin' || role === 'Admin') return true;
 
-  const { sessionClaims } = await auth();
-  const team = (sessionClaims?.metadata?.team || (sessionClaims as any)?.team || 'None') as UserTeam;
-
   const supabase = await createClient();
 
   const resources = getResourcesByCluster(cluster);
   if (!resources || resources.length === 0) return false;
   const resourceIds = resources.map(r => r.id);
 
-  // Check if there are ANY permissions granting view for this user/team/role in this cluster
+  // Check if there are ANY permissions granting view for this user or role in this cluster
   const { data } = await supabase
     .from('rbac_permissions')
     .select('id')
     .in('resource_id', resourceIds)
-    .in('subject_id', [userId, team, role])
+    .in('subject_id', [userId, role])
     .eq('can_view', true)
     .limit(1);
 

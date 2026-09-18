@@ -79,7 +79,7 @@ const MANAGE_CATEGORIES = [
       {
         href: '/manage/rbac',
         label: 'RBAC Matrix',
-        description: 'Role-Based Access Control matrix for user, team, and role permissions.',
+        description: 'Role-Based Access Control matrix for role defaults and individual user overrides.',
         icon: ShieldCheck,
         badge: 'Admin',
         gradient: 'from-rose-500/10 via-red-500/5 to-transparent',

@@ -23,9 +23,51 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.07.19";
+export const CURRENT_VERSION = "1.08.00";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.08.00",
+    date: "2026-09-18",
+    title: "Retired Team-Based RBAC — Role + Individual Override Only",
+    type: "minor",
+    highlights: [
+      "Removed the team tier from the permission engine so role grants are no longer overridden by team grants",
+      "Permissions now resolve on two tiers: individual user override, then role default",
+      "Archived and deleted all subject_type = 'team' rows and blocked new ones with a CHECK constraint",
+      "Simplified the RBAC matrix UI to Roles and Users tabs"
+    ],
+    changes: [
+      {
+        category: "Improvements",
+        description: "Rewrote checkAccess, getUserPermissions, and checkClusterAccess in permissions.ts to resolve access from the user override and role default only, dropping all team lookups and the session team claim.",
+      },
+      {
+        category: "Improvements",
+        description: "Removed the team tier from getPipelineEligibleStaff in engagement/queries.ts so pipeline POC eligibility follows role and individual overrides.",
+      },
+      {
+        category: "Improvements",
+        description: "Replaced the three-way subject union with RbacSubjectType ('role' | 'user') in actions/permissions.ts and rejected team payloads in saveGranularRbacChanges and rollbackGranularRbac.",
+      },
+      {
+        category: "Improvements",
+        description: "Removed the Teams tab, team list, and team inheritance preview from the RBAC matrix grid, leaving labelled Roles and Users tabs.",
+      },
+      {
+        category: "Improvements",
+        description: "Scoped the RBAC page query to role and user rows, dropped the unused team field from the staff user list, and flagged legacy team snapshots as non-restorable in the audit log.",
+      },
+      {
+        category: "Security",
+        description: "Added migration 20260918000000_drop_team_rbac.sql which archives team permission rows into rbac_permissions_team_backup, deletes them, and tightens the subject_type CHECK constraint to ('user', 'role').",
+      },
+      {
+        category: "Improvements",
+        description: "Updated rbac-settings.md, docs/ROLES.md, NGConnect.md, README.md, and the Manage hub copy to describe teams as an organisational label with no access implications.",
+      },
+    ],
+  },
   {
     version: "1.07.19",
     date: "2026-09-08",
