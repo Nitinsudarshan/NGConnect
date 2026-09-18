@@ -1,12 +1,16 @@
 import { getPastSessions, getContinueWatchingSessions, ContinueWatchingItem } from "@/lib/learning-center/queries"
 import { createClient } from "@/lib/supabase/server"
 import { RecordingsClient } from "./recordings-client"
+import { denyUnlessAccess } from '@/lib/guard';
 
 export const metadata = {
   title: "Past Sessions | Learning Center",
 }
 
 export default async function RecordingsPage() {
+  const denied = await denyUnlessAccess('learning_center.recordings');
+  if (denied) return denied;
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

@@ -3,17 +3,11 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { redirect } from 'next/navigation';
 import { NotificationDashboardClient } from './_components/NotificationDashboardClient';
+import { denyUnlessAccess } from '@/lib/guard';
 
 export default async function NotificationDashboardPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const isSuperUser = user?.email && ['nitin@navgurukul.org', 'nitinsudarshan@gmail.com'].includes(user.email.toLowerCase());
-  const userRole = user?.user_metadata?.role || (isSuperUser ? 'Super Admin' : 'Member');
-
-  if (userRole !== 'Admin' && userRole !== 'Super Admin' && !isSuperUser) {
-    redirect('/');
-  }
+  const denied = await denyUnlessAccess('manage.notifications', 'view', { backHref: '/manage', backLabel: 'Back to Manage' });
+  if (denied) return denied;
 
   const adminSupabase = createAdminClient();
 

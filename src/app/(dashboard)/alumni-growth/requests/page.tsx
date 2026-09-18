@@ -1,7 +1,6 @@
 import React from "react";
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import { RequestsClient } from "./RequestsClient";
+import { denyUnlessAccess } from '@/lib/guard';
 
 export const metadata = {
   title: "Member Growth Requests | NGConnect",
@@ -9,13 +8,8 @@ export const metadata = {
 };
 
 export default async function RequestsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const role = user?.user_metadata?.role || user?.app_metadata?.role;
-  if (role === "Member" || role === "Viewer") {
-    redirect("/");
-  }
+  const denied = await denyUnlessAccess('crm.requests');
+  if (denied) return denied;
 
   return <RequestsClient />;
 }

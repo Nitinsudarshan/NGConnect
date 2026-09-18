@@ -13,8 +13,12 @@ import {
 import { getSupabaseUserEmail } from '@/lib/roles';
 import { checkAccess } from '@/lib/permissions';
 import WorkspaceClient from './WorkspaceClient';
+import { denyUnlessAccess } from '@/lib/guard';
 
 export default async function WorkspacePage() {
+  const denied = await denyUnlessAccess('crm.workspace');
+  if (denied) return denied;
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const userId = user?.id || null;

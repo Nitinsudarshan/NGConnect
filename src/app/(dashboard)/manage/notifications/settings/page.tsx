@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { redirect } from 'next/navigation';
 import { SettingsClient } from './_components/SettingsClient';
 import { NotificationProviderSettings } from '@/types/email-notifications';
+import { denyUnlessAccess } from '@/lib/guard';
 
 const DEFAULT_SETTINGS: NotificationProviderSettings = {
   id: 1,
@@ -19,15 +20,8 @@ const DEFAULT_SETTINGS: NotificationProviderSettings = {
 };
 
 export default async function NotificationSettingsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const isSuperUser = user?.email && ['nitin@navgurukul.org', 'nitinsudarshan@gmail.com'].includes(user.email.toLowerCase());
-  const userRole = user?.user_metadata?.role || (isSuperUser ? 'Super Admin' : 'Member');
-
-  if (userRole !== 'Admin' && userRole !== 'Super Admin' && !isSuperUser) {
-    redirect('/');
-  }
+  const denied = await denyUnlessAccess('manage.notifications', 'edit', { backHref: '/manage/notifications', backLabel: 'Back to Notifications' });
+  if (denied) return denied;
 
   const adminSupabase = createAdminClient();
   let dbError: string | null = null;

@@ -6,6 +6,7 @@ import { checkAccess } from '@/lib/permissions';
 import { RbacGrid } from './_components/rbac-grid';
 import { RbacAuditLog } from './_components/rbac-audit-log';
 import { ShieldAlert } from 'lucide-react';
+import { AccessDenied } from '@/components/access-denied';
 
 export default async function RbacPage() {
   const supabase = await createClient();
@@ -13,7 +14,7 @@ export default async function RbacPage() {
   
   const canView = await checkAccess(user?.id ?? null, "manage.rbac", "view");
   if (!canView) {
-    redirect('/');
+    return <AccessDenied resourceId="manage.rbac" backHref="/manage" backLabel="Back to Manage" />;
   }
   const canEdit = await checkAccess(user?.id ?? null, "manage.rbac", "edit");
 

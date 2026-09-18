@@ -5,6 +5,7 @@ import { UsersTable } from "./users-table";
 import { UsersStatsCards, UsersStatsCharts } from "./users-stats";
 
 import { checkAccess } from "@/lib/permissions";
+import { AccessDenied } from "@/components/access-denied";
 
 export default async function ManageUsersPage() {
   const clientSupabase = await createClient();
@@ -12,11 +13,7 @@ export default async function ManageUsersPage() {
   const canView = await checkAccess(user?.id ?? null, "manage.users", "view");
   const canEdit = await checkAccess(user?.id ?? null, "manage.users", "edit");
   if (!canView) {
-    return (
-      <div className="flex h-[50vh] items-center justify-center text-muted-foreground">
-        You do not have permission to view Manage Users.
-      </div>
-    );
+    return <AccessDenied resourceId="manage.users" backHref="/manage" backLabel="Back to Manage" />;
   }
 
   const supabase = createAdminClient();

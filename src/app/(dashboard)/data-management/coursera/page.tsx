@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getUserRole } from '@/lib/roles';
 import CourseraDashboardClient from './_components/CourseraDashboardClient';
+import { denyUnlessAccess } from '@/lib/guard';
 
 interface SearchParams { month?: string }
 
@@ -11,8 +12,8 @@ export default async function CourseraDashboardPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const role = await getUserRole();
-  if (role !== 'Super Admin' && role !== 'Admin') redirect('/');
+  const denied = await denyUnlessAccess('data_management.coursera', 'view', { backHref: '/data-management', backLabel: 'Back to Data Management' });
+  if (denied) return denied;
 
   const { month: monthParam } = await searchParams;
 

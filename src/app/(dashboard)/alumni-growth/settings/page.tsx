@@ -5,12 +5,21 @@ import { getMentors, getLearningCenterAuditLogs } from '@/lib/learning-center/qu
 import { getUserPermissions } from '@/lib/permissions';
 import { auth } from '@/lib/auth';
 import SettingsClient from './SettingsClient';
+import { denyUnlessAnyAccess } from '@/lib/guard';
+import { getResourceIdsByPrefix } from '@/lib/resource-tree';
 
 export const metadata = {
   title: 'Alumni Growth Settings | NGConnect',
 };
 
 export default async function SettingsPage() {
+  const denied = await denyUnlessAnyAccess(getResourceIdsByPrefix('crm.settings.'), 'view', {
+    backHref: '/alumni-growth/workspace',
+    backLabel: 'Back to Workspace',
+    description: 'Your role does not include access to any Alumni Growth settings panel. Ask an administrator to grant it from the RBAC matrix.',
+  });
+  if (denied) return denied;
+
   const [
     settings,
     outcomes,

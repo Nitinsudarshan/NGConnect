@@ -5,6 +5,7 @@ import { UsersTable } from "../users/users-table";
 import { AlumniNetworkStatsCards, AlumniNetworkStatsCharts } from "./alumni-stats";
 
 import { checkAccess } from "@/lib/permissions";
+import { AccessDenied } from "@/components/access-denied";
 
 export default async function AlumniNetworkPage() {
   const clientSupabase = await createClient();
@@ -12,11 +13,7 @@ export default async function AlumniNetworkPage() {
   const canView = await checkAccess(user?.id ?? null, "manage.alumni_network", "view");
   const canEdit = await checkAccess(user?.id ?? null, "manage.alumni_network", "edit");
   if (!canView) {
-    return (
-      <div className="flex h-[50vh] items-center justify-center text-muted-foreground">
-        You do not have permission to view Manage Alumni Network.
-      </div>
-    );
+    return <AccessDenied resourceId="manage.alumni_network" backHref="/manage" backLabel="Back to Manage" />;
   }
 
   const supabase = createAdminClient();

@@ -14,8 +14,12 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { getMentorById, getMentorSessions } from "@/lib/learning-center/queries"
+import { denyUnlessAccess } from '@/lib/guard';
 
 export default async function MentorDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const denied = await denyUnlessAccess('learning_center.settings.manage_mentors');
+  if (denied) return denied;
+
   const { id } = await params
   
   const [mentor, sessions] = await Promise.all([

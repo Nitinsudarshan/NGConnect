@@ -5,6 +5,7 @@ import HelpDocsClient from "./HelpDocsClient";
 import { createClient } from "@/lib/supabase/server";
 import { checkAccess } from "@/lib/permissions";
 import { redirect } from "next/navigation";
+import { AccessDenied } from "@/components/access-denied";
 
 export const metadata = {
   title: "Help Docs | Manage | NGConnect",
@@ -19,7 +20,7 @@ export default async function HelpDocsPage() {
 
   const canView = await checkAccess(user?.id ?? null, "manage.help", "view");
   if (!canView) {
-    redirect("/");
+    return <AccessDenied resourceId="manage.help" backHref="/manage" backLabel="Back to Manage" />;
   }
 
   return (

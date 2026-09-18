@@ -13,12 +13,16 @@ import {
 } from "@/lib/learning-center/queries"
 import { getUserRole } from "@/lib/roles"
 import { LearningCenterDashboardClient } from "./dashboard-client"
+import { denyUnlessAccess } from '@/lib/guard';
 
 export const metadata = {
   title: "Learning Center Dashboard",
 }
 
 export default async function LearningCenterDashboard() {
+  const denied = await denyUnlessAccess('learning_center.dashboard');
+  if (denied) return denied;
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const userId = user?.id || ""

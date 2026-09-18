@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation';
-import { getUserRole } from '@/lib/roles';
 import Link from 'next/link';
 import {
   FileUp,
@@ -25,6 +23,7 @@ const DATA_MANAGEMENT_CATEGORIES = [
     links: [
       {
         href: '/data-management/import',
+        resource: 'data_management.import',
         label: 'Import Alumni Data',
         description: 'Upload CSV or XLSX exports,  and configure schema mappings.',
         icon: FileUp,
@@ -35,6 +34,7 @@ const DATA_MANAGEMENT_CATEGORIES = [
       },
       {
         href: '/data-management/import-history',
+        resource: 'data_management.import_history',
         label: 'Import History',
         description: 'Review details and statistics of all previous system data imports.',
         icon: History,
@@ -51,6 +51,7 @@ const DATA_MANAGEMENT_CATEGORIES = [
     links: [
       {
         href: '/data-management/audit-logs',
+        resource: 'data_management.audit_logs',
         label: 'Audit Logs',
         description: 'Full append-only change logs and activity audits across all profiles.',
         icon: FileSpreadsheet,
@@ -61,6 +62,7 @@ const DATA_MANAGEMENT_CATEGORIES = [
       },
       {
         href: '/data-management/record-history',
+        resource: 'data_management.record_history',
         label: 'Record History',
         description: 'Track granular field-level updates and timeline changes for individuals.',
         icon: UserRoundCog,
@@ -71,6 +73,7 @@ const DATA_MANAGEMENT_CATEGORIES = [
       },
       {
         href: '/data-management/rollback',
+        resource: 'data_management.rollback',
         label: 'Rollback Center',
         description: 'Perform safety restores on single accounts or undo entire import batches.',
         icon: RotateCcw,
@@ -88,6 +91,7 @@ const COURSERA_CATEGORY = {
   links: [
     {
       href: '/data-management/coursera',
+      resource: 'data_management.coursera',
       label: 'Dashboard',
       description: 'Analytics overview — active learners, hours, compliance, and license usage.',
       icon: BarChart2,
@@ -98,6 +102,7 @@ const COURSERA_CATEGORY = {
     },
     {
       href: '/data-management/coursera/activity-logs',
+      resource: 'data_management.coursera_activity_logs',
       label: 'Activity Logs',
       description: 'Browse, filter, and search per-learner monthly activity records.',
       icon: Activity,
@@ -108,6 +113,7 @@ const COURSERA_CATEGORY = {
     },
     {
       href: '/data-management/coursera/export',
+      resource: 'data_management.coursera_export',
       label: 'Export Activity Report',
       description: 'Export filtered learner activity logs and course breakdown spreadsheets.',
       icon: FileDown,
@@ -118,6 +124,7 @@ const COURSERA_CATEGORY = {
     },
     {
       href: '/data-management/import-coursera',
+      resource: 'data_management.import_coursera',
       label: 'Import Reports',
       description: 'Upload monthly Coursera XLSX exports and manage import history.',
       icon: Upload,
@@ -128,6 +135,7 @@ const COURSERA_CATEGORY = {
     },
     {
       href: '/data-management/coursera/enroll',
+      resource: 'data_management.coursera_enroll',
       label: 'Learner Enrollment & Checker',
       description: 'Check learner account status across snapshots and live API, invite, or force-enroll.',
       icon: UserPlus,
@@ -139,13 +147,22 @@ const COURSERA_CATEGORY = {
   ],
 };
 
-import { auth } from '@/lib/auth';
-import { checkClusterAccess } from '@/lib/permissions';
+import { getCurrentUserPermissions } from '@/lib/permissions';
+import { AccessDenied } from '@/components/access-denied';
 
 export default async function DataManagementPage() {
-  const { userId } = await auth();
-  const hasAccess = await checkClusterAccess(userId, 'data_management');
-  if (!hasAccess) redirect('/');
+  const permissions = await getCurrentUserPermissions();
+  const canView = (resource: string) => !!permissions[resource]?.view;
+
+  // Only render the utilities this user can actually open.
+  const categories = DATA_MANAGEMENT_CATEGORIES
+    .map(category => ({ ...category, links: category.links.filter(link => canView(link.resource)) }))
+    .filter(category => category.links.length > 0);
+  const courseraLinks = COURSERA_CATEGORY.links.filter(link => canView(link.resource));
+
+  if (categories.length === 0 && courseraLinks.length === 0) {
+    return <AccessDenied description="Your role does not include access to any Data Management utility. Ask an administrator to grant it from the RBAC matrix." />;
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-20 animate-in fade-in slide-in-from-bottom-3 duration-500">
@@ -171,7 +188,7 @@ export default async function DataManagementPage() {
       </div>
 
       <div className="space-y-12">
-        {DATA_MANAGEMENT_CATEGORIES.map((category) => (
+        {categories.map((category) => (
           <div key={category.title} className="space-y-4">
             <h2 className="text-xl font-bold tracking-tight text-foreground/90 border-b border-border/40 pb-2">
               {category.title}
@@ -215,12 +232,13 @@ export default async function DataManagementPage() {
         ))}
 
         {/* Coursera Section */}
+        {courseraLinks.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-xl font-bold tracking-tight text-foreground/90 border-b border-border/40 pb-2">
             {COURSERA_CATEGORY.title}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {COURSERA_CATEGORY.links.map((link) => {
+            {courseraLinks.map((link) => {
               const Icon = link.icon;
               return (
                 <Link key={link.href} href={link.href} className="group block">
@@ -255,6 +273,7 @@ export default async function DataManagementPage() {
             })}
           </div>
         </div>
+        )}
       </div>
     </div>
   );
