@@ -348,21 +348,18 @@ export async function getPipelineEligibleStaff(pipelineCode: string): Promise<{ 
 
     for (const user of usersData.users) {
       const role = user.app_metadata?.role || 'Staff';
-      const team = user.user_metadata?.team || 'None';
-      
+
       let canEdit = false;
 
       if (role === 'Super Admin') {
         canEdit = true;
       } else {
+        // Two-tier resolution: individual override, then role default.
         const indData = permissions?.find(d => d.subject_type === 'user' && d.subject_id === user.id);
-        const teamData = permissions?.find(d => d.subject_type === 'team' && d.subject_id === team);
         const roleData = permissions?.find(d => d.subject_type === 'role' && d.subject_id === role);
 
         if (indData && indData.can_edit !== undefined) {
           canEdit = indData.can_edit;
-        } else if (teamData && teamData.can_edit !== undefined) {
-          canEdit = teamData.can_edit;
         } else if (roleData && roleData.can_edit !== undefined) {
           canEdit = roleData.can_edit;
         } else if (role === 'Admin') {

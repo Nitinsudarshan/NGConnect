@@ -15,10 +15,23 @@ type AuditLog = {
   snapshot: any; // Now structured as { type: 'granular_update', subjectType, count, data }
 };
 
+/** Snapshots for the retired team tier can no longer be restored. */
+function isRetiredTeamSnapshot(snapshot: any) {
+  return snapshot?.subjectType === 'team'
+    || (Array.isArray(snapshot?.data) && snapshot.data.some((p: any) => p?.subject_type === 'team'));
+}
+
 function getChanges(currentSnapshot: any) {
   if (!currentSnapshot) return ["System baseline or unknown state."];
+  if (currentSnapshot.type === 'team_rbac_dropped') {
+    return [`Retired team-based RBAC — removed ${currentSnapshot.count} team permission rows (archived in ${currentSnapshot.backup_table ?? 'the backup table'})`];
+  }
   if (currentSnapshot.type !== 'granular_update') return ["Legacy snapshot format. Cannot parse granular changes."];
   
+  if (isRetiredTeamSnapshot(currentSnapshot)) {
+    return [`Team permissions snapshot (${currentSnapshot.count} items) — team-based RBAC has been retired, so this cannot be restored`];
+  }
+
   if (currentSnapshot.isRollback) {
     return [`Rolled back ${currentSnapshot.subjectType} permissions (${currentSnapshot.count} items)`];
   }
@@ -126,7 +139,7 @@ export function RbacAuditLog({ logs }: { logs: AuditLog[] }) {
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            disabled={isPending || log.snapshot?.type !== 'granular_update'}
+                            disabled={isPending || log.snapshot?.type !== 'granular_update' || isRetiredTeamSnapshot(log.snapshot)}
                             className="gap-2 border-destructive/30 text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
                             onClick={() => setConfirmLog({ id: log.id, snapshot: log.snapshot })}
                           >

@@ -18,6 +18,11 @@ These roles define the primary permission level and access capabilities of a use
 ## 2. Teams (`UserTeam`)
 Users can be categorized into specific teams for organizational structure.
 
+> **Teams do not affect permissions.** Team-based RBAC was retired (migration
+> `20260918000000_drop_team_rbac.sql`); a team is now a purely organisational
+> label used for the user directory and reporting. All access is resolved from
+> the user's **Role**, optionally overridden for that individual user.
+
 - **CEO's Office**
 - **Alumni Growth**
 - **PNC**

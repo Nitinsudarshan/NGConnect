@@ -54,6 +54,9 @@ A user can have one of the following primary roles:
 
 ### 4.2 Teams
 - **Teams:** `CEO's Office`, `Alumni Growth`, `PNC`, `Finance`, or `None`.
+- Teams are an **organisational label only** — they carry no permissions. Team-based
+  RBAC was retired so that effective access is unambiguous: permissions resolve from
+  the user's **Role**, optionally overridden for an **individual user**.
 
 ### 4.3 Developer Overrides
 The `getUserRole` utility supports a `dev-role-override` cookie, allowing Admins or Super Admins to safely spoof their role (e.g., viewing the UI exactly as a 'Member' would see it) without altering the actual database claims.
