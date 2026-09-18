@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { hasApiAccess } from "@/lib/api-guard"
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code")
@@ -22,6 +23,11 @@ export async function GET(req: NextRequest) {
 
   if (!targetUserId || targetUserId !== stateUserId) {
     return NextResponse.redirect(`${req.nextUrl.origin}/learning-center/settings?error=unauthorized`)
+  }
+
+  // Same permission as starting the flow — this half stores the token.
+  if (!(await hasApiAccess('learning_center.settings.integrations', 'edit'))) {
+    return NextResponse.redirect(`${req.nextUrl.origin}/learning-center/settings?error=forbidden`)
   }
 
   const clientId = process.env.GOOGLE_CLIENT_ID

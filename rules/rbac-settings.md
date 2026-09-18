@@ -67,6 +67,28 @@ The system relies on two tables. (If you ever need to recreate them, you can run
 2. **`rbac_audit_logs`**:
    - Stores snapshots of changes made via the RBAC UI so that Admins can instantly rollback accidental lockouts.
 
+## The Member tier is capped at read-only
+
+`Member` is the public-facing role — alumni with an account — and is moderated
+more tightly than staff roles. `READ_ONLY_ROLES` in `src/lib/permissions.ts`
+refuses `edit` and `delete` for members on every resource, regardless of what
+the matrix says, and the RBAC UI disables those boxes for the Member role.
+Staff-only reads (internal config lists, the staff directory) refuse members
+through `denyActionForMembers`. Member self-service — their own profile, watch
+progress, feedback, and access requests — runs through endpoints that bind to
+the session identity and never take a caller-supplied email or user id.
+
+## What to gate, and how hard
+
+Gate what is destructive. A read a role already reaches through the UI does not
+need a gate of its own; anything that writes, deletes, or hands out a
+credential does, at the `edit`/`delete` level of the matching resource. Where a
+read is genuinely risky for another reason — a server-side fetch of a
+caller-supplied URL, say — constrain the input rather than raising the
+permission bar and locking out the people who legitimately use it.
+`docs/RBAC-UNMODERATED.md` tracks every surface that is still open without an
+allocation, with a decision column.
+
 ## Hierarchy & Precedence
 When evaluating if a user has access to edit `crm.workspace`:
 1. Check if the **User ID** has a specific override. If found, use it.

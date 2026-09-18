@@ -7,6 +7,7 @@ import { DashboardCharts } from "@/components/dashboard-charts"
 import { CourseraStats } from "@/components/coursera-stats"
 import { CourseraCharts } from "@/components/coursera-charts"
 import { denyUnlessAccess } from "@/lib/guard"
+import { checkAccess } from "@/lib/permissions"
 
 export default async function DashboardPage() {
   const denied = await denyUnlessAccess('dashboard', 'view', {
@@ -20,7 +21,9 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   const activeRole = await getUserRole(user)
-  const isExcludedRole = activeRole === "Viewer" || activeRole === "Member"
+  // Org-wide figures follow the `reports` permission rather than a role list.
+  const canSeeOrgStats = await checkAccess(user?.id ?? null, 'reports', 'view')
+  const isExcludedRole = !canSeeOrgStats
 
   let users: any[] = []
   let alumniData: any[] = []

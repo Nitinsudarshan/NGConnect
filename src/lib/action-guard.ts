@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth';
-import { getCurrentUserPermissions } from '@/lib/permissions';
+import { getCurrentUserPermissions, isReadOnlyRole } from '@/lib/permissions';
+import { getUserRole } from '@/lib/roles';
 import { getResource, type ActionType } from '@/lib/resource-tree';
 
 export type ActionDenied = { success: false; error: string };
@@ -29,4 +30,22 @@ export async function denyActionUnlessAccess(
 
   const label = getResource(resourceId)?.label ?? resourceId;
   return { success: false, error: `Your role does not have ${action} access to ${label}.` };
+}
+
+/**
+ * Denies the read-only tier (Member) while leaving every staff role untouched.
+ *
+ * For staff-only reads that are not destructive enough to warrant a resource
+ * of their own — internal config lists, staff directories — but that the
+ * public-facing Member tier has no business calling.
+ */
+export async function denyActionForMembers(what: string): Promise<ActionDenied | null> {
+  const { userId } = await auth();
+  if (!userId) return { success: false, error: 'Unauthenticated' };
+
+  const role = await getUserRole();
+  if (isReadOnlyRole(role)) {
+    return { success: false, error: `${what} is not available to member accounts.` };
+  }
+  return null;
 }

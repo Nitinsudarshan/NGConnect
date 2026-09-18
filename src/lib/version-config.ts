@@ -23,9 +23,85 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.09.01";
+export const CURRENT_VERSION = "1.09.03";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.09.03",
+    date: "2026-09-18",
+    title: "Destructive-Surface Gating & Read-Only Member Tier",
+    type: "minor",
+    highlights: [
+      "Every destructive CRM write action now resolves through the matrix, with pipeline actions checking the pipeline they touch",
+      "Google Meet OAuth requires integrations edit — it writes a workspace-wide credential",
+      "The Member role is capped at read-only engine-wide, and the RBAC matrix disables its edit and delete boxes",
+      "Non-destructive reads were left open, and the transcript fetcher was hardened against internal targets instead of being locked down"
+    ],
+    changes: [
+      {
+        category: "Security",
+        description: "Gated updateAlumniProfileFieldsAction, recordContributionAction, and completeFollowupAction on crm.alumni_profile, crm.workspace, and crm.follow_ups edit; updatePipelineMembershipAction, transferPocAction, and assignToMeAction resolve crm.pipelines.<pipeline_code> edit so each pipeline is enforced separately.",
+      },
+      {
+        category: "Security",
+        description: "Required learning_center.settings.integrations edit on both /api/integrations/google/auth and its callback, which together store the workspace-wide Google token.",
+      },
+      {
+        category: "Security",
+        description: "Added READ_ONLY_ROLES to permissions.ts: the Member role is refused edit and delete across checkAccess, checkAnyAccess, getUserPermissions, and getAllPermissions, whatever the matrix or an individual override says.",
+      },
+      {
+        category: "Security",
+        description: "fetchExternalTextAction now requires learning_center.recordings view and refuses localhost, link-local, RFC1918, and non-HTTP targets, closing a server-side request proxy without breaking member session playback.",
+      },
+      {
+        category: "Security",
+        description: "getCallReasonsAction and getPipelineEligibleStaffAction stay open to staff as non-destructive reads but refuse member accounts, which could previously enumerate internal staff emails.",
+      },
+      {
+        category: "Improvements",
+        description: "RBAC matrix disables the edit and delete checkboxes for the Member role and explains the cap, so a grant that the engine would ignore cannot be saved.",
+      },
+      {
+        category: "Improvements",
+        description: "Recorded the applied decisions in docs/RBAC-UNMODERATED.md and documented the gate-what-is-destructive rule and the Member tier cap in rules/rbac-settings.md.",
+      },
+    ],
+  },
+  {
+    version: "1.09.02",
+    date: "2026-09-18",
+    title: "Per-Role Gate Audit — Matrix Alignment & Unmoderated Surface Register",
+    type: "patch",
+    highlights: [
+      "Audited every gate against the seeded matrix for all seven roles",
+      "Opened the gates that were closed tighter than the matrix allowed, including the Alumni CRM settings actions and the Master Data page",
+      "Left every unallocated surface working and catalogued it in docs/RBAC-UNMODERATED.md for review",
+      "Dashboard org-wide statistics now follow the reports permission instead of a hardcoded role list"
+    ],
+    changes: [
+      {
+        category: "Fixes",
+        description: "Alumni CRM settings actions (pipeline stages, org settings, interaction outcomes, contribution types, outcome mapping, call reasons, pipeline POC) required the Admin role directly, blocking Managers the matrix grants crm.settings.* edit; they now resolve through the matrix.",
+      },
+      {
+        category: "Fixes",
+        description: "Master Data page re-checked a Super Admin / Admin / Manager role list after its layout had already granted access; it now follows manage.master_data view.",
+      },
+      {
+        category: "Fixes",
+        description: "saveGranularRbacChanges and rollbackGranularRbac used isTrueAdmin instead of manage.rbac edit, and the notification test-email route checked manage.users edit instead of manage.notifications edit.",
+      },
+      {
+        category: "Improvements",
+        description: "Main dashboard resolves org-wide statistics from reports view rather than excluding the Viewer and Member roles by name, and the requests portal dropped its client-side role redirect in favour of the page guard.",
+      },
+      {
+        category: "Improvements",
+        description: "Added docs/RBAC-UNMODERATED.md cataloguing the pages, API routes, server actions, matrix bypasses, and cosmetic role checks that remain reachable without an allocation, each with a suggested resource and a decision column.",
+      },
+    ],
+  },
   {
     version: "1.09.01",
     date: "2026-09-18",

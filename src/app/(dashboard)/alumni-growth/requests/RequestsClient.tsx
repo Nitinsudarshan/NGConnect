@@ -49,12 +49,6 @@ export function RequestsClient() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [actioningId, setActioningId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user?.role === "Member" || user?.role === "Viewer") {
-      router.replace("/");
-    }
-  }, [user, router]);
-
   const fetchRequests = async () => {
     setLoading(true);
     try {
