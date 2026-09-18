@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
+import { denyApiUnlessAccess } from '@/lib/api-guard';
 
 const TEMPLATE_HEADERS = [
   'Name',
@@ -42,6 +43,9 @@ const EXAMPLE_ROW = [
 ];
 
 export async function GET() {
+  const denied = await denyApiUnlessAccess('data_management.import_coursera', 'view');
+  if (denied) return denied;
+
   const workbook = new ExcelJS.Workbook();
   const ws = workbook.addWorksheet('Learner Activity', {
     views: [{ state: 'frozen', ySplit: 1 }]

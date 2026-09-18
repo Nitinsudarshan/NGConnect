@@ -5,6 +5,7 @@ import { mergeAlumniProfile } from '@/lib/alumni/merge-profile';
 import { setAuditContext } from '@/lib/audit';
 import { getUserRole } from '@/lib/roles';
 import type { AlumniProfile } from '@/types/alumni';
+import { denyApiUnlessAccess, hasApiAccess } from '@/lib/api-guard';
 
 /**
  * GET /api/alumni/[email]
@@ -26,12 +27,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const role = await getUserRole();
-  const isSuperAdmin = role === 'Super Admin' || role === 'Admin';
-  const isMember = role === 'Member';
-
-  // Members can only view their own profile
-  if (!isSuperAdmin && !(isMember && user.email === decodedEmail)) {
+  // Staff need the alumni profile permission; anyone may read their own record.
+  const isOwnProfile = user.email === decodedEmail;
+  if (!isOwnProfile && !(await hasApiAccess('crm.alumni_profile', 'view'))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -57,11 +55,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const role = await getUserRole();
-  const isSuperAdmin = role === 'Super Admin' || role === 'Admin';
-  const isMember = role === 'Member';
 
-  // Members can only edit their own profile
-  if (!isSuperAdmin && !(isMember && user.email === decodedEmail)) {
+  // Staff need edit rights on the alumni profile; anyone may edit their own.
+  const isOwnProfile = user.email === decodedEmail;
+  if (!isOwnProfile && !(await hasApiAccess('crm.alumni_profile', 'edit'))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
 import { createClient } from '@/lib/supabase/server';
+import { denyApiUnlessAccess } from '@/lib/api-guard';
 
 export async function GET() {
   const authClient = await createClient();
@@ -9,10 +10,8 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const role = user.app_metadata?.role;
-  if (role !== 'Admin' && role !== 'Super Admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const denied = await denyApiUnlessAccess('data_management.coursera_export');
+  if (denied) return denied;
 
   const workbook = new ExcelJS.Workbook();
   const ws = workbook.addWorksheet('Learner Emails', {

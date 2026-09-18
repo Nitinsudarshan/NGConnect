@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
+import { denyApiUnlessAccess } from '@/lib/api-guard';
 
 export async function GET(
   _request: NextRequest,
@@ -15,10 +16,8 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const role = user.app_metadata?.role;
-  if (role !== 'Admin' && role !== 'Super Admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const denied = await denyApiUnlessAccess('data_management.coursera');
+  if (denied) return denied;
 
   const supabase = createAdminClient();
 

@@ -23,7 +23,7 @@ export const PERMISSION_RESOURCES: PermissionResource[] = [
   { id: 'crm.pipelines.placement', label: 'Placement Pipeline', cluster: 'crm', actions: ['view', 'edit'] },
   { id: 'crm.follow_ups', label: 'Follow-ups', cluster: 'crm', actions: ['view', 'edit'] },
   { id: 'crm.reports', label: 'CRM Reports', cluster: 'crm', actions: ['view'] },
-  { id: 'crm.requests', label: 'Member Requests', cluster: 'crm', actions: ['view', 'edit'] },
+  { id: 'crm.requests', label: 'Member Requests (Coursera access & Pay-Forward approvals)', cluster: 'crm', actions: ['view', 'edit'] },
   { id: 'crm.alumni_profile', label: 'Alumni 360 Profile', cluster: 'crm', actions: ['view', 'edit'] },
   // CRM Settings
   { id: 'crm.settings.pay_forward_rules', label: 'Pay-Forward Rules', cluster: 'crm', group: 'Outreach Rules', actions: ['view', 'edit'] },

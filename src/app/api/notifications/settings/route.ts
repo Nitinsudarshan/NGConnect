@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { denyApiUnlessAccess } from '@/lib/api-guard';
 
 export async function GET() {
+  const denied = await denyApiUnlessAccess('manage.notifications', 'view');
+  if (denied) return denied;
+
   const adminSupabase = createAdminClient();
   const { data: settings, error } = await adminSupabase
     .from('notification_provider_settings')
@@ -24,13 +28,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const isSuperUser = user?.email && ['nitin@navgurukul.org', 'nitinsudarshan@gmail.com'].includes(user.email.toLowerCase());
-  if (user?.user_metadata?.role !== 'Admin' && user?.user_metadata?.role !== 'Super Admin' && !isSuperUser) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const denied = await denyApiUnlessAccess('manage.notifications', 'edit');
+  if (denied) return denied;
 
   try {
     const body = await request.json();

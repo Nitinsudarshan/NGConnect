@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/rate-limiter';
 import { batchCheckCourseraUsersLive, batchFetchCourseraUserEnrollmentActivity } from '@/lib/coursera-api';
+import { denyApiUnlessAccess } from '@/lib/api-guard';
 
 export const maxDuration = 120;
 
@@ -28,10 +29,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const role = user.app_metadata?.role;
-  if (role !== 'Admin' && role !== 'Super Admin') {
-    return NextResponse.json({ error: 'Forbidden: Insufficient privileges.' }, { status: 403 });
-  }
+  const denied = await denyApiUnlessAccess('data_management.coursera_export');
+  if (denied) return denied;
 
   // 2. Abuse Protection: Rate Limiting (15 requests/minute per user)
   const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';

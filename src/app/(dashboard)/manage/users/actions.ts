@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { UserRole, UserTeam, canImpersonate } from "@/lib/roles";
 import { sanitizeUserMetadata, getSafeAvatarUrl } from "@/lib/avatar";
+import { checkAccess } from "@/lib/permissions";
 
 const SUPER_ADMINS = ["nitin@navgurukul.org", "nitinsudarshan@gmail.com"];
 
@@ -16,12 +17,9 @@ export async function updateUserRoleAndTeam(userId: string, role: UserRole, team
             return { error: "Unauthorized. Please log in." };
         }
 
-        const email = currentUser.email;
-        const isSuper = email && SUPER_ADMINS.includes(email.toLowerCase());
-        const isUserAdmin = isSuper || currentUser.user_metadata?.role === "Admin" || currentUser.user_metadata?.role === "Super Admin";
-
-        if (!isUserAdmin) {
-            return { error: "Unauthorized. Only administrators can perform this action." };
+        const canManageUsers = await checkAccess(currentUser.id, 'manage.users', 'edit');
+        if (!canManageUsers) {
+            return { error: "Unauthorized. You do not have edit access to Manage Users." };
         }
 
         const adminSupabase = createAdminClient();
@@ -79,12 +77,9 @@ export async function createUser(data: CreateUserData) {
             return { error: "Unauthorized. Please log in." };
         }
 
-        const email = currentUser.email;
-        const isSuper = email && SUPER_ADMINS.includes(email.toLowerCase());
-        const isUserAdmin = isSuper || currentUser.user_metadata?.role === "Admin" || currentUser.user_metadata?.role === "Super Admin";
-
-        if (!isUserAdmin) {
-            return { error: "Unauthorized. Only administrators can perform this action." };
+        const canManageUsers = await checkAccess(currentUser.id, 'manage.users', 'edit');
+        if (!canManageUsers) {
+            return { error: "Unauthorized. You do not have edit access to Manage Users." };
         }
 
         if (!data.email || !data.email.trim()) {
@@ -141,12 +136,9 @@ export async function bulkCreateUsers(users: BulkUserRow[]) {
             return { error: "Unauthorized. Please log in." };
         }
 
-        const email = currentUser.email;
-        const isSuper = email && SUPER_ADMINS.includes(email.toLowerCase());
-        const isUserAdmin = isSuper || currentUser.user_metadata?.role === "Admin" || currentUser.user_metadata?.role === "Super Admin";
-
-        if (!isUserAdmin) {
-            return { error: "Unauthorized. Only administrators can perform this action." };
+        const canManageUsers = await checkAccess(currentUser.id, 'manage.users', 'edit');
+        if (!canManageUsers) {
+            return { error: "Unauthorized. You do not have edit access to Manage Users." };
         }
 
         if (!users || !Array.isArray(users) || users.length === 0) {
@@ -278,12 +270,9 @@ export async function forceSignOutUser(targetUserId: string) {
             return { error: "Unauthorized. Please log in." };
         }
 
-        const email = currentUser.email;
-        const isSuper = email && SUPER_ADMINS.includes(email.toLowerCase());
-        const isUserAdmin = isSuper || currentUser.user_metadata?.role === "Admin" || currentUser.user_metadata?.role === "Super Admin";
-
-        if (!isUserAdmin) {
-            return { error: "Unauthorized. Only administrators can perform this action." };
+        const canManageUsers = await checkAccess(currentUser.id, 'manage.users', 'edit');
+        if (!canManageUsers) {
+            return { error: "Unauthorized. You do not have edit access to Manage Users." };
         }
 
         const adminSupabase = createAdminClient();
@@ -317,12 +306,9 @@ export async function forceSignOutAllUsers() {
             return { error: "Unauthorized. Please log in." };
         }
 
-        const email = currentUser.email;
-        const isSuper = email && SUPER_ADMINS.includes(email.toLowerCase());
-        const isUserAdmin = isSuper || currentUser.user_metadata?.role === "Admin" || currentUser.user_metadata?.role === "Super Admin";
-
-        if (!isUserAdmin) {
-            return { error: "Unauthorized. Only administrators can perform this action." };
+        const canManageUsers = await checkAccess(currentUser.id, 'manage.users', 'edit');
+        if (!canManageUsers) {
+            return { error: "Unauthorized. You do not have edit access to Manage Users." };
         }
 
         const adminSupabase = createAdminClient();
@@ -357,6 +343,11 @@ export async function impersonateUser(targetUserId: string, origin?: string) {
         const { data: { user: currentUser } } = await clientSupabase.auth.getUser();
         if (!currentUser) {
             return { error: "Unauthorized. Please log in." };
+        }
+
+        const canManageUsers = await checkAccess(currentUser.id, 'manage.users', 'edit');
+        if (!canManageUsers) {
+            return { error: "Unauthorized. You do not have edit access to Manage Users." };
         }
 
         const callerEmail = currentUser.email || "";

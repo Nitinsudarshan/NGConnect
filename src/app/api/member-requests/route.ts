@@ -6,6 +6,7 @@ import {
   updateMemberRequestStatus,
 } from "@/lib/requests-store";
 import { enrollCourseraUser } from "@/lib/coursera-api";
+import { denyApiUnlessAccess, hasApiAccess } from '@/lib/api-guard';
 
 export async function GET(request: Request) {
   try {
@@ -21,8 +22,9 @@ export async function GET(request: Request) {
     const userEmailFilter = searchParams.get("user_email");
     const statusFilter = searchParams.get("status");
 
-    const userRole = user.app_metadata?.role;
-    const isStaff = userRole === "Admin" || userRole === "Super Admin";
+    // Staff (anyone the matrix grants the requests portal) see every request;
+    // everyone else only ever sees their own.
+    const isStaff = await hasApiAccess('crm.requests', 'view');
 
     // Non-staff users can strictly view only their own requests
     let filterEmail: string | undefined = userEmailFilter || undefined;
@@ -95,13 +97,8 @@ export async function PATCH(request: Request) {
     }
 
     // Role check via app_metadata
-    const userRole = user.app_metadata?.role;
-    if (userRole !== "Admin" && userRole !== "Super Admin") {
-      return NextResponse.json(
-        { success: false, error: "Forbidden: Staff role required" },
-        { status: 403 }
-      );
-    }
+    const denied = await denyApiUnlessAccess('crm.requests', 'edit');
+    if (denied) return denied;
 
     const body = await request.json();
     const { requestId, status } = body;

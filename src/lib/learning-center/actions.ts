@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { MentorFormValues } from "./schema"
 import { createGoogleMeetLink } from "@/lib/google-meet"
+import { denyActionUnlessAccess } from "@/lib/action-guard"
 
 export async function logLearningCenterActivity(
   entityType: "mentor" | "audience" | "session_type" | "integration" | "category" | "subcategory",
@@ -32,6 +33,9 @@ export async function logLearningCenterActivity(
 }
 
 export async function createMentor(data: MentorFormValues) {
+  const denied = await denyActionUnlessAccess('learning_center.settings.manage_mentors', 'edit')
+  if (denied) return denied
+
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -54,6 +58,9 @@ export async function createMentor(data: MentorFormValues) {
 }
 
 export async function updateMentor(id: string, data: MentorFormValues) {
+  const denied = await denyActionUnlessAccess('learning_center.settings.manage_mentors', 'edit')
+  if (denied) return denied
+
   const supabase = await createClient()
 
   const { error } = await supabase
@@ -71,6 +78,9 @@ export async function updateMentor(id: string, data: MentorFormValues) {
 }
 
 export async function archiveMentorAction(id: string, name: string) {
+  const denied = await denyActionUnlessAccess('learning_center.settings.manage_mentors', 'delete')
+  if (denied) return denied
+
   const supabase = await createClient()
 
   const { error } = await supabase
@@ -87,6 +97,9 @@ export async function archiveMentorAction(id: string, name: string) {
 }
 
 export async function saveAudienceAction(id: string | null, data: { name: string; audience_type: string; campus_id?: string; course_id?: string; batch_year?: string }) {
+  const denied = await denyActionUnlessAccess('learning_center.settings.audience', 'edit')
+  if (denied) return denied
+
   const supabase = await createClient()
   const payload = {
     name: data.name,
@@ -111,6 +124,9 @@ export async function saveAudienceAction(id: string | null, data: { name: string
 }
 
 export async function deleteAudienceAction(id: string, name: string) {
+  const denied = await denyActionUnlessAccess('learning_center.settings.audience', 'delete')
+  if (denied) return denied
+
   const supabase = await createClient()
 
   // Server-side safety check: Ensure no sessions or courses depend on this audience
@@ -133,6 +149,9 @@ export async function deleteAudienceAction(id: string, name: string) {
 }
 
 export async function saveSessionTypeAction(id: string | null, name: string) {
+  const denied = await denyActionUnlessAccess('learning_center.settings.session_types', 'edit')
+  if (denied) return denied
+
   const supabase = await createClient()
 
   if (id) {
@@ -150,6 +169,9 @@ export async function saveSessionTypeAction(id: string | null, name: string) {
 }
 
 export async function deleteSessionTypeAction(id: string, name: string) {
+  const denied = await denyActionUnlessAccess('learning_center.settings.session_types', 'delete')
+  if (denied) return denied
+
   const supabase = await createClient()
 
   // Server-side safety check: Ensure no sessions depend on this session type
@@ -172,6 +194,9 @@ export async function deleteSessionTypeAction(id: string, name: string) {
 }
 
 export async function saveCategoryAction(id: string | null, name: string, description?: string | null) {
+  const denied = await denyActionUnlessAccess('learning_center.settings.session_categories', 'edit')
+  if (denied) return denied
+
   const supabase = await createClient()
 
   if (id) {
@@ -189,6 +214,9 @@ export async function saveCategoryAction(id: string | null, name: string, descri
 }
 
 export async function deleteCategoryAction(id: string, name: string) {
+  const denied = await denyActionUnlessAccess('learning_center.settings.session_categories', 'delete')
+  if (denied) return denied
+
   const supabase = await createClient()
 
   // Server-side safety check: Ensure 0 subcategories exist
@@ -212,6 +240,9 @@ export async function deleteCategoryAction(id: string, name: string) {
 }
 
 export async function saveSubcategoryAction(id: string | null, categoryId: string, name: string, description?: string | null) {
+  const denied = await denyActionUnlessAccess('learning_center.settings.session_categories', 'edit')
+  if (denied) return denied
+
   const supabase = await createClient()
 
   const payload = {
@@ -235,6 +266,9 @@ export async function saveSubcategoryAction(id: string | null, categoryId: strin
 }
 
 export async function deleteSubcategoryAction(id: string, name: string) {
+  const denied = await denyActionUnlessAccess('learning_center.settings.session_categories', 'delete')
+  if (denied) return denied
+
   const supabase = await createClient()
   const { error } = await supabase.from('learning_subcategories').delete().eq('id', id)
   if (error) return { success: false, error: error.message }
@@ -252,6 +286,9 @@ export async function logIntegrationAction(integrationName: string, action: "con
 }
 
 export async function disconnectGoogleMeetAction() {
+  const denied = await denyActionUnlessAccess('learning_center.settings.integrations', 'edit')
+  if (denied) return denied
+
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -279,6 +316,9 @@ export async function generateGoogleMeetLinkAction(
   timeStr?: string | null,
   durationMinutes: number = 60
 ) {
+  const denied = await denyActionUnlessAccess('learning_center.sessions', 'edit')
+  if (denied) return denied
+
   try {
     let startTime: Date
     if (dateStr && timeStr) {
@@ -316,6 +356,9 @@ export async function createSessionAction(
     chat_url?: string | null
   }
 ) {
+  const denied = await denyActionUnlessAccess('learning_center.sessions', 'edit')
+  if (denied) return denied
+
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -354,6 +397,9 @@ export async function updateSessionMedia(
     duration_minutes?: number | null
   }
 ) {
+  const denied = await denyActionUnlessAccess('learning_center.sessions', 'edit')
+  if (denied) return denied
+
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -399,6 +445,9 @@ export async function updateSessionAction(
     description?: string | null
   }
 ) {
+  const denied = await denyActionUnlessAccess('learning_center.sessions', 'edit')
+  if (denied) return denied
+
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -429,6 +478,9 @@ export async function updateSessionAction(
 }
 
 export async function syncSessionDurationAction(sessionId: string, durationMinutes: number) {
+  const denied = await denyActionUnlessAccess('learning_center.sessions', 'edit')
+  if (denied) return denied
+
   try {
     if (!sessionId || durationMinutes <= 0) return { success: false }
 
@@ -555,6 +607,9 @@ export async function getSubcategorySessionCountAction(subcategoryId: string): P
 }
 
 export async function saveCourseraConfigAction(config: any): Promise<{ success: boolean; error?: string }> {
+  const denied = await denyActionUnlessAccess('learning_center.settings.integrations', 'edit')
+  if (denied) return denied
+
   try {
     const admin = createAdminClient()
     const { error } = await admin

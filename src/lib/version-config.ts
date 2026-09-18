@@ -23,9 +23,51 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.09.00";
+export const CURRENT_VERSION = "1.09.01";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.09.01",
+    date: "2026-09-18",
+    title: "RBAC Enforcement Extended to API Routes and Server Actions",
+    type: "patch",
+    highlights: [
+      "Replaced the hardcoded Admin checks on 20+ API routes with matrix lookups, so a page the RBAC matrix opens up actually works",
+      "Fixed the Program role hitting 'Forbidden: Admin privileges required' on the Coursera enrolment checker",
+      "Gated 18 previously unprotected Learning Center server actions",
+      "Coursera request approval and licence allocation now defaults to Program, Admin, and Super Admin"
+    ],
+    changes: [
+      {
+        category: "Security",
+        description: "Added denyApiUnlessAccess / hasApiAccess (lib/api-guard.ts) and applied it to the Coursera enrolment, export, metrics, learner, import, recalculate, rollback and template routes, the alumni import and rollback routes, notification settings, and member requests.",
+      },
+      {
+        category: "Security",
+        description: "Added denyActionUnlessAccess (lib/action-guard.ts) and applied it to every mutating Learning Center server action — mentors, audiences, session types, categories, subcategories, sessions, Google Meet and Coursera config — which previously ran with no permission check at all.",
+      },
+      {
+        category: "Security",
+        description: "Converted the Manage Users server actions (role updates, user creation, bulk upload, force sign-out, impersonation) from hardcoded admin checks to manage.users edit.",
+      },
+      {
+        category: "Security",
+        description: "Added permission checks to /api/alumni/import/preview and /api/coursera/template, which previously required only a session.",
+      },
+      {
+        category: "Improvements",
+        description: "Alumni profile API now resolves staff access through crm.alumni_profile while still letting any member read and edit their own record.",
+      },
+      {
+        category: "Improvements",
+        description: "Labelled crm.requests as 'Member Requests (Coursera access & Pay-Forward approvals)' and seeded its edit right — which approves a request and allocates the Coursera licence — to Program, Admin, and Super Admin, leaving Manager and Operations with read access.",
+      },
+      {
+        category: "Improvements",
+        description: "Hid the Grant Access and Receive Request buttons on the requests portal from users without edit rights, showing an 'Approval not permitted' badge instead.",
+      },
+    ],
+  },
   {
     version: "1.09.00",
     date: "2026-09-18",

@@ -5,6 +5,7 @@ import { parseImportFile } from '@/lib/alumni/import-parser';
 import { validateImportRows } from '@/lib/alumni/import-validator';
 import { processImportRows } from '@/lib/alumni/import-processor';
 import { getUserRole } from '@/lib/roles';
+import { denyApiUnlessAccess } from '@/lib/api-guard';
 
 /**
  * POST /api/alumni/import/process
@@ -21,10 +22,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const denied = await denyApiUnlessAccess('data_management.import', 'edit');
+  if (denied) return denied;
+
   const role = await getUserRole();
-  if (role !== 'Super Admin' && role !== 'Admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
 
   const { batchId, storagePath } = await req.json() as { batchId: string; storagePath: string };
   if (!batchId || !storagePath) {

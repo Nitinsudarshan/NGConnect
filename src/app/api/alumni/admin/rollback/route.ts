@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { rollbackRecord } from '@/lib/alumni/rollback';
 import { getUserRole } from '@/lib/roles';
+import { denyApiUnlessAccess } from '@/lib/api-guard';
 
 /**
  * POST /api/alumni/admin/rollback
@@ -22,10 +23,10 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const denied = await denyApiUnlessAccess('data_management.rollback', 'edit');
+  if (denied) return denied;
+
   const role = await getUserRole();
-  if (role !== 'Super Admin' && role !== 'Admin') {
-    return NextResponse.json({ error: 'Forbidden — Super Admin only' }, { status: 403 });
-  }
 
   const { recordId, tableName, targetTimestamp } = await req.json() as {
     recordId: string;

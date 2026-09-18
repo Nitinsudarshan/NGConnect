@@ -12,6 +12,7 @@ import {
   RefreshCw,
   ShieldCheck,
   Sparkles,
+  Lock,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PageBanner } from "@/components/shared/page-banner";
 import { useUserContext } from "@/contexts/user-context";
+import { useCan } from "@/contexts/permission-context";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -35,6 +37,9 @@ interface MemberRequest {
 }
 
 export function RequestsClient() {
+  // Approving a request allocates a Coursera licence, so the action buttons
+  // only render for users the matrix grants edit on the requests portal.
+  const canApprove = useCan()("crm.requests", "edit");
   const user = useUserContext();
   const router = useRouter();
   const [requests, setRequests] = useState<MemberRequest[]>([]);
@@ -326,7 +331,11 @@ export function RequestsClient() {
 
                       {/* Action Button */}
                       <div className="flex items-center gap-2">
-                        {req.type === "coursera" ? (
+                        {!canApprove && isPending ? (
+                          <Badge variant="outline" className="py-0.5 px-2.5 text-xs gap-1 text-muted-foreground">
+                            <Lock className="w-3 h-3" /> Approval not permitted
+                          </Badge>
+                        ) : req.type === "coursera" ? (
                           isPending ? (
                             <Button
                               size="sm"
