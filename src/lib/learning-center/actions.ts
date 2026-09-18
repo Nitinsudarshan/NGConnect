@@ -503,7 +503,37 @@ export async function syncSessionDurationAction(sessionId: string, durationMinut
 }
 
 
+/** Hosts a caller must never be able to reach through this server. */
+function isBlockedFetchTarget(target: URL) {
+  if (target.protocol !== "https:" && target.protocol !== "http:") return true
+  const host = target.hostname.toLowerCase()
+  return (
+    host === "localhost" ||
+    host.endsWith(".localhost") ||
+    host.endsWith(".internal") ||
+    host === "metadata.google.internal" ||
+    /^(127|10)\./.test(host) ||
+    /^169\.254\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+    host === "0.0.0.0" ||
+    host === "::1" ||
+    host === "[::1]"
+  )
+}
+
+/**
+ * Loads a session transcript or chat log for the playback modal.
+ *
+ * Read-only, and members watching a recording rely on it, so it is gated at
+ * `learning_center.recordings` view rather than an edit right. The real risk
+ * here is the caller choosing the URL, so internal and non-HTTP targets are
+ * refused outright.
+ */
 export async function fetchExternalTextAction(url: string): Promise<string | null> {
+  const denied = await denyActionUnlessAccess('learning_center.recordings', 'view')
+  if (denied) return null
+
   try {
     let targetUrl = url
     const driveMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/) ||
@@ -514,10 +544,23 @@ export async function fetchExternalTextAction(url: string): Promise<string | nul
       targetUrl = `https://drive.google.com/uc?export=download&id=${fileId}`
     }
 
-    const res = await fetch(targetUrl, {
+    let parsed: URL
+    try {
+      parsed = new URL(targetUrl)
+    } catch {
+      console.error("[fetchExternalTextAction] Invalid URL")
+      return null
+    }
+    if (isBlockedFetchTarget(parsed)) {
+      console.error("[fetchExternalTextAction] Blocked target host:", parsed.hostname)
+      return null
+    }
+
+    const res = await fetch(parsed.toString(), {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
       },
+      redirect: "follow",
       cache: "no-store"
     })
 

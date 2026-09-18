@@ -48,6 +48,7 @@ export function RbacGrid({ initialData, canEdit, users = [] }: { initialData: Gr
 
   const handleSelectAll = (clusterId: string, action: ActionType, checked: boolean) => {
     if (!isEditing) return;
+    if (activeTab === 'role' && selectedSubject === 'Member' && action !== 'view') return;
     const cluster = RESOURCES_BY_CLUSTER.find(c => c.id === clusterId);
     if (!cluster) return;
 
@@ -77,6 +78,7 @@ export function RbacGrid({ initialData, canEdit, users = [] }: { initialData: Gr
 
   const handleToggle = (resourceId: string, action: ActionType, checked: boolean) => {
     if (!isEditing) return;
+    if (activeTab === 'role' && selectedSubject === 'Member' && action !== 'view') return;
     
     setPermissions(prev => {
       const existing = prev.find(p => p.subject_type === activeTab && p.subject_id === selectedSubject && p.resource_id === resourceId);
@@ -172,6 +174,10 @@ export function RbacGrid({ initialData, canEdit, users = [] }: { initialData: Gr
     setPermissions(initialData);
     setIsEditing(false);
   };
+
+  // The Member role is capped at read-only in the engine, so the matrix should
+  // not offer write boxes that would be silently ignored.
+  const isReadOnlySubject = activeTab === 'role' && selectedSubject === 'Member';
 
   const currentPermissions = useMemo(() => {
     return permissions.filter(p => p.subject_type === activeTab && p.subject_id === selectedSubject);
@@ -337,6 +343,13 @@ export function RbacGrid({ initialData, canEdit, users = [] }: { initialData: Gr
                 </h3>
               </div>
               
+              {isReadOnlySubject && (
+                <div className="text-[13px] text-muted-foreground flex items-center gap-1.5">
+                  <Info className="w-4 h-4" />
+                  The Member role is read-only: edit and delete are ignored for members, whatever is ticked here.
+                </div>
+              )}
+
               {selectedSubject && selectedSubject !== 'Super Admin' && (
                 <div className="text-[13px] animate-in fade-in slide-in-from-top-1">
                   {isEditing ? (
@@ -398,6 +411,7 @@ export function RbacGrid({ initialData, canEdit, users = [] }: { initialData: Gr
                                       {isEditing && (
                                         <Checkbox 
                                           checked={allChecked} 
+                                          disabled={isReadOnlySubject && action !== 'view'}
                                           onCheckedChange={(c) => handleSelectAll(cluster.id, action, !!c)}
                                           className="data-[state=checked]:bg-primary transition-all scale-90"
                                           title={`Select all ${action} for ${cluster.label}`}
@@ -435,7 +449,8 @@ export function RbacGrid({ initialData, canEdit, users = [] }: { initialData: Gr
                                             isEditing ? (
                                               <Checkbox
                                                 checked={isChecked}
-                                                disabled={false}
+                                                disabled={isReadOnlySubject && action !== 'view'}
+                                                title={isReadOnlySubject && action !== 'view' ? 'The Member role is read-only' : undefined}
                                                 onCheckedChange={(c) => handleToggle(resource.id, action, !!c)}
                                                 className={`
                                                   transition-all duration-200 cursor-pointer

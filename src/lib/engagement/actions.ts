@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { checkAccess, checkAnyAccess, checkClusterAccess } from '@/lib/permissions';
-import { denyActionUnlessAccess } from '@/lib/action-guard';
+import { denyActionUnlessAccess, denyActionForMembers } from '@/lib/action-guard';
 import { auth } from '@/lib/auth';
 import { getUserRole, getSupabaseUserEmail } from '@/lib/roles';
 import { LogInteractionPayload, OutcomeMappingRow, PipelineSuggestion, PipelineStage } from '@/types/engagement';
@@ -229,6 +229,9 @@ export async function updateAlumniProfileFieldsAction(payload: {
   updated_by: string;
 }) {
   try {
+    const denied = await denyActionUnlessAccess('crm.alumni_profile', 'edit');
+    if (denied) return denied;
+
     const supabase = await createClient();
     const email = payload.alumni_email;
     const masterUpdates: Record<string, any> = {};
@@ -334,6 +337,9 @@ export async function updatePipelineMembershipAction(payload: {
   added_by: string;
 }) {
   try {
+    const denied = await denyActionUnlessAccess(`crm.pipelines.${payload.pipeline_code}`, 'edit');
+    if (denied) return denied;
+
     const supabase = await createClient();
 
     // Find pipeline
@@ -519,6 +525,9 @@ export async function recordContributionAction(payload: {
   source_interaction_id?: string;
 }) {
   try {
+    const denied = await denyActionUnlessAccess('crm.workspace', 'edit');
+    if (denied) return denied;
+
     const supabase = await createClient();
 
     if (payload.amount_inr !== undefined) {
@@ -801,6 +810,9 @@ export async function manageContributionTypeAction(payload: {
 
 export async function completeFollowupAction(interactionId: string) {
   try {
+    const denied = await denyActionUnlessAccess('crm.follow_ups', 'edit');
+    if (denied) return denied;
+
     const supabase = await createClient();
     const { error } = await supabase
       .from('alumni_interactions')
@@ -823,6 +835,9 @@ import { getKanbanColumnCards, getKanbanBoardCards, getPipelineEligibleStaff, ge
 
 export async function getCallReasonsAction() {
   try {
+    const denied = await denyActionForMembers('The call reason list');
+    if (denied) return denied;
+
     const reasons = await getCallReasons();
     return { success: true, data: reasons };
   } catch (err: any) {
@@ -832,8 +847,9 @@ export async function getCallReasonsAction() {
 
 export async function getPipelineEligibleStaffAction(pipelineCode: string) {
   try {
-    const role = await getUserRole();
-    if (!role) return { success: false, error: 'Unauthorized' };
+    const denied = await denyActionForMembers('The staff directory');
+    if (denied) return denied;
+
     const staff = await getPipelineEligibleStaff(pipelineCode);
     return { success: true, data: staff };
   } catch (err: any) {
@@ -891,6 +907,9 @@ export async function transferPocAction(payload: {
   reason?: string;
 }) {
   try {
+    const denied = await denyActionUnlessAccess(`crm.pipelines.${payload.pipeline_code}`, 'edit');
+    if (denied) return denied;
+
     const supabase = await createClient();
 
     const targetPipelines = payload.pipeline_code === 'career_support' 
@@ -1118,6 +1137,9 @@ export async function assignToMeAction(payload: {
   assigned_by: string;
 }) {
   try {
+    const denied = await denyActionUnlessAccess(`crm.pipelines.${payload.pipeline_code}`, 'edit');
+    if (denied) return denied;
+
     const supabase = await createClient();
 
     const targetPipelines = (payload.pipeline_code === 'career_support' || payload.pipeline_code === 'mentoring' || payload.pipeline_code === 'placement')

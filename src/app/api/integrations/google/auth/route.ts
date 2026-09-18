@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { denyApiUnlessAccess } from "@/lib/api-guard"
 
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
@@ -8,6 +9,10 @@ export async function GET(req: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  // Completing this flow writes the workspace-wide Google integration token.
+  const denied = await denyApiUnlessAccess('learning_center.settings.integrations', 'edit')
+  if (denied) return denied
 
   const clientId = process.env.GOOGLE_CLIENT_ID
   if (!clientId) {

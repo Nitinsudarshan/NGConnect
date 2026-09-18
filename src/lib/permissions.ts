@@ -2,8 +2,25 @@ import { cache } from 'react';
 
 import { createClient } from '@/lib/supabase/server';
 import { auth } from '@/lib/auth';
-import { getUserRole } from './roles';
+import { getUserRole, type UserRole } from './roles';
 import { ActionType, getResourcesByCluster, PERMISSION_RESOURCES } from './resource-tree';
+
+/**
+ * Roles that are capped at read-only no matter what the matrix says.
+ *
+ * `Member` is the public-facing tier — alumni with an account — so it is
+ * moderated more tightly than staff roles: a Member never receives `edit` or
+ * `delete` on any registered resource, even if a role grant or an individual
+ * override ticks those boxes. Member self-service (their own profile, their
+ * own watch progress, submitting feedback or a request) runs through
+ * dedicated endpoints that are not resource-gated, so the cap does not touch
+ * it.
+ */
+const READ_ONLY_ROLES = new Set<UserRole>(['Member']);
+
+export function isReadOnlyRole(role: UserRole | string | null | undefined): boolean {
+  return !!role && READ_ONLY_ROLES.has(role as UserRole);
+}
 
 /**
  * Permission resolution is two-tiered:
@@ -21,6 +38,9 @@ export async function checkAccess(userId: string | null, resourceId: string, act
 
   // Super Admin bypass
   if (role === 'Super Admin') return true;
+
+  // Read-only roles never get write access, whatever the matrix says.
+  if (action !== 'view' && isReadOnlyRole(role)) return false;
 
   const supabase = await createClient();
 
@@ -115,6 +135,13 @@ export async function getUserPermissions(userId: string | null, cluster: string)
     }
   }
 
+  if (isReadOnlyRole(role)) {
+    for (const rid of Object.keys(map)) {
+      map[rid].edit = false;
+      map[rid].delete = false;
+    }
+  }
+
   return map as any;
 }
 
@@ -152,6 +179,7 @@ export async function checkAnyAccess(userId: string | null, resourceIds: string[
   if (!userId || resourceIds.length === 0) return false;
   const role = await getUserRole();
   if (role === 'Super Admin') return true;
+  if (action !== 'view' && isReadOnlyRole(role)) return false;
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -234,6 +262,13 @@ export async function getAllPermissions(userId: string | null): Promise<Permissi
   // Role defaults first, then individual overrides on top.
   apply(data.filter(d => d.subject_type === 'role' && d.subject_id === role));
   apply(data.filter(d => d.subject_type === 'user' && d.subject_id === userId));
+
+  if (isReadOnlyRole(role)) {
+    for (const rid of Object.keys(map)) {
+      map[rid].edit = false;
+      map[rid].delete = false;
+    }
+  }
 
   return map;
 }
