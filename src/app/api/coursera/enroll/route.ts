@@ -6,6 +6,7 @@ import {
   batchEnrollCourseraUsers,
   CourseraEnrollmentResult,
 } from '@/lib/coursera-api';
+import { denyApiUnlessAccess } from '@/lib/api-guard';
 
 export const maxDuration = 120;
 
@@ -20,10 +21,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const role = user.app_metadata?.role;
-  if (role !== 'Admin' && role !== 'Super Admin') {
-    return NextResponse.json({ error: 'Forbidden: Admin or Super Admin privileges required.' }, { status: 403 });
-  }
+  const denied = await denyApiUnlessAccess('data_management.coursera_enroll', 'edit');
+  if (denied) return denied;
 
   // 2. Abuse Protection: Rate Limiting (10 requests per minute per user)
   const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';

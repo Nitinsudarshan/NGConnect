@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { parseImportFile } from '@/lib/alumni/import-parser';
 import { validateImportRows } from '@/lib/alumni/import-validator';
 import type { ImportPreviewResult } from '@/types/import';
+import { denyApiUnlessAccess } from '@/lib/api-guard';
 
 /**
  * POST /api/alumni/import/preview
@@ -18,6 +19,9 @@ export async function POST(req: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const denied = await denyApiUnlessAccess('data_management.import', 'edit');
+  if (denied) return denied;
 
   const formData = await req.formData();
   const file = formData.get('file') as File | null;

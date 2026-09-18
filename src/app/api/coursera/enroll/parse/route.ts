@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
 import { Readable } from 'stream';
 import { createClient } from '@/lib/supabase/server';
+import { denyApiUnlessAccess } from '@/lib/api-guard';
 
 export const maxDuration = 60;
 
@@ -14,10 +15,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const role = user.app_metadata?.role;
-  if (role !== 'Admin' && role !== 'Super Admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const denied = await denyApiUnlessAccess('data_management.coursera_enroll');
+  if (denied) return denied;
 
   let formData: FormData;
   try {

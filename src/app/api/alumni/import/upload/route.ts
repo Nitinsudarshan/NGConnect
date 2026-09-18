@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
+import { denyApiUnlessAccess } from '@/lib/api-guard';
 
 /**
  * POST /api/alumni/import/upload
@@ -16,10 +17,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // L1 Fix: Add role check
-  if (user.app_metadata?.role !== 'Admin' && user.app_metadata?.role !== 'Super Admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const denied = await denyApiUnlessAccess('data_management.import', 'edit');
+  if (denied) return denied;
 
   const formData = await req.formData();
   const file = formData.get('file') as File | null;

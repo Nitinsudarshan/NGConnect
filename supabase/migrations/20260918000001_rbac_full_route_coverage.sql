@@ -23,12 +23,15 @@ BEGIN
     SELECT * FROM (VALUES
       -- resource_id, role, can_view, can_edit, can_delete
 
-      -- Alumni CRM: member requests portal (was: any role except Member/Viewer)
+      -- Alumni CRM: member requests portal (Coursera access requests and
+      -- Pay-Forward submissions). `edit` is what approves a request and
+      -- allocates the Coursera licence, so it goes to Super Admin, Admin, and
+      -- Program; Manager and Operations keep the read access they had.
       ('crm.requests',                          'Super Admin', true,  true,  true ),
       ('crm.requests',                          'Admin',       true,  true,  true ),
-      ('crm.requests',                          'Manager',     true,  true,  false),
       ('crm.requests',                          'Program',     true,  true,  false),
-      ('crm.requests',                          'Operations',  true,  true,  false),
+      ('crm.requests',                          'Manager',     true,  false, false),
+      ('crm.requests',                          'Operations',  true,  false, false),
 
       -- Alumni CRM: the 360° alumni profile (was: ungated for any signed-in user)
       ('crm.alumni_profile',                    'Super Admin', true,  true,  true ),

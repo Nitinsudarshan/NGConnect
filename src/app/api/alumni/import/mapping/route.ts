@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getUserRole } from '@/lib/roles';
 import fs from 'fs/promises';
 import path from 'path';
+import { denyApiUnlessAccess } from '@/lib/api-guard';
 
 const MAPPING_FILE_PATH = path.join(process.cwd(), 'src', 'lib', 'alumni', 'ghar-column-map.json');
 
@@ -38,10 +39,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const role = await getUserRole();
-  if (role !== 'Super Admin' && role !== 'Admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const denied = await denyApiUnlessAccess('data_management.import', 'edit');
+  if (denied) return denied;
 
   try {
     const body = await req.json();
