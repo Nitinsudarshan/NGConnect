@@ -4,13 +4,14 @@ import { auth } from "@/lib/auth";
 import { checkAccess } from "@/lib/permissions";
 import { getLearningCenterReportData } from "@/lib/learning-center/queries";
 import LearningCenterReportsClient from "./LearningCenterReportsClient";
+import { AccessDenied } from '@/components/access-denied';
 
 export default async function LearningCenterReportsPage() {
   const { userId } = await auth();
-  const hasAccess = await checkAccess(userId, "learning_center.dashboard", "view") || await checkAccess(userId, "reports", "view");
+  const hasAccess = await checkAccess(userId, "learning_center.reports", "view");
 
   if (!hasAccess) {
-    redirect("/");
+    return <AccessDenied resourceId="learning_center.reports" backHref="/learning-center" backLabel="Back to Learning Center" />;
   }
 
   const supabase = await createClient();

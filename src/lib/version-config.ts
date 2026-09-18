@@ -23,9 +23,59 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.08.00";
+export const CURRENT_VERSION = "1.09.00";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.09.00",
+    date: "2026-09-18",
+    title: "Full RBAC Route Coverage & Hide-Instead-Of-Redirect Access Control",
+    type: "minor",
+    highlights: [
+      "Registered every remaining page in the RBAC matrix, including the Coursera dashboard, activity logs, export, and enrolment tools",
+      "Replaced hardcoded Super Admin / Admin route checks with matrix-driven permission guards",
+      "Sidebar entries and hub cards are now rendered from the user's permissions, so restricted areas are never offered",
+      "Direct links to a restricted page show an Access Denied card naming the resource instead of silently redirecting home"
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Registered 13 new permission resources in resource-tree.ts (Coursera activity logs/export/enrolment, member requests, alumni 360 profile, Learning Center reports, management reports, notifications, auth diagnostics, docs, support, feedback) plus a General & Help cluster.",
+      },
+      {
+        category: "Features",
+        description: "Added denyUnlessAccess / denyUnlessAnyAccess page guards in lib/guard.tsx and an AccessDenied card that names the missing resource and links back to the nearest hub.",
+      },
+      {
+        category: "Features",
+        description: "Added PermissionProvider with useCan/useCanAny hooks, populated once per request from getCurrentUserPermissions in the dashboard layout.",
+      },
+      {
+        category: "Improvements",
+        description: "Rebuilt the sidebar so every nav entry, and each Alumni Growth / Learning Center / Manage group, is shown only when the matrix grants view on its resource.",
+      },
+      {
+        category: "Improvements",
+        description: "Filtered the Manage and Data Management hub cards by permission, and hid the Import History rollback shortcut unless the user may edit data_management.rollback.",
+      },
+      {
+        category: "Security",
+        description: "Gated previously unprotected routes: Alumni Growth workspace, all-data, pipelines, follow-ups, reports, settings, requests, and the alumni 360 profile, plus the Learning Center dashboard, sessions, recordings, content hub, and settings.",
+      },
+      {
+        category: "Security",
+        description: "Replaced hardcoded role checks on the Coursera pages, import history, notification logs and settings, and auth diagnostics with checkAccess against their registered resources.",
+      },
+      {
+        category: "Improvements",
+        description: "Retired the dead x-invoke-path routing logic in the Learning Center layout in favour of per-page permission guards.",
+      },
+      {
+        category: "Improvements",
+        description: "Added migration 20260918000001_rbac_full_route_coverage.sql seeding the new resources for every role, preserving prior access and granting the Program role read access to the Coursera dashboard, activity logs, and export report.",
+      },
+    ],
+  },
   {
     version: "1.08.00",
     date: "2026-09-18",

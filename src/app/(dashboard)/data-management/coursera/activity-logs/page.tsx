@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getUserRole } from '@/lib/roles';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, FileDown } from 'lucide-react';
+import { denyUnlessAccess } from '@/lib/guard';
 
 interface SearchParams {
   month?: string;
@@ -26,8 +27,8 @@ export default async function ActivityLogsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const role = await getUserRole();
-  if (role !== 'Super Admin' && role !== 'Admin') redirect('/');
+  const denied = await denyUnlessAccess('data_management.coursera_activity_logs', 'view', { backHref: '/data-management', backLabel: 'Back to Data Management' });
+  if (denied) return denied;
 
   const { month: monthParam, search = '', status = 'all', page: pageParam } = await searchParams;
   const page = Math.max(1, parseInt(pageParam ?? '1', 10));

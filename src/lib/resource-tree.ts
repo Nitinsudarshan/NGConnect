@@ -23,6 +23,8 @@ export const PERMISSION_RESOURCES: PermissionResource[] = [
   { id: 'crm.pipelines.placement', label: 'Placement Pipeline', cluster: 'crm', actions: ['view', 'edit'] },
   { id: 'crm.follow_ups', label: 'Follow-ups', cluster: 'crm', actions: ['view', 'edit'] },
   { id: 'crm.reports', label: 'CRM Reports', cluster: 'crm', actions: ['view'] },
+  { id: 'crm.requests', label: 'Member Requests', cluster: 'crm', actions: ['view', 'edit'] },
+  { id: 'crm.alumni_profile', label: 'Alumni 360 Profile', cluster: 'crm', actions: ['view', 'edit'] },
   // CRM Settings
   { id: 'crm.settings.pay_forward_rules', label: 'Pay-Forward Rules', cluster: 'crm', group: 'Outreach Rules', actions: ['view', 'edit'] },
   { id: 'crm.settings.active_member_criteria', label: 'Active Member Criteria', cluster: 'crm', group: 'Outreach Rules', actions: ['view', 'edit'] },
@@ -40,6 +42,7 @@ export const PERMISSION_RESOURCES: PermissionResource[] = [
   { id: 'learning_center.sessions', label: 'Sessions', cluster: 'learning_center', actions: ['view', 'edit', 'delete'] },
   { id: 'learning_center.recordings', label: 'Recordings', cluster: 'learning_center', actions: ['view', 'edit'] },
   { id: 'learning_center.content_hub', label: 'Content Hub', cluster: 'learning_center', actions: ['view', 'edit'] },
+  { id: 'learning_center.reports', label: 'Learning Center Reports', cluster: 'learning_center', actions: ['view'] },
   // Learning Center Settings
   { id: 'learning_center.settings.manage_mentors', label: 'Manage Mentors', cluster: 'learning_center', group: 'Master Data', actions: ['view', 'edit', 'delete'] },
   { id: 'learning_center.settings.audience', label: 'Audience', cluster: 'learning_center', group: 'Master Data', actions: ['view', 'edit', 'delete'] },
@@ -55,7 +58,10 @@ export const PERMISSION_RESOURCES: PermissionResource[] = [
   { id: 'data_management.audit_logs', label: 'Audit Logs', cluster: 'data_management', actions: ['view'] },
   { id: 'data_management.import_history', label: 'Import History', cluster: 'data_management', actions: ['view'] },
   { id: 'data_management.record_history', label: 'Record History', cluster: 'data_management', actions: ['view'] },
-  { id: 'data_management.coursera', label: 'Coursera Data', cluster: 'data_management', actions: ['view', 'edit'] },
+  { id: 'data_management.coursera', label: 'Coursera Dashboard', cluster: 'data_management', group: 'Coursera', actions: ['view', 'edit'] },
+  { id: 'data_management.coursera_activity_logs', label: 'Coursera Activity Logs', cluster: 'data_management', group: 'Coursera', actions: ['view'] },
+  { id: 'data_management.coursera_export', label: 'Coursera Export Report', cluster: 'data_management', group: 'Coursera', actions: ['view'] },
+  { id: 'data_management.coursera_enroll', label: 'Coursera Enrollment & Checker', cluster: 'data_management', group: 'Coursera', actions: ['view', 'edit'] },
 
   // ---------------- MANAGE ----------------
   { id: 'manage.users', label: 'Manage Users', cluster: 'manage', actions: ['view', 'edit', 'delete'] },
@@ -63,6 +69,14 @@ export const PERMISSION_RESOURCES: PermissionResource[] = [
   { id: 'manage.master_data', label: 'Master Data', cluster: 'manage', actions: ['view', 'edit', 'delete'] },
   { id: 'manage.rbac', label: 'RBAC', cluster: 'manage', actions: ['view', 'edit'] },
   { id: 'manage.help', label: 'Help Docs Hub', cluster: 'manage', actions: ['view', 'edit'] },
+  { id: 'manage.reports', label: 'Management Reports', cluster: 'manage', actions: ['view'] },
+  { id: 'manage.notifications', label: 'Notification Logs & Settings', cluster: 'manage', actions: ['view', 'edit'] },
+  { id: 'manage.diagnostics', label: 'Auth Diagnostics', cluster: 'manage', actions: ['view'] },
+
+  // ---------------- GENERAL / HELP ----------------
+  { id: 'general.docs', label: 'Developer Documentation', cluster: 'general', actions: ['view'] },
+  { id: 'general.support', label: 'Support Desk', cluster: 'general', actions: ['view'] },
+  { id: 'general.feedback', label: 'Feedback', cluster: 'general', actions: ['view'] },
 ];
 
 export const RESOURCE_CLUSTERS = [
@@ -72,6 +86,7 @@ export const RESOURCE_CLUSTERS = [
   { id: 'manage', label: 'Manage' },
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'reports', label: 'Reports' },
+  { id: 'general', label: 'General & Help' },
 ];
 
 export function getResourcesByCluster(cluster: string) {
@@ -80,4 +95,13 @@ export function getResourcesByCluster(cluster: string) {
 
 export function getResource(id: string) {
   return PERMISSION_RESOURCES.find(r => r.id === id);
+}
+
+/**
+ * All resource ids that start with the given prefix, e.g. `crm.settings.` for
+ * every Alumni CRM settings panel. Used to gate container pages that render a
+ * set of individually-permissioned sections.
+ */
+export function getResourceIdsByPrefix(prefix: string) {
+  return PERMISSION_RESOURCES.filter(r => r.id.startsWith(prefix)).map(r => r.id);
 }

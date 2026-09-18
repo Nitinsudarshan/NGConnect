@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-import { getUserRole } from '@/lib/roles';
 import { createClient } from '@/lib/supabase/server';
 import type { ImportBatch } from '@/types/import';
 import Link from 'next/link';
@@ -18,13 +17,18 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { denyUnlessAccess } from '@/lib/guard';
+import { auth } from '@/lib/auth';
+import { checkAccess } from '@/lib/permissions';
 
 
 export default async function ImportHistoryPage() {
-  const role = await getUserRole();
-  if (role !== 'Super Admin' && role !== 'Admin' && role !== 'Manager') {
-    redirect('/');
-  }
+  const denied = await denyUnlessAccess('data_management.import_history', 'view', { backHref: '/data-management', backLabel: 'Back to Data Management' });
+  if (denied) return denied;
+
+  // The rollback shortcut is only offered to users who may actually roll back.
+  const { userId } = await auth();
+  const canRollback = await checkAccess(userId, 'data_management.rollback', 'edit');
 
   const supabase = await createClient();
   const { data: batches } = await supabase
@@ -140,7 +144,7 @@ export default async function ImportHistoryPage() {
                       </Badge>
                     </td>
                     <td className="px-5 py-4 text-right">
-                      {isCompleted && (role === 'Super Admin' || role === 'Admin') ? (
+                      {isCompleted && canRollback ? (
                         <Link
                           href={`/data-management/rollback?batch=${batch.id}`}
                           className="inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-500 font-semibold bg-red-500/10 hover:bg-red-500/15 px-2.5 py-1.5 rounded-md border border-red-500/20 dark:border-red-500/30 transition-all hover:scale-105"

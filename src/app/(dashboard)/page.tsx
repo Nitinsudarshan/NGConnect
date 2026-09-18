@@ -6,8 +6,16 @@ import { DashboardStats } from "@/components/dashboard-stats"
 import { DashboardCharts } from "@/components/dashboard-charts"
 import { CourseraStats } from "@/components/coursera-stats"
 import { CourseraCharts } from "@/components/coursera-charts"
+import { denyUnlessAccess } from "@/lib/guard"
 
 export default async function DashboardPage() {
+  const denied = await denyUnlessAccess('dashboard', 'view', {
+    backHref: '/profile',
+    backLabel: 'Go to your profile',
+    description: 'Your role does not include access to the main dashboard. Ask an administrator to grant it from the RBAC matrix.',
+  })
+  if (denied) return denied
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

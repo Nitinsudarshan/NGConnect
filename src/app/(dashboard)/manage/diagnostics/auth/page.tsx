@@ -10,16 +10,15 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ShieldCheck, ShieldAlert, AlertTriangle, Cookie, Database, Cpu, CheckCircle2, HardDrive } from 'lucide-react';
 import Link from 'next/link';
+import { denyUnlessAccess } from '@/lib/guard';
 
 export const metadata = {
   title: 'Auth & Session Diagnostics | NGConnect',
 };
 
 export default async function AuthDiagnosticsPage() {
-  const isAdmin = await isTrueAdmin();
-  if (!isAdmin) {
-    redirect('/');
-  }
+  const denied = await denyUnlessAccess('manage.diagnostics', 'view', { backHref: '/manage', backLabel: 'Back to Manage' });
+  if (denied) return denied;
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

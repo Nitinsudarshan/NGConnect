@@ -1,12 +1,16 @@
 import React from "react"
 import { GraduationCap, Clock, Sparkles } from "lucide-react"
 import { PageBanner } from "@/components/shared/page-banner"
+import { denyUnlessAccess } from '@/lib/guard';
 
 export const metadata = {
   title: "Learning Hub | Coming Soon",
 }
 
-export default function ContentHubPage() {
+export default async function ContentHubPage() {
+  const denied = await denyUnlessAccess('learning_center.content_hub');
+  if (denied) return denied;
+
   return (
     <div className="p-6 space-y-8">
       <PageBanner

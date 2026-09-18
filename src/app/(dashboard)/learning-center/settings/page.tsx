@@ -10,12 +10,21 @@ import {
 } from "@/lib/learning-center/queries"
 import { getUserPermissions } from "@/lib/permissions"
 import { auth } from "@/lib/auth"
+import { denyUnlessAnyAccess } from '@/lib/guard'
+import { getResourceIdsByPrefix } from '@/lib/resource-tree'
 
 export const metadata = {
   title: "Settings | Learning Center",
 }
 
 export default async function SettingsPage() {
+  const denied = await denyUnlessAnyAccess(getResourceIdsByPrefix('learning_center.settings.'), 'view', {
+    backHref: '/learning-center',
+    backLabel: 'Back to Learning Center',
+    description: 'Your role does not include access to any Learning Center settings panel. Ask an administrator to grant it from the RBAC matrix.',
+  })
+  if (denied) return denied
+
   const [mentors, audiences, sessionTypes, categories, auditLogs, courseraConfig, gmeetStatus] = await Promise.all([
     getMentors(),
     getAudiences(),

@@ -3,14 +3,15 @@ import { redirect, notFound } from 'next/navigation';
 import { getUserRole } from '@/lib/roles';
 import Link from 'next/link';
 import LearnerDetailClient from './_components/LearnerDetailClient';
+import { denyUnlessAccess } from '@/lib/guard';
 
 interface PageProps {
   params: Promise<{ email: string }>;
 }
 
 export default async function LearnerDetailPage({ params }: PageProps) {
-  const role = await getUserRole();
-  if (role !== 'Super Admin' && role !== 'Admin') redirect('/');
+  const denied = await denyUnlessAccess('data_management.coursera', 'view', { backHref: '/data-management', backLabel: 'Back to Data Management' });
+  if (denied) return denied;
 
   const { email: encodedEmail } = await params;
   const email = decodeURIComponent(encodedEmail).trim().toLowerCase();

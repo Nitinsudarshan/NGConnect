@@ -1,8 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Database, Filter, Search } from "lucide-react"
 import { PageBanner } from "@/components/shared/page-banner"
+import { denyUnlessAccess } from '@/lib/guard';
 
-export default function AllDataPage() {
+export default async function AllDataPage() {
+  const denied = await denyUnlessAccess('crm.all_data');
+  if (denied) return denied;
+
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-20">
       {/* Banner */}

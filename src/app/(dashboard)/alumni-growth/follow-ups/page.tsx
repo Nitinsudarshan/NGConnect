@@ -4,8 +4,12 @@ import { getSupabaseUserEmail } from '@/lib/roles';
 import { checkAccess } from '@/lib/permissions';
 import { createClient } from '@/lib/supabase/server';
 import FollowUpsClient from './FollowUpsClient';
+import { denyUnlessAccess } from '@/lib/guard';
 
 export default async function FollowUpsPage() {
+  const denied = await denyUnlessAccess('crm.follow_ups');
+  if (denied) return denied;
+
   const userEmail = (await getSupabaseUserEmail()) || 'staff@navgurukul.org';
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

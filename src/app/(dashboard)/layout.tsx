@@ -8,9 +8,11 @@ import {
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { UserProvider } from "@/contexts/user-context"
+import { PermissionProvider } from "@/contexts/permission-context"
 import { PresenceProvider } from "@/contexts/presence-context"
 import { BreadcrumbProvider } from "@/contexts/breadcrumb-context"
 import { getUserRole, isTrueSuperAdmin } from "@/lib/roles"
+import { getCurrentUserPermissions } from "@/lib/permissions"
 import { getSafeAvatarUrl } from "@/lib/avatar"
 
 export default async function DashboardLayout({
@@ -34,6 +36,10 @@ export default async function DashboardLayout({
     const appMetadata = user?.app_metadata || {}
     const trueRole = (isSuperAdmin ? "Super Admin" : (appMetadata.role || userMetadata.role || "Member")) as string
 
+    // Effective RBAC permissions, so the sidebar and hub cards can hide what
+    // this user cannot open instead of letting them click into a denial.
+    const permissions = await getCurrentUserPermissions()
+
     return (
         <UserProvider user={{
             id: user?.id || "1",
@@ -43,6 +49,7 @@ export default async function DashboardLayout({
             role: activeRole,
             isAlumni,
         }}>
+            <PermissionProvider permissions={permissions}>
             <PresenceProvider>
                 <BreadcrumbProvider>
                     <div className="[--header-height:calc(--spacing(14))] h-svh w-full flex flex-col overflow-hidden bg-background">
@@ -58,6 +65,7 @@ export default async function DashboardLayout({
                     </div>
                 </BreadcrumbProvider>
             </PresenceProvider>
+            </PermissionProvider>
         </UserProvider>
     )
 }

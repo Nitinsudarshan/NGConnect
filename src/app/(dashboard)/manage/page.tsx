@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation';
-import { auth } from '@/lib/auth';
-import { getUserRole } from '@/lib/roles';
-import { checkClusterAccess } from '@/lib/permissions';
+import { getCurrentUserPermissions } from '@/lib/permissions';
+import { getResourceIdsByPrefix } from '@/lib/resource-tree';
+import { AccessDenied } from '@/components/access-denied';
+
+const DATA_MANAGEMENT_RESOURCES = getResourceIdsByPrefix('data_management.');
 import Link from 'next/link';
 import {
   Users,
@@ -23,6 +25,7 @@ const MANAGE_CATEGORIES = [
     links: [
       {
         href: '/manage/users',
+        resources: ['manage.users'],
         label: 'Users Directory',
         description: 'Manage staff and user accounts, authentication metadata, and role assignments.',
         icon: Users,
@@ -33,6 +36,7 @@ const MANAGE_CATEGORIES = [
       },
       {
         href: '/manage/alumni-network',
+        resources: ['manage.alumni_network'],
         label: 'Alumni Network',
         description: 'View and manage external registered alumni network members across campuses.',
         icon: GraduationCap,
@@ -43,6 +47,7 @@ const MANAGE_CATEGORIES = [
       },
       {
         href: '/manage/master-data',
+        resources: ['manage.master_data'],
         label: 'Master Data',
         description: 'Central registry for alumni records, campuses, courses, and educational datasets.',
         icon: Database,
@@ -58,6 +63,7 @@ const MANAGE_CATEGORIES = [
     links: [
       {
         href: '/manage/reports',
+        resources: ['manage.reports'],
         label: 'Manage & Data Quality Reports',
         description: 'Cross-cutting system health report generator for contact suppression and delivery failures.',
         icon: BarChart2,
@@ -68,6 +74,7 @@ const MANAGE_CATEGORIES = [
       },
       {
         href: '/data-management',
+        resources: DATA_MANAGEMENT_RESOURCES,
         label: 'Data Management Hub',
         description: 'System administration utilities for imports, rollbacks, and audit logs.',
         icon: DatabaseBackup,
@@ -78,6 +85,7 @@ const MANAGE_CATEGORIES = [
       },
       {
         href: '/manage/rbac',
+        resources: ['manage.rbac'],
         label: 'RBAC Matrix',
         description: 'Role-Based Access Control matrix for role defaults and individual user overrides.',
         icon: ShieldCheck,
@@ -88,6 +96,7 @@ const MANAGE_CATEGORIES = [
       },
       {
         href: '/manage/notifications',
+        resources: ['manage.notifications'],
         label: 'Notification Logs',
         description: 'Email dispatch logs, queue monitoring, and system notification settings.',
         icon: Mail,
@@ -98,6 +107,7 @@ const MANAGE_CATEGORIES = [
       },
       {
         href: '/manage/help',
+        resources: ['manage.help'],
         label: 'Help Docs Hub',
         description: 'Interactive documentation manager and contextual user guide editor.',
         icon: FileQuestion,
@@ -111,12 +121,19 @@ const MANAGE_CATEGORIES = [
 ];
 
 export default async function ManageHubPage() {
-  const { userId } = await auth();
-  const hasAccess = await checkClusterAccess(userId, 'manage');
-  if (!hasAccess) redirect('/');
+  const permissions = await getCurrentUserPermissions();
 
-  const role = await getUserRole();
-  const isSuperOrAdmin = role === 'Super Admin' || role === 'Admin';
+  // Only render the tools this user can actually open.
+  const categories = MANAGE_CATEGORIES
+    .map(category => ({
+      ...category,
+      links: category.links.filter(link => link.resources.some(r => permissions[r]?.view)),
+    }))
+    .filter(category => category.links.length > 0);
+
+  if (categories.length === 0) {
+    return <AccessDenied description="Your role does not include access to any management tool. Ask an administrator to grant it from the RBAC matrix." />;
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-20 animate-in fade-in slide-in-from-bottom-3 duration-500">
@@ -138,23 +155,14 @@ export default async function ManageHubPage() {
       </div>
 
       <div className="space-y-10">
-        {MANAGE_CATEGORIES.map((category) => {
-          const visibleLinks = category.links.filter((link) => {
-            if (['/manage/rbac', '/manage/notifications', '/manage/help'].includes(link.href)) {
-              return isSuperOrAdmin;
-            }
-            return true;
-          });
-
-          if (visibleLinks.length === 0) return null;
-
+        {categories.map((category) => {
           return (
             <div key={category.title} className="space-y-4">
               <h2 className="text-xl font-bold tracking-tight text-foreground/90 border-b border-border/40 pb-2">
                 {category.title}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {visibleLinks.map((link) => {
+                {category.links.map((link) => {
                   const Icon = link.icon;
                   return (
                     <Link key={link.href} href={link.href} className="group block">
