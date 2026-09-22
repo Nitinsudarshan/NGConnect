@@ -23,9 +23,44 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.09.03";
+export const CURRENT_VERSION = "1.09.04";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.09.04",
+    date: "2026-09-22",
+    title: "Member Details Sheet Tab & KPI Dashboard Cards in Export Activity Report",
+    type: "patch",
+    highlights: [
+      "Added dedicated 'Member Details' sheet tab to Export Activity Report with KPI dashboard summary cards",
+      "Categorized member status across Member (Active/Inactive), Invited (Pending), and Not Invited",
+      "Enforced strict rolling 30-day active criteria (activity within 30 days and > 0 logged study hours)",
+      "Added live dashboard KPI metric summary cards to the user verification results panel",
+      "Resolved negative days_since_activity calculation bug in report exports and snapshot calculations"
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Implemented 'Member Details' Excel worksheet containing KPI dashboard stat cards (Total Members, Active, Inactive, Invited, Not Invited, Enrolled Courses) and detailed member table with Name, Email, Enrolled Courses, Member Status, and activity dates.",
+      },
+      {
+        category: "Features",
+        description: "Added 'Include Member Details Sheet' option in Report Output Structure configuration on /data-management/coursera/export.",
+      },
+      {
+        category: "Improvements",
+        description: "Added visual KPI stat cards to the account verification panel on the export page for immediate inspection prior to report generation.",
+      },
+      {
+        category: "Improvements",
+        description: "Enforced strict 30-day rolling active member criteria requiring both login within 30 days and > 0 logged study hours in report export and verification.",
+      },
+      {
+        category: "Fixes",
+        description: "Resolved negative days_since_activity bug in report exports and snapshot calculations, formatting exact dates with elapsed positive days ago.",
+      },
+    ],
+  },
   {
     version: "1.09.03",
     date: "2026-09-18",
