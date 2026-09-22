@@ -6,9 +6,12 @@ import { createClient } from '@/lib/supabase/client';
 import {
   FileDown,
   Download,
-  Users,
-  User,
   FileSpreadsheet,
+  Users,
+  UserCheck,
+  UserX,
+  UserMinus,
+  BookOpen,
   ChevronDown,
   ChevronUp,
   CheckCircle2,
@@ -18,10 +21,19 @@ import {
   Loader2,
   Trash2,
   ArrowLeft,
+  LayoutDashboard,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface AvailableMonth {
   month: string;
+}
+
+interface MonthOverview {
+  totalLearners: number;
+  activeLearners: number;
+  totalHours: number;
+  totalCompletions: number;
 }
 
 type UserScope = 'all' | 'users' | 'import';
@@ -41,6 +53,8 @@ export default function ExportCourseraActivityPage() {
   const [availableMonths, setAvailableMonths] = useState<AvailableMonth[]>([]);
   const [loadingMonths, setLoadingMonths] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [monthOverview, setMonthOverview] = useState<MonthOverview | null>(null);
+  const [loadingOverview, setLoadingOverview] = useState(false);
 
   // User scope selection
   const [userScope, setUserScope] = useState<UserScope>('all');
@@ -54,6 +68,7 @@ export default function ExportCourseraActivityPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Options & export state
+  const [includeMemberDetailsSheet, setIncludeMemberDetailsSheet] = useState(true);
   const [includeCourseBreakdown, setIncludeCourseBreakdown] = useState(true);
   const [includeUnmatchedSheet, setIncludeUnmatchedSheet] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -66,15 +81,30 @@ export default function ExportCourseraActivityPage() {
     total: number;
     foundCount: number;
     notFoundCount: number;
+    memberCount?: number;
+    activeMemberCount?: number;
+    inactiveMemberCount?: number;
+    invitedCount?: number;
+    notInvitedCount?: number;
     found: Array<{
       email: string;
       name: string | null;
       inSelectedMonth: boolean;
+      memberStatus?: 'Member' | 'Invited' | 'Not Invited';
+      activityStatus?: 'Active' | 'Inactive' | 'NA';
+      enrolledCourses?: number;
       source?: string;
       enrollmentDate?: string;
       lastActivityDate?: string;
     }>;
-    notFound: Array<{ email: string; reason: string }>;
+    notFound: Array<{
+      email: string;
+      name?: string | null;
+      memberStatus?: 'Member' | 'Invited' | 'Not Invited';
+      activityStatus?: 'Active' | 'Inactive' | 'NA';
+      enrolledCourses?: number;
+      reason: string;
+    }>;
     selectedMonth: string | null;
   } | null>(null);
   const [showMissingList, setShowMissingList] = useState(false);
@@ -95,9 +125,60 @@ export default function ExportCourseraActivityPage() {
     setLoadingMonths(false);
   }, [supabase]);
 
+  // Fetch month overview stats for preview cards
+  const fetchMonthOverview = useCallback(async (month: string) => {
+    if (!month) return;
+    setLoadingOverview(true);
+    try {
+      if (month === 'all') {
+        const { data: metrics } = await supabase
+          .from('coursera_computed_metrics')
+          .select('total_learners, active_learners, total_monthly_hours, total_completions');
+
+        if (metrics && metrics.length > 0) {
+          const totalL = Math.max(...metrics.map(m => Number(m.total_learners) || 0));
+          const activeL = metrics.reduce((acc, m) => acc + (Number(m.active_learners) || 0), 0);
+          const totalH = metrics.reduce((acc, m) => acc + (Number(m.total_monthly_hours) || 0), 0);
+          const totalC = metrics.reduce((acc, m) => acc + (Number(m.total_completions) || 0), 0);
+          setMonthOverview({
+            totalLearners: totalL,
+            activeLearners: activeL,
+            totalHours: totalH,
+            totalCompletions: totalC,
+          });
+        }
+      } else {
+        const { data: metrics } = await supabase
+          .from('coursera_computed_metrics')
+          .select('total_learners, active_learners, total_monthly_hours, total_completions')
+          .eq('month', month)
+          .maybeSingle();
+
+        if (metrics) {
+          setMonthOverview({
+            totalLearners: Number(metrics.total_learners) || 0,
+            activeLearners: Number(metrics.active_learners) || 0,
+            totalHours: Number(metrics.total_monthly_hours) || 0,
+            totalCompletions: Number(metrics.total_completions) || 0,
+          });
+        }
+      }
+    } catch {
+      // Graceful fallback
+    } finally {
+      setLoadingOverview(false);
+    }
+  }, [supabase]);
+
   useEffect(() => {
     fetchMonths();
   }, [fetchMonths]);
+
+  useEffect(() => {
+    if (selectedMonth) {
+      fetchMonthOverview(selectedMonth);
+    }
+  }, [selectedMonth, fetchMonthOverview]);
 
   // Parse comma/newline-separated emails from textarea
   const parseManualEmails = (text: string): string[] => {
@@ -231,6 +312,7 @@ export default function ExportCourseraActivityPage() {
           month: selectedMonth || 'all',
           userScope,
           emails: targetEmails,
+          includeMemberDetailsSheet,
           includeCourseBreakdown,
           includeUnmatchedSheet,
         }),
@@ -260,7 +342,7 @@ export default function ExportCourseraActivityPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
 
-      setSuccessMessage('Activity report exported successfully!');
+      setSuccessMessage('Activity report exported successfully with Member Details and Dashboard sheets!');
     } catch {
       setErrorMessage('Network error while exporting report.');
     } finally {
@@ -298,192 +380,234 @@ export default function ExportCourseraActivityPage() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Export Activity Report</h1>
               <p className="text-muted-foreground text-sm mt-0.5">
-                Generate and download filtered Coursera activity logs and course breakdown spreadsheets.
+                Generate formatted Excel reports with Member Details, Dashboard summary cards, learning hours, and course breakdowns.
               </p>
             </div>
           </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          <a
-            href="/api/coursera/export/template"
-            download
-            className="inline-flex items-center gap-2 text-xs font-medium px-3.5 py-2 rounded-lg border border-border/80 bg-background hover:bg-accent transition-colors shadow-sm"
-          >
-            <Download className="w-3.5 h-3.5 text-muted-foreground" />
-            Download User List Template
-          </a>
-        </div>
       </div>
 
-      {/* Main Configuration Card */}
-      <div className="rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm p-6 space-y-6 shadow-sm">
+      {/* Main Form Container */}
+      <div className="bg-card border border-border/60 rounded-2xl p-6 sm:p-8 shadow-sm space-y-8">
         
-        {/* Step 1: Snapshot Month */}
+        {/* Step 1: Select Month */}
         <div className="space-y-2">
           <label className="text-sm font-semibold text-foreground flex items-center justify-between">
             <span>1. Select Snapshot Month</span>
-            {loadingMonths && <span className="text-xs text-muted-foreground">Loading available months…</span>}
+            {loadingMonths && (
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" /> Loading months...
+              </span>
+            )}
           </label>
+
           <div className="relative max-w-md">
             <select
               value={selectedMonth}
-              onChange={e => setSelectedMonth(e.target.value)}
+              onChange={(e) => {
+                setSelectedMonth(e.target.value);
+                setVerificationResult(null);
+              }}
               disabled={loadingMonths}
-              className="w-full appearance-none bg-background border border-border/80 rounded-lg px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
+              className="w-full appearance-none bg-background border border-border/80 rounded-xl px-4 py-2.5 pr-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition shadow-sm cursor-pointer disabled:opacity-50"
             >
-              {availableMonths.map(m => (
+              {availableMonths.map((m) => (
                 <option key={m.month} value={m.month}>
-                  {formatMonth(m.month, firstMonth)} ({m.month})
+                  {formatMonth(m.month, firstMonth)} ({m.month.substring(0, 7)})
                 </option>
               ))}
-              <option value="all">All Available Snapshot Months</option>
+              <option value="all">All Historical Months (All uploaded snapshot periods)</option>
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           </div>
           <p className="text-xs text-muted-foreground">
-            Choose which monthly snapshot records to export. Select &ldquo;All Available Snapshot Months&rdquo; for historical aggregation.
+            Choose which monthly snapshot records to export. Select &ldquo;All Historical Months&rdquo; for comprehensive historical aggregation.
           </p>
+
+          {/* Month Snapshot Metrics Preview Cards */}
+          {monthOverview && !verificationResult && (
+            <div className="pt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-xl bg-muted/30 border border-border/40">
+                <div className="space-y-0.5">
+                  <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-primary" /> Total Learners
+                  </span>
+                  <p className="text-lg font-bold text-foreground">
+                    {loadingOverview ? '—' : monthOverview.totalLearners.toLocaleString()}
+                  </p>
+                </div>
+                <div className="space-y-0.5">
+                  <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1.5">
+                    <UserCheck className="w-3.5 h-3.5 text-emerald-500" /> Active Learners
+                  </span>
+                  <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                    {loadingOverview ? '—' : monthOverview.activeLearners.toLocaleString()}
+                  </p>
+                </div>
+                <div className="space-y-0.5">
+                  <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-blue-500" /> Total Hours
+                  </span>
+                  <p className="text-lg font-bold text-foreground">
+                    {loadingOverview ? '—' : `${monthOverview.totalHours.toLocaleString(undefined, { maximumFractionDigits: 1 })} hrs`}
+                  </p>
+                </div>
+                <div className="space-y-0.5">
+                  <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" /> Completions
+                  </span>
+                  <p className="text-lg font-bold text-foreground">
+                    {loadingOverview ? '—' : monthOverview.totalCompletions.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Step 2: User Scope Selector */}
+        {/* Step 2: Select Scope */}
         <div className="space-y-3 pt-2 border-t border-border/40">
           <label className="text-sm font-semibold text-foreground">
-            2. Choose User Scope
+            2. Learner Scope
           </label>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              {
-                id: 'all' as UserScope,
-                label: 'All Users',
-                desc: 'Export all learners in selected month',
-                icon: Users,
-              },
-              {
-                id: 'users' as UserScope,
-                label: 'Specific User(s)',
-                desc: 'Single or multiple comma-separated email IDs',
-                icon: User,
-              },
-              {
-                id: 'import' as UserScope,
-                label: 'Import a List',
-                desc: 'Upload an .xlsx or .csv email list',
-                icon: FileSpreadsheet,
-              },
-            ].map(tab => {
-              const Icon = tab.icon;
-              const isSelected = userScope === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => {
-                    setUserScope(tab.id);
-                    setErrorMessage(null);
-                  }}
-                  className={`flex flex-col items-start p-3.5 rounded-xl border text-left transition-all duration-200 ${
-                    isSelected
-                      ? 'border-primary bg-primary/5 ring-1 ring-primary/40 shadow-sm'
-                      : 'border-border/70 hover:border-border hover:bg-accent/40'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className={`p-1.5 rounded-lg ${isSelected ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <span className="text-sm font-semibold text-foreground leading-none">{tab.label}</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground leading-tight">{tab.desc}</span>
-                </button>
-              );
-            })}
+            <button
+              type="button"
+              onClick={() => {
+                setUserScope('all');
+                setVerificationResult(null);
+              }}
+              className={`p-4 rounded-xl border text-left transition flex items-start gap-3 ${
+                userScope === 'all'
+                  ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                  : 'border-border/60 bg-background/50 hover:bg-muted/40 hover:border-border'
+              }`}
+            >
+              <Users className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold text-sm text-foreground block">All Learners</span>
+                <span className="text-xs text-muted-foreground">Export every learner with data in selected month</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setUserScope('users');
+                setVerificationResult(null);
+              }}
+              className={`p-4 rounded-xl border text-left transition flex items-start gap-3 ${
+                userScope === 'users'
+                  ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                  : 'border-border/60 bg-background/50 hover:bg-muted/40 hover:border-border'
+              }`}
+            >
+              <UserCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold text-sm text-foreground block">Specific Emails</span>
+                <span className="text-xs text-muted-foreground">Paste custom list of emails to filter report</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setUserScope('import');
+                setVerificationResult(null);
+              }}
+              className={`p-4 rounded-xl border text-left transition flex items-start gap-3 ${
+                userScope === 'import'
+                  ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                  : 'border-border/60 bg-background/50 hover:bg-muted/40 hover:border-border'
+              }`}
+            >
+              <FileSpreadsheet className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold text-sm text-foreground block">Import Spreadsheet</span>
+                <span className="text-xs text-muted-foreground">Upload .xlsx/.csv with user email addresses</span>
+              </div>
+            </button>
           </div>
 
-          {/* Scope details container */}
+          {/* Scope specifics */}
           <div className="pt-2">
-            {/* Scope: Specific User(s) */}
             {userScope === 'users' && (
-              <div className="space-y-2 max-w-xl animate-in fade-in duration-200">
+              <div className="space-y-3 bg-muted/20 border border-border/60 rounded-xl p-4">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-muted-foreground">
-                    Learner Email Address(es)
-                  </label>
-                  {parsedManualList.length > 0 && (
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                      {parsedManualList.length} valid email{parsedManualList.length === 1 ? '' : 's'} detected
-                    </span>
-                  )}
+                  <span className="text-xs font-medium text-foreground">
+                    Enter Learner Emails (one per line, comma or semicolon separated)
+                  </span>
+                  <span className="text-xs font-mono text-muted-foreground">
+                    {parsedManualList.length} valid email{parsedManualList.length === 1 ? '' : 's'} recognized
+                  </span>
                 </div>
                 <textarea
-                  rows={3}
+                  rows={4}
                   value={rawEmailList}
-                  onChange={e => setRawEmailList(e.target.value)}
-                  placeholder="e.g. learner1@navgurukul.org, learner2@navgurukul.org"
-                  className="w-full bg-background border border-border/80 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 font-mono text-xs transition"
+                  onChange={e => {
+                    setRawEmailList(e.target.value);
+                    setVerificationResult(null);
+                  }}
+                  placeholder="alumni1@organization.org&#10;alumni2@organization.org, alumni3@organization.org"
+                  className="w-full text-xs font-mono p-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Enter a single email ID, or if multiple email IDs then separate them with a comma (or new lines).
-                </p>
               </div>
             )}
 
-            {/* Scope: Import List File */}
             {userScope === 'import' && (
-              <div className="space-y-3 max-w-xl animate-in fade-in duration-200">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-muted-foreground">
-                    Upload Spreadsheet with Emails (.xlsx or .csv)
-                  </label>
+              <div className="space-y-3 bg-muted/20 border border-border/60 rounded-xl p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <span className="text-xs font-medium text-foreground block">
+                      Upload Learner List (.xlsx or .csv)
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      File can contain an &apos;Email&apos; / &apos;Email Address&apos; column or plain text emails.
+                    </span>
+                  </div>
                   <a
                     href="/api/coursera/export/template"
                     download
-                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium"
                   >
-                    <Download className="w-3 h-3" /> Download Template
+                    <Download className="w-3.5 h-3.5" /> Download Template (.xlsx)
                   </a>
                 </div>
 
                 {!importedFileName ? (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-border/70 hover:border-primary/50 hover:bg-accent/40 rounded-xl p-6 text-center cursor-pointer transition-all duration-200"
-                  >
+                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-border/80 rounded-xl p-6 bg-background/50 hover:bg-muted/30 transition cursor-pointer relative">
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept=".xlsx,.csv"
-                      className="hidden"
                       onChange={e => {
-                        const f = e.target.files?.[0];
-                        if (f) handleFileUpload(f);
+                        const file = e.target.files?.[0];
+                        if (file) handleFileUpload(file);
                       }}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                     />
-                    <FileSpreadsheet className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm font-medium text-foreground">
-                      {parsingFile ? 'Analyzing spreadsheet…' : 'Click to select or drop your user list file here'}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Supports .xlsx and .csv files with an &ldquo;Email&rdquo; column</p>
+                    <FileSpreadsheet className="w-8 h-8 text-muted-foreground mb-2" />
+                    <span className="text-xs font-medium text-foreground">
+                      Click to browse or drag & drop spreadsheet
+                    </span>
+                    <span className="text-[10px] text-muted-foreground mt-1">
+                      Supports Excel (.xlsx) and CSV files
+                    </span>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/5">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                        <CheckCircle2 className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{importedFileName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {importedEmails.length} valid learner email{importedEmails.length === 1 ? '' : 's'} extracted
-                        </p>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <div className="truncate">
+                        <span className="font-semibold text-foreground truncate block">{importedFileName}</span>
+                        <span className="text-muted-foreground">{importedEmails.length} email addresses parsed</span>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={clearImportedFile}
-                      className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                      title="Remove file"
+                      className="text-muted-foreground hover:text-destructive p-1 rounded transition"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -492,89 +616,142 @@ export default function ExportCourseraActivityPage() {
               </div>
             )}
 
-            {/* Verify Accounts Action & Results */}
+            {/* Verification Button for specific email selections */}
             {userScope !== 'all' && getActiveEmails().length > 0 && (
-              <div className="pt-3 border-t border-border/40 space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="text-xs text-muted-foreground">
-                    Check if these emails exist in Coursera snapshots before exporting:
-                  </div>
+              <div className="mt-3 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs text-muted-foreground">
+                    Check whether your {getActiveEmails().length} email(s) exist in Coursera snapshots or live enterprise roster before exporting.
+                  </p>
                   <button
                     type="button"
                     onClick={handleVerifyUsers}
                     disabled={verifying}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/80 bg-background hover:bg-accent text-xs font-medium transition shadow-sm disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-background hover:bg-muted text-xs font-medium transition shrink-0"
                   >
                     {verifying ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Verifying Accounts…
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Verifying...
                       </>
                     ) : (
                       <>
-                        <Search className="w-3.5 h-3.5 text-primary" /> Check Coursera Accounts
+                        <Search className="w-3.5 h-3.5" />
+                        Verify Users
                       </>
                     )}
                   </button>
                 </div>
 
+                {/* Verification Results & Live Dashboard Cards */}
                 {verificationResult && (
-                  <div className="rounded-xl border border-border/80 bg-background/50 p-4 space-y-3 animate-in fade-in duration-200">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 text-xs font-semibold">
-                        <span>Account Verification Summary</span>
-                        <span className="text-muted-foreground">({verificationResult.total} emails checked)</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setShowFoundList(!showFoundList)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15 transition-colors cursor-pointer"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5" /> {verificationResult.foundCount} Verified in Coursera
-                          {showFoundList ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                        </button>
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${
-                          verificationResult.notFoundCount > 0
-                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
-                            : 'bg-muted text-muted-foreground border-border/60'
-                        }`}>
-                          <AlertCircle className="w-3.5 h-3.5" /> {verificationResult.notFoundCount} Not Found / No Records
+                  <div className="p-4 rounded-xl bg-card border border-border/60 shadow-sm space-y-4 animate-in fade-in duration-300">
+                    <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                      <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                        <LayoutDashboard className="w-3.5 h-3.5 text-primary" /> Scope Dashboard Breakdown
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        Scope: {verificationResult.total} emails
+                      </span>
+                    </div>
+
+                    {/* 5-Card Status Dashboard Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                      <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-1">
+                        <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1">
+                          <Users className="w-3 h-3 text-primary" /> Total
                         </span>
+                        <p className="text-base font-bold text-foreground">{verificationResult.total}</p>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 space-y-1">
+                        <span className="text-[10px] uppercase tracking-wider font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                          <UserCheck className="w-3 h-3 text-emerald-600" /> Active (&le;30d)
+                        </span>
+                        <p className="text-base font-bold text-emerald-700 dark:text-emerald-300">
+                          {verificationResult.activeMemberCount ?? 0}
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 space-y-1">
+                        <span className="text-[10px] uppercase tracking-wider font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                          <UserMinus className="w-3 h-3 text-amber-600" /> Inactive (&gt;30d)
+                        </span>
+                        <p className="text-base font-bold text-amber-700 dark:text-amber-300">
+                          {verificationResult.inactiveMemberCount ?? 0}
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 space-y-1">
+                        <span className="text-[10px] uppercase tracking-wider font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-1">
+                          <UserX className="w-3 h-3 text-blue-600" /> Invited (Pending)
+                        </span>
+                        <p className="text-base font-bold text-blue-700 dark:text-blue-300">
+                          {verificationResult.invitedCount ?? 0}
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 space-y-1">
+                        <span className="text-[10px] uppercase tracking-wider font-semibold text-rose-700 dark:text-rose-400 flex items-center gap-1">
+                          <UserX className="w-3 h-3 text-rose-600" /> Not Invited
+                        </span>
+                        <p className="text-base font-bold text-rose-700 dark:text-rose-300">
+                          {verificationResult.notInvitedCount ?? 0}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Found users list */}
-                    {showFoundList && verificationResult.foundCount > 0 && (
-                      <div className="space-y-2 pt-1 border-t border-border/40">
-                        <div className="flex items-center justify-between text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                          <span>Verified Accounts ({verificationResult.foundCount})</span>
-                          <span className="text-[10px] text-muted-foreground">Cross-checked against Snapshots & Live Enterprise API</span>
-                        </div>
-                        <div className="max-h-56 overflow-y-auto space-y-1.5 p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
-                          {verificationResult.found.map(f => (
-                            <div key={f.email} className="flex flex-col sm:flex-row sm:items-center justify-between text-xs py-1.5 px-2.5 rounded bg-background/80 border border-border/50 gap-1.5 sm:gap-4">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span className="font-mono text-foreground truncate">{f.email}</span>
-                                {f.name && <span className="text-muted-foreground text-[11px] truncate">({f.name})</span>}
+                    {/* Matched Users Toggle & List */}
+                    {verificationResult.foundCount > 0 && (
+                      <div className="space-y-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowFoundList(!showFoundList)}
+                          className="flex items-center justify-between w-full text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline text-left"
+                        >
+                          <span>
+                            {showFoundList ? 'Hide' : 'Show'} {verificationResult.foundCount} confirmed Coursera member(s)
+                          </span>
+                          {showFoundList ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        </button>
+
+                        {showFoundList && (
+                          <div className="max-h-56 overflow-y-auto space-y-1.5 p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                            {verificationResult.found.map(f => (
+                              <div key={f.email} className="flex flex-col sm:flex-row sm:items-center justify-between text-xs py-1.5 px-2.5 rounded bg-background/80 border border-border/50 gap-1.5 sm:gap-4">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="font-mono text-foreground truncate">{f.email}</span>
+                                  {f.name && <span className="text-muted-foreground text-[11px] truncate">({f.name})</span>}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2 shrink-0 text-[11px] text-muted-foreground">
+                                  {f.enrolledCourses !== undefined && f.enrolledCourses > 0 && (
+                                    <span>Courses: <strong className="font-medium text-foreground">{f.enrolledCourses}</strong></span>
+                                  )}
+                                  {f.lastActivityDate && f.lastActivityDate !== '—' && (
+                                    <span>Last Active: <strong className="font-medium text-foreground">{f.lastActivityDate}</strong></span>
+                                  )}
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                                    Member
+                                  </span>
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                                    f.activityStatus === 'Active'
+                                      ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-semibold'
+                                      : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                                  }`}>
+                                    {f.activityStatus === 'Active' ? 'Active (<= 30d)' : 'Inactive (> 30d)'}
+                                  </span>
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                                    f.source?.includes('Live API')
+                                      ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                                      : 'bg-muted text-muted-foreground'
+                                  }`}>
+                                    {f.source || 'Snapshots'}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex flex-wrap items-center gap-2 shrink-0 text-[11px] text-muted-foreground">
-                                {f.enrollmentDate && f.enrollmentDate !== '—' && (
-                                  <span>Enrolled: <strong className="font-medium text-foreground">{f.enrollmentDate}</strong></span>
-                                )}
-                                {f.lastActivityDate && f.lastActivityDate !== '—' && (
-                                  <span>Last Active: <strong className="font-medium text-foreground">{f.lastActivityDate}</strong></span>
-                                )}
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                                  f.source?.includes('Live API')
-                                    ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20'
-                                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                                }`}>
-                                  {f.source || 'Snapshots'}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -584,7 +761,7 @@ export default function ExportCourseraActivityPage() {
                         <button
                           type="button"
                           onClick={() => setShowMissingList(!showMissingList)}
-                          className="flex items-center justify-between w-full text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline text-left"
+                          className="flex items-center justify-between w-full text-xs font-medium text-rose-600 dark:text-rose-400 hover:underline text-left"
                         >
                           <span>
                             {showMissingList ? 'Hide' : 'Show'} {verificationResult.notFoundCount} email(s) with no Coursera account
@@ -593,13 +770,25 @@ export default function ExportCourseraActivityPage() {
                         </button>
 
                         {showMissingList && (
-                          <div className="max-h-40 overflow-y-auto space-y-1.5 p-2 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                          <div className="max-h-48 overflow-y-auto space-y-1.5 p-2 rounded-lg bg-rose-500/5 border border-rose-500/20">
                             {verificationResult.notFound.map(nf => (
-                              <div key={nf.email} className="flex items-center justify-between text-xs py-1 px-2 rounded bg-background/80 border border-border/50">
-                                <span className="font-mono text-foreground">{nf.email}</span>
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
-                                  No Account Found
-                                </span>
+                              <div key={nf.email} className="flex flex-col sm:flex-row sm:items-center justify-between text-xs py-1.5 px-2.5 rounded bg-background/80 border border-border/50 gap-1.5 sm:gap-4">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="font-mono text-foreground truncate">{nf.email}</span>
+                                  {nf.name && <span className="text-muted-foreground text-[11px] truncate">({nf.name})</span>}
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                                    nf.memberStatus === 'Invited'
+                                      ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30'
+                                      : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
+                                  }`}>
+                                    {nf.memberStatus || 'Not Invited'}
+                                  </span>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono">
+                                    Activity: NA
+                                  </span>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -619,7 +808,20 @@ export default function ExportCourseraActivityPage() {
           <label className="text-sm font-semibold text-foreground">
             3. Report Output Structure
           </label>
-          <div className="space-y-2 pt-1">
+          <div className="space-y-2.5 pt-1">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="include-member-details"
+                checked={includeMemberDetailsSheet}
+                onChange={e => setIncludeMemberDetailsSheet(e.target.checked)}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary/40 cursor-pointer"
+              />
+              <label htmlFor="include-member-details" className="text-sm text-foreground cursor-pointer select-none">
+                Include Member Details Sheet <span className="text-xs text-muted-foreground">(adds a dedicated worksheet summarizing Member, Inactive, and Invited statuses, enrolled courses, and KPI dashboard summary cards)</span>
+              </label>
+            </div>
+
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
@@ -629,7 +831,7 @@ export default function ExportCourseraActivityPage() {
                 className="h-4 w-4 rounded border-border text-primary focus:ring-primary/40 cursor-pointer"
               />
               <label htmlFor="include-course-breakdown" className="text-sm text-foreground cursor-pointer select-none">
-                Include Course-Level Breakdown Sheet <span className="text-xs text-muted-foreground">(adds a 2nd worksheet with individual course enrollments, hours, and grades)</span>
+                Include Course-Level Breakdown Sheet <span className="text-xs text-muted-foreground">(adds a worksheet with individual course enrollments, hours, and grades)</span>
               </label>
             </div>
 
@@ -680,7 +882,7 @@ export default function ExportCourseraActivityPage() {
             {exporting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Generating Report…
+                Generating Report...
               </>
             ) : (
               <>
