@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
     const latestActivity = activityTimes[0] ?? null;
     const snapshotDate = new Date(snapshotMonth + 'T00:00:00Z').getTime();
     const days_since_activity = latestActivity !== null
-      ? Math.floor((snapshotDate - latestActivity) / 86400000)
+      ? Math.max(0, Math.floor((Date.now() - latestActivity) / 86400000))
       : null;
 
     const is_compliant = monthly_hours >= minMonthlyHours;
