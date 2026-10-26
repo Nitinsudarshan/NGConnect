@@ -774,3 +774,149 @@ export async function batchEnrollCourseraUsers(
 
   return results;
 }
+
+// ── Program Memberships & Removal (Seat Reclamation) ─────────────────────────
+
+export interface CourseraProgramMember {
+  /** Composite id as returned by Coursera: `${programId}~${externalId}` */
+  membershipId: string;
+  externalId: string;
+  email: string;
+  fullName: string;
+  joinedAt: number | null;
+}
+
+/**
+ * Lists every member of the configured program (paginated).
+ * Field names are parsed defensively since the memberships payload
+ * can differ slightly between accounts.
+ */
+export async function getCourseraProgramMembers(): Promise<CourseraProgramMember[]> {
+  const orgId = process.env.COURSERA_ORG_ID;
+  const progId = process.env.COURSERA_PROGRAM_ID || 'WsV-YttFEeq-fw5R5-S6kw';
+  if (!orgId || !progId) return [];
+  if (isCircuitOpen()) return [];
+
+  const token = await getCourseraAccessToken();
+  if (!token) return [];
+
+  const members: CourseraProgramMember[] = [];
+  let start = 0;
+  const limit = 100;
+  const MAX_PAGES = 100; // up to 10,000 members
+
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const url = `https://api.coursera.com/ent/api/businesses.v1/${orgId}/programs/${progId}/memberships?limit=${limit}&start=${start}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!res.ok) {
+      recordApiFailure(res.status);
+      throw new Error(`Coursera memberships fetch failed (${res.status})`);
+    }
+    recordApiSuccess();
+
+    const data = await res.json();
+    const elements: any[] = data.elements || [];
+
+    for (const el of elements) {
+      const membershipId: string = el.id || '';
+      const externalId: string =
+        el.externalId || (membershipId.includes('~') ? membershipId.split('~').slice(1).join('~') : '');
+      const email = String(el.email || el.userEmail || externalId || '').toLowerCase().trim();
+      if (!externalId && !email) continue;
+      members.push({
+        membershipId,
+        externalId: externalId || email,
+        email,
+        fullName: el.fullName || el.name || '',
+        joinedAt: Number(el.joinedAt || el.createdAt || el.enrolledAt) || null,
+      });
+    }
+
+    if (!data.paging?.next || elements.length === 0) break;
+    start = Number(data.paging.next);
+    await sleep(50);
+  }
+
+  return members;
+}
+
+export interface CourseraRemovalResult {
+  email: string;
+  externalId: string;
+  success: boolean;
+  message: string;
+}
+
+/**
+ * Removes a learner from the program, freeing their seat.
+ * softDelete=true lets them rejoin without a fresh invite (safer default).
+ */
+export async function removeCourseraMember(
+  member: { email: string; externalId: string },
+  softDelete = true
+): Promise<CourseraRemovalResult> {
+  const orgId = process.env.COURSERA_ORG_ID;
+  const progId = process.env.COURSERA_PROGRAM_ID || 'WsV-YttFEeq-fw5R5-S6kw';
+  const base = { email: member.email, externalId: member.externalId };
+
+  if (!orgId || !progId) return { ...base, success: false, message: 'Coursera Org/Program ID not configured.' };
+  if (isCircuitOpen()) return { ...base, success: false, message: 'Circuit breaker open — try again shortly.' };
+
+  const token = await getCourseraAccessToken();
+  if (!token) return { ...base, success: false, message: 'Failed to acquire Coursera OAuth token.' };
+
+  const composite = encodeURIComponent(`${progId}~${member.externalId}`);
+  const url = `https://api.coursera.com/ent/api/businesses.v1/${orgId}/programs/${progId}/memberships/${composite}?softDelete=${softDelete}`;
+
+  try {
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+
+    if (res.status === 204 || res.ok) {
+      recordApiSuccess();
+      return { ...base, success: true, message: softDelete ? 'Removed (soft delete — can rejoin).' : 'Removed.' };
+    }
+
+    if (res.status === 429 || res.status >= 500) recordApiFailure(res.status);
+    const errText = await res.text().catch(() => '');
+    return { ...base, success: false, message: `Coursera returned ${res.status}: ${errText.slice(0, 200)}` };
+  } catch (err: any) {
+    recordApiFailure();
+    return { ...base, success: false, message: `Network error: ${err.message || 'unknown'}` };
+  }
+}
+
+/**
+ * Batch removal with the same concurrency/throttle pattern as enrollment.
+ */
+export async function batchRemoveCourseraMembers(
+  members: Array<{ email: string; externalId: string }>,
+  softDelete = true
+): Promise<CourseraRemovalResult[]> {
+  const results: CourseraRemovalResult[] = [];
+  const CONCURRENCY = 5;
+
+  for (let i = 0; i < members.length; i += CONCURRENCY) {
+    const chunk = members.slice(i, i + CONCURRENCY);
+    results.push(...(await Promise.all(chunk.map(m => removeCourseraMember(m, softDelete)))));
+    if (i + CONCURRENCY < members.length) await sleep(100);
+  }
+
+  return results;
+}

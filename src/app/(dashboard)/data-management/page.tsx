@@ -13,7 +13,8 @@ import {
   Users,
   LayoutDashboard,
   FileDown,
-  UserPlus
+  UserPlus,
+  UserMinus
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
@@ -143,6 +144,17 @@ const COURSERA_CATEGORY = {
       gradient: 'from-violet-500/10 via-purple-500/5 to-transparent',
       border: 'hover:border-violet-500/30 dark:hover:border-violet-500/50',
       iconBg: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 group-hover:bg-violet-600 group-hover:text-white',
+    },
+    {
+      href: '/data-management/coursera/prune',
+      resource: 'data_management.coursera_prune',
+      label: 'Prune Inactive',
+      description: 'See how many learners are inactive and free seats by days inactive or seat count, with preview, confirmation, and a removal log.',
+      icon: UserMinus,
+      badge: 'Admin',
+      gradient: 'from-rose-500/10 via-red-500/5 to-transparent',
+      border: 'hover:border-rose-500/30 dark:hover:border-rose-500/50',
+      iconBg: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 group-hover:bg-rose-600 group-hover:text-white',
     },
   ],
 };

@@ -85,3 +85,28 @@ Permanent, append-only change history for all alumni data. Supports rollback.
 
 - **Columns**: `id` (UUID PK), `table_name`, `record_id` (TEXT — email for alumni_master, UUID for others), `field_name`, `old_value`, `new_value`, `action_type` (`INSERT`/`UPDATE`/`DELETE`/`IMPORT`/`RESTORE`), `changed_by_user_id`, `changed_by_name`, `changed_by_role`, `changed_at`, `ip_address`.
 - **RLS**: No UPDATE or DELETE policies (append-only). Super Admin and internal roles can SELECT. All writes use the service-role client.
+
+---
+
+## 9. `coursera_removal_log`
+One row per learner removal attempt made by Coursera Prune Inactive (`/data-management/coursera/prune`).
+
+- **Columns**: `id` (UUID PK), `run_id` (UUID, FK → `coursera_prune_runs.id`), `removed_at`, `removed_by` (FK → `auth.users`), `mode` (`inactive_days`/`free_seats`), `threshold` (days or seats), `email`, `external_id`, `full_name`, `last_seen_at`, `last_seen_source`, `days_inactive`, `courses_count`, `soft_delete`, `success`, `message`.
+- **RLS**: Enabled with no policies — service-role only. Reads go through `/api/coursera/prune-inactive/removals` (RBAC `data_management.coursera_prune` view).
+
+---
+
+## 10. `coursera_prune_runs`
+Log of every prune-tool action: overview scans, previews (with their full candidate list), and executions.
+
+- **Columns**: `id` (UUID PK), `kind` (`scan`/`preview`/`execute`), `created_at`, `created_by`, `created_by_email`, `mode`, `threshold` (CHECK: ≥ 90 when `mode = 'inactive_days'`), `grace_days`, `soft_delete`, `total_members`, `eligible_members`, `candidate_count`, `succeeded`, `failed`, `spared`, `preview_id` (execution → preview), `executed_run_id` (preview → execution; makes each preview single-use), `details` (JSONB).
+- **Indexes**: unique `preview_id` for `kind = 'execute'`, so a preview can only be executed once.
+- **RLS**: Enabled with no policies — service-role only.
+
+---
+
+## 11. `coursera_prune_protected`
+Accounts that prune runs must never remove (staff, test accounts).
+
+- **Columns**: `email` (TEXT PK, lower-case), `note`, `added_at`, `added_by` (FK → `auth.users`), `added_by_email`.
+- **RLS**: Enabled with no policies — service-role only. Managed from the prune page (RBAC `data_management.coursera_prune` edit).

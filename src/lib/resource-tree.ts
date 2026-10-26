@@ -62,6 +62,7 @@ export const PERMISSION_RESOURCES: PermissionResource[] = [
   { id: 'data_management.coursera_activity_logs', label: 'Coursera Activity Logs', cluster: 'data_management', group: 'Coursera', actions: ['view'] },
   { id: 'data_management.coursera_export', label: 'Coursera Export Report', cluster: 'data_management', group: 'Coursera', actions: ['view'] },
   { id: 'data_management.coursera_enroll', label: 'Coursera Enrollment & Checker', cluster: 'data_management', group: 'Coursera', actions: ['view', 'edit'] },
+  { id: 'data_management.coursera_prune', label: 'Coursera Prune Inactive (delete = permanent delete)', cluster: 'data_management', group: 'Coursera', actions: ['view', 'edit', 'delete'] },
 
   // ---------------- MANAGE ----------------
   { id: 'manage.users', label: 'Manage Users', cluster: 'manage', actions: ['view', 'edit', 'delete'] },
