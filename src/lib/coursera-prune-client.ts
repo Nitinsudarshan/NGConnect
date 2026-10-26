@@ -5,7 +5,9 @@ import type {
   PruneCriteria,
   PruneExecutionResult,
   PrunePreview,
+  PruneRunProgress,
   PruneRunSummary,
+  ScanProgress,
 } from '@/types/coursera-prune';
 
 /**
@@ -41,18 +43,32 @@ async function call<T>(url: string, init?: RequestInit): Promise<T> {
   return json.data as T;
 }
 
-export const fetchLatestScan = () => call<InactivityScan | null>(`${BASE}/overview`);
+export interface OverviewData {
+  latest: InactivityScan | null;
+  running: ScanProgress | null;
+}
 
-export const refreshScan = () => call<InactivityScan>(`${BASE}/overview`, { method: 'POST' });
+export const fetchOverview = () => call<OverviewData>(`${BASE}/overview`);
+
+/** Starts a refresh, or returns the one already running so it can be resumed. */
+export const startScan = () => call<ScanProgress>(`${BASE}/scans`, { method: 'POST' });
+
+export const stepScan = (scanId: string) => call<ScanProgress>(`${BASE}/scans/${scanId}/step`, { method: 'POST' });
 
 export const requestPreview = (criteria: PruneCriteria, graceDays: number) =>
   call<PrunePreview>(BASE, { method: 'POST', body: JSON.stringify({ action: 'preview', ...criteria, graceDays }) });
 
-export const executePrune = (previewId: string, confirmEmails: string[], hardDelete: boolean) =>
-  call<PruneExecutionResult>(BASE, {
+export const fetchPreview = (previewId: string) => call<PrunePreview>(`${BASE}/previews/${previewId}`);
+
+export const startPrune = (previewId: string, confirmEmails: string[], hardDelete: boolean) =>
+  call<PruneRunProgress>(BASE, {
     method: 'POST',
     body: JSON.stringify({ action: 'execute', previewId, confirmEmails, hardDelete }),
   });
+
+export const stepPrune = (runId: string) => call<PruneRunProgress>(`${BASE}/runs/${runId}/step`, { method: 'POST' });
+
+export const fetchPruneResult = (runId: string) => call<PruneExecutionResult>(`${BASE}/runs/${runId}`);
 
 export const fetchRuns = () => call<PruneRunSummary[]>(`${BASE}/runs`);
 

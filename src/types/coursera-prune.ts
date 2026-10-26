@@ -38,11 +38,22 @@ export interface PrunePlan {
   candidates: PruneCandidate[];
 }
 
-/** Result of a prune preview: the plan plus the id that execution must reference. */
+export type RunStatus = 'running' | 'done' | 'failed';
+
+/**
+ * A saved prune list: a preview built from a completed scan. It can be
+ * reopened and pruned from until `expiresAt`, once.
+ */
 export interface PrunePreview {
   previewId: string;
+  createdAt: string;
+  createdByEmail: string | null;
   graceDays: number;
+  /** When the scan this list was built from finished. */
+  scannedAt: string;
   expiresAt: string;
+  /** Set once a prune has been started from this list. */
+  executedRunId: string | null;
   plan: PrunePlan;
 }
 
@@ -61,6 +72,18 @@ export interface InactivityScan {
   lastSeen: Array<number | null>;
 }
 
+/** Progress of a refresh (scan) that checks members a batch at a time. */
+export interface ScanProgress {
+  scanId: string;
+  status: RunStatus;
+  startedAt: string;
+  total: number;
+  checked: number;
+  /** Set when the scan cannot continue right now (Coursera cooldown, another tab working). */
+  waitMs?: number;
+  done: boolean;
+}
+
 export interface PrunedAccount {
   email: string;
   fullName: string | null;
@@ -69,6 +92,19 @@ export interface PrunedAccount {
   daysInactive: number | null;
   coursesCount: number | null;
   message: string;
+}
+
+/** Progress of a prune that removes members a batch at a time. */
+export interface PruneRunProgress {
+  runId: string;
+  status: RunStatus;
+  total: number;
+  processed: number;
+  removed: number;
+  failed: number;
+  spared: number;
+  waitMs?: number;
+  done: boolean;
 }
 
 export interface PruneExecutionResult {
@@ -94,6 +130,7 @@ export type PruneRunKind = 'scan' | 'preview' | 'execute';
 export interface PruneRunSummary {
   id: string;
   kind: PruneRunKind;
+  status: RunStatus | null;
   createdAt: string;
   createdBy: string | null;
   createdByEmail: string | null;
@@ -108,6 +145,8 @@ export interface PruneRunSummary {
   spared: number | null;
   previewId: string | null;
   executedRunId: string | null;
+  /** Previews only: the list can no longer be pruned from after this. */
+  expiresAt: string | null;
 }
 
 export interface ProtectedAccount {
