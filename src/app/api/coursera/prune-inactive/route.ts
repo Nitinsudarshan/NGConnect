@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { randomUUID } from 'crypto';
 import { checkRateLimit } from '@/lib/rate-limiter';
 import { denyApiUnlessAccess } from '@/lib/api-guard';
 import { buildPrunePlan, PruneCriteria } from '@/lib/coursera-prune';
@@ -137,13 +139,59 @@ export async function POST(request: NextRequest) {
   );
 
   const succeeded = results.filter(r => r.success).length;
+  const runId = randomUUID();
+  const threshold = criteria.mode === 'inactive_days' ? criteria.days : criteria.seats;
+
+  // Join removal results back to candidate details for the report
+  const byEmail = new Map(toRemove.map(c => [c.email, c]));
+  const rows = results.map(r => {
+    const c = byEmail.get(r.email);
+    return {
+      run_id: runId,
+      removed_by: user.id,
+      mode: criteria.mode,
+      threshold,
+      email: r.email,
+      external_id: r.externalId,
+      full_name: c?.fullName || null,
+      last_seen_at: c?.lastSeenAt || null,
+      last_seen_source: c?.lastSeenSource || null,
+      days_inactive: c?.daysInactive ?? null,
+      courses_count: c?.coursesCount ?? null,
+      soft_delete: softDelete,
+      success: r.success,
+      message: r.message,
+    };
+  });
+
+  // Persist the audit log. A logging failure must not hide what was removed,
+  // so we still return the full list below and flag the problem.
+  let logError: string | null = null;
+  if (rows.length > 0) {
+    const { error } = await createAdminClient().from('coursera_removal_log').insert(rows);
+    if (error) {
+      logError = error.message;
+      console.error('[coursera/prune-inactive] failed to write removal log:', error);
+    }
+  }
 
   console.info(
-    `[coursera/prune-inactive] user=${user.id} mode=${criteria.mode} removed=${succeeded}/${results.length} spared=${sparedEmails.length} softDelete=${softDelete}`
+    `[coursera/prune-inactive] run=${runId} user=${user.id} mode=${criteria.mode} removed=${succeeded}/${results.length} spared=${sparedEmails.length}`
   );
+
+  const toReport = (r: (typeof rows)[number]) => ({
+    email: r.email,
+    fullName: r.full_name,
+    lastSeenAt: r.last_seen_at,
+    lastSeenSource: r.last_seen_source,
+    daysInactive: r.days_inactive,
+    coursesCount: r.courses_count,
+    message: r.message,
+  });
 
   return NextResponse.json({
     dryRun: false,
+    runId,
     criteria,
     softDelete,
     summary: {
@@ -153,7 +201,10 @@ export async function POST(request: NextRequest) {
       failed: results.length - succeeded,
       spared: sparedEmails.length,
     },
+    removedAccounts: rows.filter(r => r.success).map(toReport),
+    failedAccounts: rows.filter(r => !r.success).map(toReport),
     sparedEmails, // confirmed but no longer in the plan (became active, protected, etc.)
-    results,
+    downloadUrl: `/api/coursera/prune-inactive/removals?runId=${runId}&format=csv`,
+    logError,
   });
 }
