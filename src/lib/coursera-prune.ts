@@ -17,12 +17,12 @@ import {
   batchFetchCourseraUserEnrollmentActivity,
   CourseraProgramMember,
 } from '@/lib/coursera-api';
+import { DEFAULT_GRACE_DAYS } from '@/lib/coursera-prune-schema';
+import type { PruneCandidate, PruneCriteria, PrunePlan, PruneSkipped } from '@/types/coursera-prune';
+
+export type { PruneCandidate, PruneCriteria, PrunePlan } from '@/types/coursera-prune';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-export type PruneCriteria =
-  | { mode: 'inactive_days'; days: number }
-  | { mode: 'free_seats'; seats: number };
 
 export interface PruneOptions {
   /** Skip anyone who joined the program within this many days (default 14). */
@@ -31,37 +31,28 @@ export interface PruneOptions {
   protectedEmails?: string[];
 }
 
-export interface PruneCandidate {
-  email: string;
-  externalId: string;
-  fullName: string;
-  coursesCount: number;
-  lastSeenAt: string | null;
-  lastSeenSource: 'activity' | 'enrollment' | 'joined' | 'never';
-  daysInactive: number | null; // null = never active, no dates at all
-  rank: number; // 1 = most inactive
-}
-
-export interface PrunePlan {
-  criteria: PruneCriteria;
-  generatedAt: string;
+export interface ProgramActivityScan {
+  scannedAt: number;
   totalMembers: number;
-  eligibleMembers: number; // after grace period + protected list
-  skipped: { inGracePeriod: number; protected: number; activityLookupFailed: number };
-  candidates: PruneCandidate[];
+  eligibleMembers: number;
+  skipped: PruneSkipped;
+  /** Every rankable member, most inactive first. */
+  ranked: PruneCandidate[];
 }
 
-export async function buildPrunePlan(
-  criteria: PruneCriteria,
-  options: PruneOptions = {}
-): Promise<PrunePlan> {
+/**
+ * Reads every program member and their last activity live from Coursera, and
+ * ranks them most-inactive first. Shared by the overview cards and the planner
+ * so both count members the same way.
+ */
+export async function scanProgramActivity(options: PruneOptions = {}): Promise<ProgramActivityScan> {
   const now = Date.now();
-  const graceDays = options.graceDays ?? 14;
+  const graceDays = options.graceDays ?? DEFAULT_GRACE_DAYS;
   const protectedSet = new Set((options.protectedEmails || []).map(e => e.toLowerCase().trim()));
 
   const members = await getCourseraProgramMembers();
 
-  const skipped = { inGracePeriod: 0, protected: 0, activityLookupFailed: 0 };
+  const skipped: PruneSkipped = { inGracePeriod: 0, protected: 0, activityLookupFailed: 0 };
   const eligible: CourseraProgramMember[] = [];
 
   for (const m of members) {
@@ -122,19 +113,37 @@ export async function buildPrunePlan(
     rank: i + 1,
   }));
 
+  return {
+    scannedAt: now,
+    totalMembers: members.length,
+    eligibleMembers: eligible.length,
+    skipped,
+    ranked,
+  };
+}
+
+/**
+ * Builds the list of members a prune with `criteria` would remove.
+ */
+export async function buildPrunePlan(
+  criteria: PruneCriteria,
+  options: PruneOptions = {}
+): Promise<PrunePlan> {
+  const scan = await scanProgramActivity(options);
+
   let candidates: PruneCandidate[];
   if (criteria.mode === 'inactive_days') {
-    candidates = ranked.filter(c => c.daysInactive === null || c.daysInactive > criteria.days);
+    candidates = scan.ranked.filter(c => c.daysInactive === null || c.daysInactive > criteria.days);
   } else {
-    candidates = ranked.slice(0, criteria.seats);
+    candidates = scan.ranked.slice(0, criteria.seats);
   }
 
   return {
     criteria,
-    generatedAt: new Date(now).toISOString(),
-    totalMembers: members.length,
-    eligibleMembers: eligible.length,
-    skipped,
+    generatedAt: new Date(scan.scannedAt).toISOString(),
+    totalMembers: scan.totalMembers,
+    eligibleMembers: scan.eligibleMembers,
+    skipped: scan.skipped,
     candidates,
   };
 }

@@ -23,9 +23,51 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.09.04";
+export const CURRENT_VERSION = "1.10.00";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.10.00",
+    date: "2026-10-26",
+    title: "Coursera Prune Inactive: inactivity overview and guarded seat reclamation",
+    type: "minor",
+    highlights: [
+      "New Prune Inactive page under Data Management → Coursera",
+      "Inactivity overview cards with live refresh and an inactive-since date picker",
+      "Prune by days inactive (minimum 90) or by number of seats, with preview, confirmation, and a downloadable pruned list",
+      "Every preview and prune is logged; permanent delete is limited to roles with the delete permission and written to the audit log"
+    ],
+    changes: [
+      {
+        category: "Features",
+        description: "Added /data-management/coursera/prune with overview cards (total members, never started, inactive 90/180/365+ days), a Refresh from Coursera button, and an inactive-since date picker capped at 90 days ago.",
+      },
+      {
+        category: "Features",
+        description: "Added 'By days inactive' and 'By number of seats' prune tabs: settings → preview with per-member selection → Prune → confirmation dialog (typed count for 50+ members, typed DELETE for permanent delete) → pruned list with CSV download.",
+      },
+      {
+        category: "Features",
+        description: "Added a stored protected-accounts list that every preview and prune skips, and a prune log of all previews and executions.",
+      },
+      {
+        category: "Security",
+        description: "Registered RBAC resource data_management.coursera_prune (view / edit / delete = permanent delete), seeded delete for Super Admin, Admin, and Program; prune APIs now check it instead of coursera_enroll.",
+      },
+      {
+        category: "Security",
+        description: "Prune execution must reference an unexpired (30 min), unused preview run by the same user, and can only remove accounts that were in that preview; each execution writes an audit_log entry.",
+      },
+      {
+        category: "Improvements",
+        description: "Days-based prunes now require at least 90 days of inactivity, enforced in the UI, the API schema, and a database CHECK constraint.",
+      },
+      {
+        category: "Improvements",
+        description: "Prune API routes return the standard { success, data, error } shape and no longer forward raw database errors to the client.",
+      },
+    ],
+  },
   {
     version: "1.09.04",
     date: "2026-09-22",
