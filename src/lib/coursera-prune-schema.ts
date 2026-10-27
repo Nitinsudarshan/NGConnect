@@ -12,8 +12,14 @@ export const MAX_INACTIVE_DAYS = 3650;
 export const MAX_REMOVALS_PER_RUN = 500;
 export const DEFAULT_GRACE_DAYS = 14;
 export const MAX_GRACE_DAYS = 365;
-/** A preview must be executed within this window, or a fresh preview is required. */
-export const PREVIEW_TTL_MINUTES = 30;
+/** A saved prune list can be pruned from for this long after it is created. */
+export const PREVIEW_VALID_DAYS = 7;
+/** A refresh left running longer than this is abandoned and a new one starts. */
+export const SCAN_RESUME_HOURS = 24;
+/** Members checked live per refresh request; small enough to finish well inside a request. */
+export const SCAN_BATCH_SIZE = 25;
+/** Members re-checked and removed per prune request. */
+export const PRUNE_BATCH_SIZE = 10;
 
 const daysField = z
   .number({ error: 'Enter a number of days.' })

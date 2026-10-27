@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MIN_INACTIVE_DAYS } from '@/lib/coursera-prune-schema';
-import type { InactivityScan } from '@/types/coursera-prune';
+import type { InactivityScan, ScanProgress } from '@/types/coursera-prune';
+import { JobProgress } from './JobProgress';
 import { StatCard } from './StatCard';
 import {
   DAY_MS,
@@ -24,18 +25,31 @@ const PRESET_DAYS = [90, 180, 365];
 
 interface InactivityOverviewProps {
   scan: InactivityScan | null;
+  /** The refresh in progress or paused, if any. */
+  refresh: ScanProgress | null;
   isRefreshing: boolean;
   onRefresh: () => void;
+  onStopRefresh: () => void;
   /** Opens the "By days" prune tab pre-filled with this many days. */
   onPruneByDays: (days: number) => void;
   canEdit: boolean;
 }
 
 /**
- * Program-wide inactivity cards from the latest stored scan, with a refresh
- * button (live Coursera re-scan) and an "inactive since" date picker.
+ * Program-wide inactivity cards from the latest finished refresh, with a
+ * refresh button (checks every member live, a batch at a time, resumable) and
+ * an "inactive since" date picker.
  */
-export const InactivityOverview = ({ scan, isRefreshing, onRefresh, onPruneByDays, canEdit }: InactivityOverviewProps) => {
+export const InactivityOverview = ({
+  scan,
+  refresh,
+  isRefreshing,
+  onRefresh,
+  onStopRefresh,
+  onPruneByDays,
+  canEdit,
+}: InactivityOverviewProps) => {
+  const isPaused = !!refresh && !refresh.done && !isRefreshing;
   // Latest date that is still at least MIN_INACTIVE_DAYS ago
   const maxDate = useMemo(() => toDateInputValue(new Date(Date.now() - MIN_INACTIVE_DAYS * DAY_MS)), []);
   const [sinceDate, setSinceDate] = useState(maxDate);
@@ -64,15 +78,27 @@ export const InactivityOverview = ({ scan, isRefreshing, onRefresh, onPruneByDay
           <h2 id="overview-heading" className="text-xl font-semibold">Inactivity overview</h2>
           <p className="text-muted-foreground text-sm">
             {scan
-              ? `Last refreshed ${formatDateTime(scan.scannedAt)}. Counts exclude members who joined in the last ${scan.graceDays} days, protected accounts, and members whose activity could not be read.`
+              ? `Data from ${formatDateTime(scan.scannedAt)}. Counts exclude members who joined in the last ${scan.graceDays} days, protected accounts, and members whose activity could not be read.`
               : 'No data yet. Refresh to read every member’s last activity from Coursera.'}
           </p>
         </div>
         <Button variant="outline" onClick={onRefresh} disabled={isRefreshing} className="shrink-0">
           {isRefreshing ? <Loader2 className="animate-spin" aria-hidden="true" /> : <RefreshCw aria-hidden="true" />}
-          {isRefreshing ? 'Refreshing… (can take a few minutes)' : 'Refresh from Coursera'}
+          {isRefreshing ? 'Refreshing…' : isPaused ? 'Resume refresh' : 'Refresh from Coursera'}
         </Button>
       </div>
+
+      {refresh && !refresh.done && (
+        <JobProgress
+          label={isPaused ? 'Refresh paused' : 'Checking members with Coursera'}
+          done={refresh.checked}
+          total={refresh.total}
+          detail="Keep this page open while it runs. If you leave or stop, press Resume refresh later to continue where it stopped. The cards update when it finishes."
+          waitMs={refresh.waitMs}
+          isRunning={isRefreshing}
+          onStop={onStopRefresh}
+        />
+      )}
 
       {scan && (
         <>

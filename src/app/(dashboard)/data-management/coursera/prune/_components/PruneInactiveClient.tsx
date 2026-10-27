@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { CalendarDays, Ticket } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { refreshScan } from '@/lib/coursera-prune-client';
-import type { InactivityScan, PruneMode } from '@/types/coursera-prune';
+import { useJobLoop } from '@/hooks/useJobLoop';
+import { fetchOverview, fetchPreview, startScan, stepScan } from '@/lib/coursera-prune-client';
+import type { InactivityScan, PruneMode, PrunePreview, ScanProgress } from '@/types/coursera-prune';
 import { InactivityOverview } from './InactivityOverview';
 import { ProtectedAccountsCard } from './ProtectedAccountsCard';
 import { PruneHistory } from './PruneHistory';
@@ -15,49 +16,91 @@ import { PruneWorkflow } from './PruneWorkflow';
 
 interface PruneInactiveClientProps {
   initialScan: InactivityScan | null;
+  /** A refresh left running (e.g. the page was closed mid-way), to resume. */
+  initialRunningScan: ScanProgress | null;
   canEdit: boolean;
   canHardDelete: boolean;
 }
 
+/** What a prune tab should show when it (re)mounts. */
+interface TabSeed {
+  key: number;
+  days?: number;
+  list?: PrunePreview;
+  resumeRunId?: string;
+}
+
 /**
- * Interactive body of the Prune Inactive page: overview, the two prune tabs,
- * protected accounts, and the prune log.
+ * Interactive body of the Prune Inactive page: overview with a batched
+ * refresh, the two prune tabs, saved lists and the prune log, and protected
+ * accounts.
  */
-export const PruneInactiveClient = ({ initialScan, canEdit, canHardDelete }: PruneInactiveClientProps) => {
+export const PruneInactiveClient = ({ initialScan, initialRunningScan, canEdit, canHardDelete }: PruneInactiveClientProps) => {
   const [scan, setScan] = useState(initialScan);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refresh, setRefresh] = useState<ScanProgress | null>(initialRunningScan);
   const [tab, setTab] = useState<PruneMode>('inactive_days');
-  // Remounts the days tab when the overview hands it a new value
-  const [daysPrefill, setDaysPrefill] = useState<{ days: number; key: number } | null>(null);
+  // Remounts a tab when the overview or the log hands it something to show
+  const [seeds, setSeeds] = useState<Partial<Record<PruneMode, TabSeed>>>({});
   const [historyKey, setHistoryKey] = useState(0);
+  const scanJob = useJobLoop();
+
+  const reloadHistory = useCallback(() => setHistoryKey(k => k + 1), []);
 
   const handleRefresh = async () => {
-    setIsRefreshing(true);
     try {
-      setScan(await refreshScan());
-      toast.success('Overview refreshed from Coursera.');
+      const started = await startScan();
+      setRefresh(started);
+      const final = await scanJob.run(() => stepScan(started.scanId), setRefresh);
+      if (final) {
+        const overview = await fetchOverview();
+        setScan(overview.latest);
+        setRefresh(null);
+        toast.success('Overview refreshed from Coursera.');
+      }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Refresh failed.');
-    } finally {
-      setIsRefreshing(false);
+      toast.error(err instanceof Error ? err.message : 'Refresh stopped. Press Resume refresh to continue.');
     }
   };
 
-  const handlePruneByDays = (days: number) => {
-    setTab('inactive_days');
-    setDaysPrefill({ days, key: Date.now() });
+  const seedTab = (mode: PruneMode, seed: Omit<TabSeed, 'key'>) => {
+    setTab(mode);
+    setSeeds(prev => ({ ...prev, [mode]: { ...seed, key: Date.now() } }));
     document.getElementById('prune-heading')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const reloadHistory = () => setHistoryKey(k => k + 1);
+  const handleOpenList = async (previewId: string, mode: PruneMode) => {
+    try {
+      seedTab(mode, { list: await fetchPreview(previewId) });
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Could not open the list.');
+    }
+  };
+
+  const renderTab = (mode: PruneMode) => {
+    const seed = seeds[mode];
+    return (
+      <PruneWorkflow
+        key={seed?.key ?? mode}
+        mode={mode}
+        defaultAmount={seed?.days}
+        openedList={seed?.list}
+        resumeRunId={seed?.resumeRunId}
+        hasScanData={!!scan}
+        canHardDelete={canHardDelete}
+        onLogged={reloadHistory}
+      />
+    );
+  };
 
   return (
     <div className="flex flex-col gap-8">
       <InactivityOverview
         scan={scan}
-        isRefreshing={isRefreshing}
+        refresh={refresh}
+        isRefreshing={scanJob.isRunning}
         onRefresh={handleRefresh}
-        onPruneByDays={handlePruneByDays}
+        onStopRefresh={scanJob.stop}
+        onPruneByDays={days => seedTab('inactive_days', { days })}
         canEdit={canEdit}
       />
 
@@ -66,7 +109,8 @@ export const PruneInactiveClient = ({ initialScan, canEdit, canHardDelete }: Pru
           <CardHeader>
             <CardTitle id="prune-heading" className="text-xl">Prune</CardTitle>
             <CardDescription>
-              Preview first — nothing is removed until you press Prune and confirm. Every preview and prune is logged.
+              Preview builds a saved list from the latest refresh. Nothing is removed until you press Prune and
+              confirm; each member is checked again with Coursera just before removal.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -82,16 +126,10 @@ export const PruneInactiveClient = ({ initialScan, canEdit, canHardDelete }: Pru
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="inactive_days" forceMount hidden={tab !== 'inactive_days'}>
-                <PruneWorkflow
-                  key={daysPrefill?.key ?? 'days'}
-                  mode="inactive_days"
-                  defaultAmount={daysPrefill?.days}
-                  canHardDelete={canHardDelete}
-                  onLogged={reloadHistory}
-                />
+                {renderTab('inactive_days')}
               </TabsContent>
               <TabsContent value="free_seats" forceMount hidden={tab !== 'free_seats'}>
-                <PruneWorkflow mode="free_seats" canHardDelete={canHardDelete} onLogged={reloadHistory} />
+                {renderTab('free_seats')}
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -102,13 +140,15 @@ export const PruneInactiveClient = ({ initialScan, canEdit, canHardDelete }: Pru
         </p>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-1">
-          <ProtectedAccountsCard canEdit={canEdit} />
-        </div>
-        <div className="lg:col-span-2">
-          <PruneHistory reloadKey={historyKey} />
-        </div>
+      <PruneHistory
+        reloadKey={historyKey}
+        canEdit={canEdit}
+        onOpenList={handleOpenList}
+        onResumeRun={(runId, mode) => seedTab(mode, { resumeRunId: runId })}
+      />
+
+      <div className="w-full lg:max-w-xl">
+        <ProtectedAccountsCard canEdit={canEdit} />
       </div>
     </div>
   );

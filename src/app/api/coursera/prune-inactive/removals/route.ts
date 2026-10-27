@@ -12,7 +12,7 @@ const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
  *   ?runId=<uuid>             one removal run
  *   ?from=YYYY-MM-DD&to=...   all removals in a date range
  *   ?format=csv               download instead of JSON
- *   ?includeFailed=true       include failed attempts (default: removed only)
+ *   ?includeFailed=true       include failed and spared members (default: removed only)
  */
 export async function GET(request: NextRequest) {
   const access = await requirePruneAccess('view');
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
   const headers = [
     'Removed At', 'Email', 'External ID', 'Name', 'Last Seen', 'Last Seen Source',
-    'Days Inactive', 'Courses', 'Mode', 'Threshold', 'Soft Delete', 'Success', 'Message', 'Run ID',
+    'Days Inactive', 'Courses', 'Mode', 'Threshold', 'Soft Delete', 'Outcome', 'Message', 'Run ID',
   ];
   const esc = (v: unknown) => {
     const s = v === null || v === undefined ? '' : String(v);
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       [
         r.removed_at, r.email, r.external_id, r.full_name, r.last_seen_at, r.last_seen_source,
         r.days_inactive, r.courses_count, r.mode, r.threshold, r.soft_delete,
-        r.success, r.message, r.run_id,
+        r.outcome ?? (r.success ? 'removed' : 'failed'), r.message, r.run_id,
       ].map(esc).join(',')
     ),
   ];

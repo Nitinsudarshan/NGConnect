@@ -67,6 +67,15 @@ function recordApiFailure(statusCode?: number) {
   }
 }
 
+/**
+ * Milliseconds until Coursera calls resume after a rate-limit or failure
+ * cooldown, or 0 when calls are allowed. Lets batched jobs pause and retry
+ * instead of recording every member in the batch as a failure.
+ */
+export function getCourseraCooldownMs(): number {
+  return isCircuitOpen() ? Math.max(0, circuitBreaker.openUntil - Date.now()) : 0;
+}
+
 function isCircuitOpen(): boolean {
   if (circuitBreaker.state === 'OPEN') {
     if (Date.now() > circuitBreaker.openUntil) {

@@ -4,9 +4,9 @@ import { ArrowLeft, UserMinus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { denyUnlessAccess } from '@/lib/guard';
 import { getCurrentUserPermissions } from '@/lib/permissions';
-import { getLatestScan } from '@/lib/coursera-prune-store';
+import { getLatestScan, getRunningScan } from '@/lib/coursera-prune-store';
 import { PRUNE_RESOURCE } from '@/lib/coursera-prune-auth';
-import type { InactivityScan } from '@/types/coursera-prune';
+import type { InactivityScan, ScanProgress } from '@/types/coursera-prune';
 import { PruneInactiveClient } from './_components/PruneInactiveClient';
 
 /**
@@ -25,8 +25,9 @@ export default async function CourseraPrunePage() {
   const canHardDelete = !!permissions[PRUNE_RESOURCE]?.delete;
 
   let initialScan: InactivityScan | null = null;
+  let initialRunningScan: ScanProgress | null = null;
   try {
-    initialScan = await getLatestScan();
+    [initialScan, initialRunningScan] = await Promise.all([getLatestScan(), getRunningScan()]);
   } catch {
     // The page still works; the overview shows the "refresh" prompt.
   }
@@ -53,7 +54,12 @@ export default async function CourseraPrunePage() {
         </div>
       </div>
 
-      <PruneInactiveClient initialScan={initialScan} canEdit={canEdit} canHardDelete={canHardDelete} />
+      <PruneInactiveClient
+        initialScan={initialScan}
+        initialRunningScan={initialRunningScan}
+        canEdit={canEdit}
+        canHardDelete={canHardDelete}
+      />
     </div>
   );
 }

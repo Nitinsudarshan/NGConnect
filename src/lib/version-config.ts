@@ -23,9 +23,46 @@ export interface VersionEntry {
   changes: VersionChangeItem[];
 }
 
-export const CURRENT_VERSION = "1.10.00";
+export const CURRENT_VERSION = "1.11.00";
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.11.00",
+    date: "2026-10-26",
+    title: "Coursera Prune Inactive: saved prune lists and batched, resumable refresh and prune",
+    type: "minor",
+    highlights: [
+      "Refresh checks members a batch at a time with a progress bar, pauses on Coursera rate limits, and can be resumed",
+      "Previews are built instantly from the latest refresh and saved as prune lists, usable for 7 days",
+      "Prunes run a few members per request, re-check each live, log each member immediately, and can be resumed"
+    ],
+    changes: [
+      {
+        category: "Fixes",
+        description: "Previews and prunes no longer re-check every program member in a single request, which took around 10 minutes, hit Coursera rate limits, and could time out mid-prune.",
+      },
+      {
+        category: "Features",
+        description: "Refresh from Coursera now stores the member list and checks activity 25 members per request (coursera_prune_scan_members), with progress, Stop, and Resume refresh.",
+      },
+      {
+        category: "Features",
+        description: "Every preview is saved as a prune list that can be reopened from the prune log and pruned from for 7 days, once.",
+      },
+      {
+        category: "Features",
+        description: "Prunes run 10 members per request with a progress bar; each member is re-checked live, spared if active since the list was made or now protected, and logged before the request returns. Stopped prunes can be resumed from the log.",
+      },
+      {
+        category: "Improvements",
+        description: "When Coursera rate-limits, refresh and prune wait for the cooldown and continue instead of recording members as failed.",
+      },
+      {
+        category: "Security",
+        description: "Each member is handled at most once per prune (unique run/email log index), and a short lease stops two tabs processing the same batch.",
+      },
+    ],
+  },
   {
     version: "1.10.00",
     date: "2026-10-26",
